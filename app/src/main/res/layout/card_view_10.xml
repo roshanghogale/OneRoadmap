@@ -1,0 +1,204 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical">
+
+    <androidx.cardview.widget.CardView
+        android:id="@+id/cardView10"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="16dp"
+        android:layout_marginEnd="16dp"
+        android:layout_marginBottom="16dp"
+        app:cardBackgroundColor="#5645C0"
+        app:cardCornerRadius="18dp"
+        app:cardElevation="4dp">
+
+        <androidx.cardview.widget.CardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            app:cardCornerRadius="18dp"
+            app:cardElevation="0dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:orientation="vertical"
+                android:visibility="visible">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:layout_marginTop="24dp"
+                    android:layout_marginBottom="4dp"
+                    android:gravity="center"
+                    android:orientation="horizontal">
+
+                    <androidx.cardview.widget.CardView
+                        android:layout_width="wrap_content"
+                        android:layout_height="35dp"
+                        android:layout_marginStart="16dp"
+                        android:layout_marginTop="6dp"
+                        android:layout_marginEnd="8dp"
+                        android:layout_marginBottom="10dp"
+                        app:cardBackgroundColor="#5645C0"
+                        app:cardCornerRadius="6dp"
+                        app:cardElevation="6dp">
+
+                        <LinearLayout
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_gravity="center"
+                            android:layout_marginStart="12dp"
+                            android:layout_marginEnd="12dp"
+                            android:gravity="center"
+                            android:orientation="horizontal">
+
+                            <ImageView
+                                android:id="@+id/imageView4"
+                                android:layout_width="23dp"
+                                android:layout_height="23dp"
+                                android:src="@drawable/link" />
+
+                            <TextView
+                                android:id="@+id/textView45"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:fontFamily="@font/yantramanav_medium"
+                                android:text=" अर्जाची लिंक "
+                                android:textAlignment="center"
+                                android:textColor="#FFFFFF"
+                                android:textSize="16sp" />
+                        </LinearLayout>
+
+                    </androidx.cardview.widget.CardView>
+
+                    <androidx.cardview.widget.CardView
+                        android:layout_width="wrap_content"
+                        android:layout_height="35dp"
+                        android:layout_marginStart="8dp"
+                        android:layout_marginTop="6dp"
+                        android:layout_marginEnd="16dp"
+                        android:layout_marginBottom="10dp"
+                        app:cardBackgroundColor="#FFFFFF"
+                        app:cardCornerRadius="6dp"
+                        app:cardElevation="6dp">
+
+                        <TextView
+                            android:id="@+id/textView34"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_gravity="center"
+                            android:layout_marginStart="12dp"
+                            android:layout_marginEnd="12dp"
+                            android:fontFamily="@font/yantramanav_medium"
+                            android:text=" नोटिफिकेशन PDF"
+                            android:textAlignment="center"
+                            android:textColor="#002EAD"
+                            android:textSize="16sp" />
+                    </androidx.cardview.widget.CardView>
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:layout_marginStart="12dp"
+                    android:layout_marginEnd="12dp"
+                    android:background="@drawable/rectangle_back_green_dotted"
+                    android:orientation="vertical">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:gravity="center"
+                        android:orientation="horizontal">
+
+                        <ImageView
+                            android:id="@+id/imageView5"
+                            android:layout_width="20dp"
+                            android:layout_height="20dp"
+                            android:src="@drawable/green_tick" />
+
+                        <TextView
+                            android:id="@+id/textView2"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="8dp"
+                            android:layout_marginTop="12dp"
+                            android:layout_marginEnd="8dp"
+                            android:layout_marginBottom="12dp"
+                            android:fontFamily="@font/poppins_medium"
+                            android:text="Free Resources For Better Understand"
+                            android:textColor="#2F7F23"
+                            android:textSize="12sp" />
+                    </LinearLayout>
+
+                    <androidx.cardview.widget.CardView
+                        android:layout_width="match_parent"
+                        android:layout_height="40dp"
+                        android:layout_gravity="center"
+                        android:layout_marginStart="36dp"
+                        android:layout_marginTop="12dp"
+                        android:layout_marginEnd="36dp"
+                        android:layout_marginBottom="16dp"
+                        app:cardBackgroundColor="#000000"
+                        app:cardCornerRadius="6dp"
+                        app:cardElevation="4dp">
+
+                        <TextView
+                            android:id="@+id/textView48"
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:layout_gravity="center"
+                            android:background="@drawable/gradient_for_link_button"
+                            android:gravity="center"
+                            android:text="सिलेक्शन PDF"
+                            android:textColor="#FFFFFF"
+                            android:textSize="18sp"
+                            android:textStyle="bold" />
+                    </androidx.cardview.widget.CardView>
+
+                    <androidx.cardview.widget.CardView
+                        android:layout_width="match_parent"
+                        android:layout_height="40dp"
+                        android:layout_gravity="center"
+                        android:layout_marginStart="36dp"
+                        android:layout_marginEnd="36dp"
+                        android:layout_marginBottom="24dp"
+                        app:cardBackgroundColor="#000000"
+                        app:cardCornerRadius="6dp"
+                        app:cardElevation="4dp">
+
+                        <TextView
+                            android:id="@+id/textView44"
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:layout_gravity="center"
+                            android:gravity="center"
+                            android:text="अभ्यासक्रम PDF"
+                            android:textColor="#FFFFFF"
+                            android:textSize="18sp"
+                            android:textStyle="bold" />
+                    </androidx.cardview.widget.CardView>
+
+                </LinearLayout>
+
+                <TextView
+                    android:id="@+id/textView3"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_margin="16dp"
+                    android:fontFamily="@font/poppins_medium"
+                    android:text="NOTE-  फॉर्म ची लिंक केवळ लंडस्पेस मोड मधेच ओपन होईल , त्यामुळे लिंक ओपन करण्यासाठी ऑटो रोटेशन चालू कराल"
+                    android:textSize="14sp"
+                    android:textStyle="bold" />
+
+            </LinearLayout>
+
+        </androidx.cardview.widget.CardView>
+    </androidx.cardview.widget.CardView>
+</LinearLayout>

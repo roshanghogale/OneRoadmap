@@ -1,0 +1,203 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#F8F8F8"
+    android:padding="16dp"
+    android:clipToPadding="false"
+    android:clipChildren="false">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:layout_marginTop="12dp"
+        android:clipChildren="false"
+        android:clipToPadding="false">
+
+        <!-- Title -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Just 3 Step !"
+            android:textColor="@android:color/black"
+            android:textSize="22sp"
+            android:textStyle="bold"
+            android:layout_marginBottom="4dp"/>
+
+        <!-- Subtitle -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="तुम्हाला योग्य नोटिफिकेशन मिळावे - त्यासाठी हि स्टेप महत्वाची"
+            android:textColor="@android:color/black"
+            android:textSize="14sp"
+            android:layout_marginBottom="30dp"/>
+
+        <!-- Card + Profile Icon -->
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:clipChildren="false"
+            android:clipToPadding="false">
+
+            <!-- Card Layout -->
+            <LinearLayout
+                android:id="@+id/cardContainer"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:background="@drawable/bg_card"
+                android:padding="16dp">
+
+                <!-- Name Input -->
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="8dp"
+                    android:text="आपले नाव प्रविष्ट करा"
+                    android:textColor="@android:color/black"
+                    android:textSize="14sp"
+                    android:textStyle="bold" />
+
+                <EditText
+                    android:id="@+id/etName"
+                    android:layout_width="match_parent"
+                    android:layout_height="50dp"
+                    android:hint="नाव आणि आडनाव"
+                    android:padding="12dp"
+                    android:background="@drawable/spinner_background"
+                    android:drawablePadding="8dp"
+                    app:drawableStartCompat="@drawable/edit"/>
+
+                <!-- Gender -->
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="16dp"
+                    android:layout_marginBottom="8dp"
+                    android:text="लिंग"
+                    android:textColor="@android:color/black"
+                    android:textSize="14sp"
+                    android:textStyle="bold" />
+
+                <RadioGroup
+                    android:id="@+id/radioGroupGender"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="2dp"
+                    android:layout_marginEnd="2dp"
+                    android:orientation="horizontal">
+
+                    <RadioButton
+                        android:id="@+id/radio_men"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginEnd="8dp"
+                        android:layout_weight="1"
+                        android:background="@drawable/rectangle_with_stroke"
+                        android:buttonTint="@color/text_secondary"
+                        android:fontFamily="@font/yantramanav_regular"
+                        android:text="पुरुष"
+                        android:textColor="@color/text_secondary"
+                        android:textSize="16sp" />
+
+                    <RadioButton
+                        android:id="@+id/radio_women"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="8dp"
+                        android:layout_weight="1"
+                        android:background="@drawable/rectangle_with_stroke"
+                        android:buttonTint="@color/text_secondary"
+                        android:fontFamily="@font/yantramanav_regular"
+                        android:text="स्त्री"
+                        android:textColor="@color/text_secondary"
+                        android:textSize="16sp" />
+                </RadioGroup>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="16dp"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:id="@+id/textView17"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="8dp"
+                        android:text="Select Your Avatar"
+                        android:textColor="@android:color/black"
+                        android:textSize="14sp"
+                        android:textStyle="bold"
+                        android:visibility="gone" />
+
+                    <!-- RecyclerView for avatar selection -->
+                    <androidx.recyclerview.widget.RecyclerView
+                        android:id="@+id/avatar_recycler"
+                        android:layout_width="match_parent"
+                        android:layout_height="126dp"
+                        android:clipToPadding="false"
+                        android:padding="4dp"
+                        android:visibility="gone" />
+                </LinearLayout>
+
+                <!-- Age Group -->
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="16dp"
+                    android:layout_marginBottom="12dp"
+                    android:text="योग्य Age ग्रुप निवडा ?"
+                    android:textColor="@android:color/black"
+                    android:textSize="14sp"
+                    android:textStyle="bold" />
+
+                <Spinner
+                    android:id="@+id/spinnerAge"
+                    android:layout_width="match_parent"
+                    android:layout_height="45dp"
+                    android:background="@drawable/spinner_background"
+                    android:layout_marginBottom="8dp"
+                    android:padding="8dp"/>
+            </LinearLayout>
+
+            <!-- Profile Icon fully outside card -->
+            <androidx.cardview.widget.CardView
+                android:layout_width="55dp"
+                android:layout_height="55dp"
+                app:cardCornerRadius="50dp"
+                app:cardBackgroundColor="@color/gray"
+                app:cardElevation="0dp"
+                android:layout_alignTop="@id/cardContainer"
+                android:layout_alignParentEnd="true"
+                android:layout_marginEnd="26dp"
+                android:translationY="-28dp">
+
+                <de.hdodenhof.circleimageview.CircleImageView
+                    android:id="@+id/user_profile"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:layout_margin="1dp"
+                    android:src="@drawable/profile"
+                    android:scaleType="centerCrop"/>
+            </androidx.cardview.widget.CardView>
+        </RelativeLayout>
+
+        <!-- Next Button -->
+        <Button
+            android:id="@+id/btnNext"
+            android:layout_width="match_parent"
+            android:layout_height="55dp"
+            android:text="Next"
+            android:textAllCaps="true"
+            android:textColor="@android:color/white"
+            android:backgroundTint="@color/purple"
+            android:layout_marginTop="30dp"
+            android:drawableEnd="@drawable/arrow_right"
+            android:drawableTint="@color/white"
+            android:drawablePadding="8dp"/>
+    </LinearLayout>
+</ScrollView>

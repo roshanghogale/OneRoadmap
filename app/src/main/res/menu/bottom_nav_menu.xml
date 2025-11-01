@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <item
+        android:id="@+id/nav_home"
+        android:icon="@drawable/home_active"
+        android:title="Home" />
+
+    <item
+        android:id="@+id/nav_chat"
+        android:icon="@drawable/chat_inactive"
+        android:title="Chat" />
+
+    <item
+        android:id="@+id/nav_main"
+        android:icon="@drawable/main_active_ic"
+        android:title="Career" />
+
+    <item
+        android:id="@+id/nav_all_jobs"
+        android:icon="@drawable/list"
+        android:title="All Jobs" />
+
+    <item
+        android:id="@+id/nav_profile"
+        android:icon="@drawable/profile_inactive"
+        android:title="Profile" />
+</menu>

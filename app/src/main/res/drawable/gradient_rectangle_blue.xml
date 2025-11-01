@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Stroke layer -->
+    <item>
+        <shape android:shape="rectangle">
+            <gradient
+                android:startColor="#3079F2"
+                android:centerColor="#FFFFFF"
+                android:endColor="#FFFFFF"
+                android:angle="270"/>
+            <corners android:radius="24dp"/>
+            <stroke android:color="#806C6C6C"
+                android:width="1dp"/>
+        </shape>
+    </item>
+</layer-list>
+

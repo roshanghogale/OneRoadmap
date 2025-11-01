@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="black">#FF000000</color>
+    <color name="white">#FFFFFFFF</color>
+    <color name="purple">#7E18EB</color>
+    <color name="blue">#1A0D53</color>
+    <color name="red">#E91E63</color>
+    <color name="green">#26BB08</color>
+    <color name="headerPurple">#5547F2</color>     <!-- sampled from your image -->
+    <color name="headerSubtext">#E6E4FF</color>    <!-- soft white for subtitle -->
+    <color name="segmentBlack">#111111</color>
+    <color name="chipYellow">#FFD54F</color>
+    <color name="chipGreen">#2DBE6C</color>
+    <color name="yellow">#FFEB3B</color>
+    <color name="text_primary">#0C0F14</color>
+    <color name="text_secondary">#7A7C7F</color>
+    <color name="gray">#929292</color>
+    <color name="grey">#D3D3D3</color>
+    <color name="bottom_navigation_dark">#0A0916</color>
+    <color name="bottom_navigation_light">#FFFFFF</color>
+    <color name="chip_default">#0B6581</color>
+    <color name="chip_selected">#084D63</color>
+</resources>

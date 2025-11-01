@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="#F8F8F8">
+
+    <!-- Progress Bar Container (Wrapper for Background and Foreground) -->
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="8dp"
+        android:layout_marginBottom="8dp"
+        android:layout_marginTop="42dp"
+        android:layout_marginStart="12dp"
+        android:layout_marginEnd="12dp">
+
+        <!-- Background Progress Bar (Grey) -->
+        <LinearLayout
+            android:id="@+id/progressBarBackground"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="horizontal"
+            android:weightSum="3">
+
+            <View
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:layout_marginEnd="4dp"
+                android:background="@color/grey"/>
+
+            <View
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:layout_marginEnd="4dp"
+                android:background="@color/grey"/>
+
+            <View
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:background="@color/grey"/>
+        </LinearLayout>
+
+        <!-- Foreground Progress Bar (Purple or Transparent) -->
+        <LinearLayout
+            android:id="@+id/progressBarContainer"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="horizontal"
+            android:weightSum="3">
+
+            <View
+                android:id="@+id/progressStep1"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:layout_marginEnd="4dp"
+                android:background="@color/purple"/>
+
+            <View
+                android:id="@+id/progressStep2"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:layout_marginEnd="4dp"
+                android:background="@android:color/transparent"/>
+
+            <View
+                android:id="@+id/progressStep3"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:background="@android:color/transparent"/>
+        </LinearLayout>
+    </FrameLayout>
+
+    <!-- Fragment Container -->
+    <FrameLayout
+        android:id="@+id/fragment_container"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
+</LinearLayout>

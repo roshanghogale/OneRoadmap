@@ -1,0 +1,183 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#F8F8F8"
+    android:padding="16dp"
+    android:clipToPadding="false"
+    android:clipChildren="false">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:layout_marginTop="12dp"
+        android:clipChildren="false"
+        android:clipToPadding="false">
+
+        <!-- Title -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Yours Education"
+            android:textColor="@android:color/black"
+            android:textSize="22sp"
+            android:textStyle="bold"
+            android:layout_marginBottom="8dp"/>
+
+        <!-- Subtitle -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="शिक्षण संबंधित माहिती भरा"
+            android:textColor="@android:color/black"
+            android:textSize="14sp"
+            android:layout_marginBottom="24dp"/>
+
+        <!-- Card + Icon -->
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:clipChildren="false"
+            android:clipToPadding="false">
+
+            <!-- Card -->
+            <LinearLayout
+                android:id="@+id/cardContainer"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:background="@drawable/bg_card2"
+                android:padding="16dp">
+
+                <!-- Education -->
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="तुमचे शिक्षण"
+                    android:textStyle="bold"
+                    android:textSize="14sp"
+                    android:layout_marginTop="8dp"
+                    android:layout_marginBottom="8dp"/>
+
+                <Spinner
+                    android:id="@+id/spinnerEducation"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:background="@drawable/spinner_background"
+                    android:paddingStart="12dp"/>
+
+                <!-- 12th Grade -->
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="बारावी कशा मध्ये झाली ?"
+                    android:textStyle="bold"
+                    android:textSize="14sp"
+                    android:layout_marginTop="16dp"
+                    android:layout_marginBottom="8dp"/>
+
+                <Spinner
+                    android:id="@+id/spinnerTwelfth"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:background="@drawable/spinner_background"
+                    android:paddingStart="12dp"/>
+
+                <!-- Degree -->
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="डिग्री"
+                    android:textStyle="bold"
+                    android:textSize="14sp"
+                    android:layout_marginBottom="8dp"
+                    android:layout_marginTop="16dp"/>
+
+                <Spinner
+                    android:id="@+id/spinnerDegree"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:background="@drawable/spinner_background"
+                    android:paddingStart="12dp"/>
+
+                <!-- Post Graduation -->
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="पोस्ट ग्रॅज्युएशन (Optional)"
+                    android:textStyle="bold"
+                    android:textSize="14sp"
+                    android:layout_marginBottom="8dp"
+                    android:layout_marginTop="16dp"/>
+
+                <Spinner
+                    android:id="@+id/spinnerPostGrad"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="8dp"
+                    android:background="@drawable/spinner_background"
+                    android:paddingStart="12dp"/>
+            </LinearLayout>
+
+            <!-- Icon fully outside card -->
+            <androidx.cardview.widget.CardView
+                android:layout_width="55dp"
+                android:layout_height="55dp"
+                app:cardCornerRadius="50dp"
+                app:cardBackgroundColor="@color/white"
+                app:cardElevation="0dp"
+                android:layout_alignTop="@id/cardContainer"
+                android:layout_alignParentEnd="true"
+                android:layout_marginEnd="26dp"
+                android:translationY="-28dp">
+
+                <ImageView
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:padding="10dp"
+                    android:layout_margin="1dp"
+                    android:scaleType="fitCenter"
+                    android:src="@drawable/education"/>
+            </androidx.cardview.widget.CardView>
+        </RelativeLayout>
+
+        <!-- Buttons -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center"
+            android:layout_marginTop="30dp">
+
+            <Button
+                android:id="@+id/btnPrevious"
+                android:layout_width="0dp"
+                android:layout_height="55dp"
+                android:layout_weight="1"
+                android:text="Previous"
+                android:backgroundTint="#D3D3D3"
+                android:textColor="@android:color/black"
+                android:drawableStart="@drawable/arrow_back"
+                android:drawableTint="@color/black"
+                android:drawablePadding="8dp"/>
+
+            <Space
+                android:layout_width="12dp"
+                android:layout_height="wrap_content"/>
+
+            <Button
+                android:id="@+id/btnNext"
+                android:layout_width="0dp"
+                android:layout_height="55dp"
+                android:layout_weight="1"
+                android:text="Last Step"
+                android:textColor="@android:color/white"
+                android:backgroundTint="@color/purple"
+                android:drawableEnd="@drawable/arrow_right"
+                android:drawableTint="@color/white"
+                android:drawablePadding="8dp"/>
+        </LinearLayout>
+    </LinearLayout>
+</ScrollView>

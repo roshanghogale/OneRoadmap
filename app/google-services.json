@@ -1,0 +1,106 @@
+{
+  "project_info": {
+    "project_number": "938969683806",
+    "firebase_url": "https://roshan-notifiaction-default-rtdb.firebaseio.com",
+    "project_id": "roshan-notifiaction",
+    "storage_bucket": "roshan-notifiaction.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:938969683806:android:fdc78909194490bbaee1cf",
+        "android_client_info": {
+          "package_name": "com.example.newsrohsan"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB2lrYZlRcAJJ4QoDGknop3FQ0ZR39VsGs"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:938969683806:android:a8d999d645b8e639aee1cf",
+        "android_client_info": {
+          "package_name": "com.newsproject.layoutdemo"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB2lrYZlRcAJJ4QoDGknop3FQ0ZR39VsGs"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:938969683806:android:6132b413ee1393e4aee1cf",
+        "android_client_info": {
+          "package_name": "com.newsproject.oneroadmap"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB2lrYZlRcAJJ4QoDGknop3FQ0ZR39VsGs"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:938969683806:android:fc2bb27324b7591baee1cf",
+        "android_client_info": {
+          "package_name": "com.newsproject.todaybhartidemo"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB2lrYZlRcAJJ4QoDGknop3FQ0ZR39VsGs"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:938969683806:android:20424b866213d1feaee1cf",
+        "android_client_info": {
+          "package_name": "com.newsproject.todaybhartifinaldemo"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB2lrYZlRcAJJ4QoDGknop3FQ0ZR39VsGs"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -1,0 +1,269 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.core.widget.NestedScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#F8F8F8"
+    android:padding="16dp"
+    android:clipToPadding="false"
+    android:clipChildren="false"
+    android:descendantFocusability="beforeDescendants">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:layout_marginTop="12dp"
+        android:layout_marginBottom="38dp"
+        android:clipChildren="false"
+        android:clipToPadding="false">
+
+        <!-- Title -->
+        <TextView
+            android:id="@+id/tvTitle3"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Your Notifications"
+            android:textColor="@android:color/black"
+            android:textSize="22sp"
+            android:textStyle="bold"
+            android:layout_marginBottom="8dp" />
+
+        <!-- Sub-title -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="नोटिफिकेशनसाठी आवडीनिवडी निवडा"
+            android:textColor="@android:color/black"
+            android:textSize="14sp"
+            android:layout_marginBottom="24dp" />
+
+        <!-- Card + icon -->
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:clipChildren="false"
+            android:clipToPadding="false">
+
+            <!-- Card container -->
+            <LinearLayout
+                android:id="@+id/cardContainer"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:background="@drawable/bg_card"
+                android:padding="16dp">
+
+                <!-- Question 1: study material -->
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="FREE स्टडी मटेरियल कोणत्या भरतीची पाहिजे ?"
+                    android:textSize="14sp"
+                    android:textStyle="bold"
+                    android:layout_marginBottom="8dp"/>
+
+                <Button
+                    android:id="@+id/btnStudyMaterial"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Select Study Materials"
+                    android:background="@drawable/spinner_background"
+                    android:paddingStart="12dp"
+                    android:layout_marginBottom="18dp" />
+
+                <!-- Question 2: current affairs PDF -->
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="FREE करंट अफेयर्स PDF पाहिजेत ?"
+                    android:textSize="14sp"
+                    android:textStyle="bold"
+                    android:layout_marginBottom="8dp"/>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:layout_marginBottom="18dp">
+
+                    <RadioGroup
+                        android:id="@+id/rgCurrentPdf"
+                        android:layout_width="0dp"
+                        android:layout_weight="1"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal">
+
+                        <RadioButton
+                            android:id="@+id/rbPdfYes"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:background="@drawable/rectangle_with_stroke"
+                            android:buttonTint="@color/purple"
+                            android:text="हो"
+                            android:textSize="16sp"
+                            android:padding="12dp"/>
+
+                        <RadioButton
+                            android:id="@+id/rbPdfNo"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:layout_marginStart="12dp"
+                            android:background="@drawable/rectangle_with_stroke"
+                            android:buttonTint="@color/purple"
+                            android:text="नाही"
+                            android:textSize="16sp"
+                            android:padding="12dp"/>
+                    </RadioGroup>
+                </LinearLayout>
+
+                <!-- Question 3: job by stream -->
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="दहावी, बारावी आधारित जॉब पाहिजेत ?"
+                    android:textSize="14sp"
+                    android:textStyle="bold"
+                    android:layout_marginBottom="8dp"/>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:layout_marginBottom="18dp">
+
+                    <RadioGroup
+                        android:id="@+id/rgJobByStream"
+                        android:layout_width="0dp"
+                        android:layout_weight="1"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal">
+
+                        <RadioButton
+                            android:id="@+id/rbJobYes"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:background="@drawable/rectangle_with_stroke"
+                            android:buttonTint="@color/purple"
+                            android:text="हो"
+                            android:textSize="16sp"
+                            android:padding="12dp"/>
+
+                        <RadioButton
+                            android:id="@+id/rbJobNo"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:layout_marginStart="12dp"
+                            android:background="@drawable/rectangle_with_stroke"
+                            android:buttonTint="@color/purple"
+                            android:text="नाही"
+                            android:textSize="16sp"
+                            android:padding="12dp"/>
+                    </RadioGroup>
+                </LinearLayout>
+
+                <!-- District spinner -->
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="जिल्हा"
+                    android:textSize="14sp"
+                    android:textStyle="bold"
+                    android:layout_marginTop="4dp"
+                    android:layout_marginBottom="8dp"/>
+
+                <Spinner
+                    android:id="@+id/spinnerDistrict3"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:background="@drawable/spinner_background"
+                    android:paddingStart="12dp"
+                    android:layout_marginBottom="12dp"/>
+
+                <!-- Taluka spinner -->
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="तालुका"
+                    android:textSize="14sp"
+                    android:textStyle="bold"
+                    android:layout_marginTop="4dp"
+                    android:layout_marginBottom="8dp"/>
+
+                <Spinner
+                    android:id="@+id/spinnerTaluka3"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:background="@drawable/spinner_background"
+                    android:paddingStart="12dp"
+                    android:layout_marginBottom="8dp"/>
+
+            </LinearLayout>
+
+            <!-- Icon -->
+            <androidx.cardview.widget.CardView
+                android:layout_width="55dp"
+                android:layout_height="55dp"
+                app:cardCornerRadius="50dp"
+                app:cardBackgroundColor="@color/white"
+                app:cardElevation="0dp"
+                android:layout_alignTop="@id/cardContainer"
+                android:layout_alignParentEnd="true"
+                android:layout_marginEnd="26dp"
+                android:translationY="-28dp"
+                android:clickable="false"
+                android:focusable="false">
+
+                <ImageView
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:layout_margin="1dp"
+                    android:padding="8dp"
+                    android:src="@drawable/notification2"
+                    android:scaleType="centerCrop"/>
+            </androidx.cardview.widget.CardView>
+        </RelativeLayout>
+
+        <!-- Buttons row -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center"
+            android:layout_marginTop="16dp"
+            android:layout_marginBottom="24dp">
+
+            <Button
+                android:id="@+id/btnPrev3"
+                android:layout_width="0dp"
+                android:layout_height="55dp"
+                android:layout_weight="1"
+                android:text="Previous"
+                android:backgroundTint="#D3D3D3"
+                android:textColor="@android:color/black"
+                android:drawableStart="@drawable/arrow_back"
+                android:drawableTint="@color/black"
+                android:drawablePadding="8dp"/>
+
+            <Space
+                android:layout_width="12dp"
+                android:layout_height="wrap_content"/>
+
+            <Button
+                android:id="@+id/btnSubmit3"
+                android:layout_width="0dp"
+                android:layout_height="55dp"
+                android:layout_weight="1"
+                android:text="Submit"
+                android:textColor="@android:color/white"
+                android:backgroundTint="@color/purple"
+                android:drawableEnd="@drawable/arrow_right"
+                android:drawableTint="@color/white"
+                android:drawablePadding="8dp"/>
+        </LinearLayout>
+    </LinearLayout>
+</androidx.core.widget.NestedScrollView>

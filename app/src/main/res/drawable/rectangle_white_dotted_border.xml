@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Stroke layer -->
+    <item>
+        <shape android:shape="rectangle">
+            <corners android:radius="12dp"/>
+            <stroke android:color="#FFFFFF"
+                android:dashGap="4dp"
+                android:width="1.5dp"
+                android:dashWidth="4dp"/>
+        </shape>
+    </item>
+</layer-list>
+

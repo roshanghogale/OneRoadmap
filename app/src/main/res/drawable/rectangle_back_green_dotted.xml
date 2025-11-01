@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Stroke layer -->
+    <item>
+        <shape android:shape="rectangle">
+            <solid
+                android:color="#ECF8EB"/>
+            <corners android:radius="12dp"/>
+            <stroke android:color="#2E960F"
+                android:dashGap="2dp"
+                android:width="2dp"
+                android:dashWidth="3dp"/>
+        </shape>
+    </item>
+</layer-list>
+

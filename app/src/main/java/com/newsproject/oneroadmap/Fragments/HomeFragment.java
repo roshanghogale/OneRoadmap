@@ -1,0 +1,1586 @@
+package com.newsproject.oneroadmap.Fragments;
+
+import android.app.Dialog;
+import android.content.Context;
+import android.content.Intent;
+import android.content.SharedPreferences;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
+import android.net.Uri;
+import android.os.Build;
+import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
+import android.util.Log;
+import android.view.LayoutInflater;
+import android.view.View;
+import android.view.ViewGroup;
+import android.view.WindowManager;
+import android.widget.ImageView;
+import android.widget.LinearLayout;
+import android.widget.ScrollView;
+import android.widget.TextView;
+import android.widget.Toast;
+
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.annotation.RequiresApi;
+import androidx.cardview.widget.CardView;
+import androidx.constraintlayout.widget.ConstraintLayout;
+import androidx.core.content.ContextCompat;
+import androidx.fragment.app.Fragment;
+import androidx.fragment.app.FragmentTransaction;
+import androidx.lifecycle.ViewModelProvider;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.PagerSnapHelper;
+import androidx.recyclerview.widget.RecyclerView;
+import androidx.viewbinding.ViewBinding;
+
+import com.bumptech.glide.Glide;
+import com.google.android.material.bottomnavigation.BottomNavigationView;
+import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.storage.FirebaseStorage;
+import com.google.gson.Gson;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonObject;
+import com.mikhaellopez.circularprogressbar.CircularProgressBar;
+import com.newsproject.oneroadmap.Adapters.CurrentAffairsAdapter;
+import com.newsproject.oneroadmap.Adapters.RecentlyOpenedAdapter;
+import com.newsproject.oneroadmap.Adapters.StoriesAdapter;
+import com.newsproject.oneroadmap.Adapters.StoryAdapter;
+import com.newsproject.oneroadmap.Adapters.StudentUpdateAdapter;
+import com.newsproject.oneroadmap.Adapters.StudyMaterialAdapter;
+import com.newsproject.oneroadmap.Models.CurrentAffairs;
+import com.newsproject.oneroadmap.Models.JobUpdate;
+import com.newsproject.oneroadmap.Models.News;
+import com.newsproject.oneroadmap.Models.RecentlyOpenedItem;
+import com.newsproject.oneroadmap.Models.Slider;
+import com.newsproject.oneroadmap.Models.Story;
+import com.newsproject.oneroadmap.Models.StudentUpdateItem;
+import com.newsproject.oneroadmap.Models.StudyMaterial;
+import com.newsproject.oneroadmap.R;
+import com.newsproject.oneroadmap.Utils.BuildConfig;
+import com.newsproject.oneroadmap.Models.JobViewModel;
+import com.newsproject.oneroadmap.Utils.NewsUtils;
+
+import org.imaginativeworld.whynotimagecarousel.ImageCarousel;
+import org.imaginativeworld.whynotimagecarousel.listener.CarouselListener;
+import org.imaginativeworld.whynotimagecarousel.model.CarouselItem;
+
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+
+import de.hdodenhof.circleimageview.CircleImageView;
+import okhttp3.Cache;
+import okhttp3.Call;
+import okhttp3.Callback;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.Response;
+
+public class HomeFragment extends Fragment {
+    private CircleImageView top5ImageView;
+    private LinearLayout circularProgressBar;
+    private TextView top5TitleView;
+    private TextView top5TimeAgoView;
+    private RecyclerView storyRecycler;
+    private RecyclerView currentAffairsRecycler;
+    private static RecyclerView storiesPlayer;
+    private RecyclerView recentlyOpenedRecycler;
+    private RecyclerView studentUpdatesRecycler;
+    private RecyclerView recyclerStudyMaterial;
+    private LinearLayout recentRecycler;
+    private ScrollView mainScrollView;
+    private ImageCarousel carousel;
+    private StoryAdapter storyAdapter;
+    private CurrentAffairsAdapter currentAffairsAdapter;
+    private RecentlyOpenedAdapter recentlyOpenedAdapter;
+    private StudentUpdateAdapter studentAdapter1, studentAdapter2, studentAdapter3, studentAdapter4, studentAdapter5;
+    private StudyMaterialAdapter studyMaterialAdapter;
+    private List<Story> storyList = new ArrayList<>();
+    private List<CurrentAffairs> currentAffairsList = new ArrayList<>();
+    private List<JobUpdate> jobUpdatesList = new ArrayList<>();
+    private List<RecentlyOpenedItem> recentlyOpenedList = new ArrayList<>();
+    private List<StudentUpdateItem> studentUpdatesList = new ArrayList<>();
+    private List<CarouselItem> carouselItemsList = new ArrayList<>();
+    private List<StudyMaterial> studyMaterialsAll = new ArrayList<>();
+    private List<StudyMaterial> currentStudyMaterials = new ArrayList<>();
+    private CardView bankJobs, privateJobs, governmentJobs;
+    private ImageView admitCard;
+    private CircleImageView profileIcon;
+    private TextView allStudentUpdates, userName;
+    private SharedPreferences storyPrefs;
+    private FirebaseFirestore db;
+    private FirebaseStorage firebaseStorage;
+    private ExecutorService executorService;
+    private final Handler mainHandler = new Handler(Looper.getMainLooper());
+    private static final String TAG = "HomeFragmentRunning";
+    private boolean hasShownStoriesErrorToast = false;
+    private boolean hasShownCurrentAffairsErrorToast = false;
+    private boolean hasShownJobUpdatesErrorToast = false;
+    private boolean hasShownStudentUpdatesErrorToast = false;
+    private boolean hasShownRecentlyOpenedErrorToast = false;
+    private boolean hasShownCarouselItemsErrorToast = false;
+    private boolean hasShownStudyMaterialsErrorToast = false;
+    private boolean hasShownTop5JobsErrorToast = false;
+    private JobViewModel jobViewModel;
+    private OkHttpClient client;
+    private LinearLayout govLinear, policeLinear, bankLinear, selfLinear;
+    private Map<String, News> newsCache = new HashMap<>(); // Cache for news items
+    private String top5PdfUrl = "";
+
+    @Override
+    public void onCreate(@Nullable Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        executorService = Executors.newSingleThreadExecutor();
+        Log.d(TAG, "ExecutorService created in onCreate");
+
+        // Initialize OkHttpClient
+        int cacheSize = 10 * 1024 * 1024; // 10 MB cache
+        Cache cache = new Cache(requireContext().getCacheDir(), cacheSize);
+        client = new OkHttpClient.Builder()
+                .cache(cache)
+                .build();
+
+        // Initialize JobViewModel
+        jobViewModel = new ViewModelProvider(this).get(JobViewModel.class);
+    }
+
+    public static boolean isStoriesPlayerVisible() {
+        return storiesPlayer != null && storiesPlayer.getVisibility() == View.VISIBLE;
+    }
+
+    public static void stopStory(Context context) {
+        if (storiesPlayer != null) {
+            RecyclerView.Adapter adapter = storiesPlayer.getAdapter();
+            if (adapter instanceof StoriesAdapter) {
+                StoriesAdapter storiesAdapter = (StoriesAdapter) adapter;
+                for (int i = 0; i < storiesPlayer.getChildCount(); i++) {
+                    RecyclerView.ViewHolder holder = storiesPlayer.findViewHolderForAdapterPosition(i);
+                    if (holder instanceof StoriesAdapter.StoryViewHolder) {
+                        ((StoriesAdapter.StoryViewHolder) holder).cancelViewTask();
+                        Log.d(TAG, "Canceled tasks and reset progress for view holder at position: " + i);
+                    }
+                }
+            }
+            storiesPlayer.setVisibility(View.GONE);
+            Log.d(TAG, "storiesPlayer stopped and set to GONE");
+            // Show bottom navigation again
+            if (context instanceof androidx.fragment.app.FragmentActivity) {
+                androidx.fragment.app.FragmentActivity activity = (androidx.fragment.app.FragmentActivity) context;
+                android.view.View bottom = activity.findViewById(R.id.bottom_navigation);
+                if (bottom != null) bottom.setVisibility(View.VISIBLE);
+            }
+        }
+    }
+
+    public static void updateAdapter(Context context, int position, StoryAdapter storyAdapter) {
+        storyAdapter.notifyItemChanged(position);
+        Log.d(TAG, "Notified story adapter for position: " + position);
+        if (position + 1 < storyAdapter.getItemCount()) {
+            storiesPlayer.smoothScrollToPosition(position + 1);
+            Log.d(TAG, "Scrolled to next story position: " + (position + 1));
+        } else {
+            Toast.makeText(context, "No more stories to play.", Toast.LENGTH_SHORT).show();
+            Log.d(TAG, "No more stories, showed toast");
+        }
+    }
+
+    public static void playStory(Context context, int position, List<Story> storyList, StoryAdapter storyAdapter) {
+        Log.d(TAG, "playStory called at position: " + position);
+        if (storiesPlayer != null) {
+            storiesPlayer.setVisibility(View.VISIBLE);
+            StoriesAdapter storiesAdapterLocal = new StoriesAdapter(context, storyList, storyAdapter, storiesPlayer);
+            storiesPlayer.setAdapter(storiesAdapterLocal);
+
+            // Set initial visible position
+            storiesAdapterLocal.setCurrentVisiblePosition(position);
+
+            LinearLayoutManager layoutManager = (LinearLayoutManager) storiesPlayer.getLayoutManager();
+            if (layoutManager != null) {
+                layoutManager.scrollToPosition(position);
+            }
+
+            // Listen for scroll changes
+            storiesPlayer.clearOnScrollListeners();
+            storiesPlayer.addOnScrollListener(new RecyclerView.OnScrollListener() {
+                @Override
+                public void onScrolled(@NonNull RecyclerView recyclerView, int dx, int dy) {
+                    LinearLayoutManager lm = (LinearLayoutManager) recyclerView.getLayoutManager();
+                    if (lm != null) {
+                        int visiblePos = lm.findFirstCompletelyVisibleItemPosition();
+                        if (visiblePos != RecyclerView.NO_POSITION && visiblePos != storiesAdapterLocal.getCurrentVisiblePosition()) {
+                            storiesAdapterLocal.setCurrentVisiblePosition(visiblePos);
+
+                            // Cancel / schedule tasks for every attached child
+                            for (int i = 0; i < recyclerView.getChildCount(); i++) {
+                                View child = recyclerView.getChildAt(i);
+                                RecyclerView.ViewHolder vh = recyclerView.getChildViewHolder(child);
+                                if (vh instanceof StoriesAdapter.StoryViewHolder) {
+                                    StoriesAdapter.StoryViewHolder holder = (StoriesAdapter.StoryViewHolder) vh;
+                                    int pos = vh.getAdapterPosition();
+                                    if (pos == visiblePos) {
+                                        holder.scheduleViewTask(storyList.get(pos), pos);
+                                    } else {
+                                        holder.cancelViewTask();
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+
+            // Hide bottom nav
+            if (context instanceof androidx.fragment.app.FragmentActivity) {
+                androidx.fragment.app.FragmentActivity activity = (androidx.fragment.app.FragmentActivity) context;
+                View bottom = activity.findViewById(R.id.bottom_navigation);
+                if (bottom != null) bottom.setVisibility(View.GONE);
+            }
+        } else {
+            Log.e(TAG, "storiesPlayer is null");
+            Toast.makeText(context, "Cannot play story", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    @Nullable
+    @Override
+    public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
+        Log.d(TAG, "onCreateView called");
+        return inflater.inflate(R.layout.fragment_home, container, false);
+    }
+
+    @RequiresApi(api = Build.VERSION_CODES.O)
+    @Override
+    public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
+        super.onViewCreated(view, savedInstanceState);
+        Log.d(TAG, "onViewCreated called");
+        db = FirebaseFirestore.getInstance();
+        firebaseStorage = FirebaseStorage.getInstance();
+        storyPrefs = requireContext().getSharedPreferences("StoryPrefs", Context.MODE_PRIVATE);
+        initViews(view);
+        loadData();
+
+        // Set bottom margins based on Android version
+        setBottomMarginsBasedOnAndroidVersion();
+
+        BottomNavigationView bottomNavigationView = requireActivity().findViewById(R.id.bottom_navigation);
+        bottomNavigationView.setBackgroundColor(ContextCompat.getColor(requireContext(), R.color.bottom_navigation_light));
+        Log.d(TAG, "Set bottom navigation background color");
+    }
+
+    private void initViews(View view) {
+        Log.d(TAG, "initViews called");
+        circularProgressBar = view.findViewById(R.id.top5_progress_border);
+        top5ImageView = view.findViewById(R.id.top5_image_view);
+        top5TitleView = view.findViewById(R.id.top5_title);
+        top5TimeAgoView = view.findViewById(R.id.top5_upload_time);
+        mainScrollView = view.findViewById(R.id.main_scroll);
+        storyRecycler = view.findViewById(R.id.story_recycler);
+        currentAffairsRecycler = view.findViewById(R.id.current_affairs_recycler);
+        storiesPlayer = view.findViewById(R.id.storiesPlayer);
+        recentRecycler = view.findViewById(R.id.recent_recycler);
+        recentlyOpenedRecycler = view.findViewById(R.id.recently_opened_recycler);
+        studentUpdatesRecycler = view.findViewById(R.id.student_updates_recycler);
+        recyclerStudyMaterial = view.findViewById(R.id.free_study_material_recycler);
+        bankJobs = view.findViewById(R.id.card_all_bank_jobs);
+        governmentJobs = view.findViewById(R.id.card_all_govt_jobs);
+        privateJobs = view.findViewById(R.id.card_all_private_jobs);
+        carousel = view.findViewById(R.id.carousel);
+        admitCard = view.findViewById(R.id.result_hallticket);
+        profileIcon = view.findViewById(R.id.profile_image);
+        allStudentUpdates = view.findViewById(R.id.all_student_updates);
+        userName = view.findViewById(R.id.user_name);
+
+        // Locate the four category linears
+        LinearLayout studyCards = view.findViewById(R.id.study_material_cards_linear);
+        LinearLayout row1 = (LinearLayout) studyCards.getChildAt(1); // Index 0 is header, 1 is first row
+        govLinear = (LinearLayout) row1.getChildAt(0);
+        policeLinear = (LinearLayout) row1.getChildAt(1);
+        LinearLayout row2 = (LinearLayout) studyCards.getChildAt(2); // Second row
+        bankLinear = (LinearLayout) row2.getChildAt(0);
+        selfLinear = (LinearLayout) row2.getChildAt(1);
+
+        // Load user data from SharedPreferences
+        SharedPreferences sharedPreferences = requireContext().getSharedPreferences("UserPrefs", Context.MODE_PRIVATE);
+        String userNameText = sharedPreferences.getString("userName", "Guest");
+        String[] userNames = userNameText.split(" ");
+        userName.setText(userNames[0]);
+        Log.d(TAG, "Set userName text: " + userNames[0]);
+
+        // Load avatar from SharedPreferences
+        String avatarName = sharedPreferences.getString("avatar", "");
+        if (!avatarName.isEmpty()) {
+            int avatarResId = getResources().getIdentifier(avatarName, "drawable", requireContext().getPackageName());
+            if (avatarResId != 0) { // Check if the resource ID is valid
+                Glide.with(requireContext())
+                        .load(avatarResId)
+                        .placeholder(R.mipmap.ic_launcher_round) // Default placeholder
+                        .error(R.mipmap.ic_launcher_round) // Fallback if loading fails
+                        .into(profileIcon);
+                Log.d(TAG, "Loaded avatar from SharedPreferences: " + avatarName + " (ID: " + avatarResId + ")");
+            } else {
+                // Resource not found, use default image
+                profileIcon.setImageResource(R.mipmap.ic_launcher_round);
+                Log.e(TAG, "Avatar resource not found for name: " + avatarName);
+            }
+        } else {
+            // No avatar name in SharedPreferences, use default image
+            profileIcon.setImageResource(R.mipmap.ic_launcher_round);
+            Log.d(TAG, "No avatar found in SharedPreferences, using default image");
+        }
+
+        // Setup RecyclerViews
+        LinearLayoutManager storyLayoutManager = new LinearLayoutManager(getContext(), LinearLayoutManager.HORIZONTAL, false);
+        storyRecycler.setLayoutManager(storyLayoutManager);
+        storyAdapter = new StoryAdapter(getContext(), storyList);
+        storyRecycler.setAdapter(storyAdapter);
+        Log.d(TAG, "Set up storyRecycler");
+
+        LinearLayoutManager currentAffairsLayoutManager = new LinearLayoutManager(getContext(), LinearLayoutManager.HORIZONTAL, false);
+        currentAffairsRecycler.setLayoutManager(currentAffairsLayoutManager);
+        currentAffairsAdapter = new CurrentAffairsAdapter(currentAffairsList, getContext());
+        currentAffairsRecycler.setAdapter(currentAffairsAdapter);
+        Log.d(TAG, "Set up currentAffairsRecycler");
+
+        LinearLayoutManager recentlyOpenedLayoutManager = new LinearLayoutManager(getContext(), LinearLayoutManager.HORIZONTAL, false);
+        recentlyOpenedRecycler.setLayoutManager(recentlyOpenedLayoutManager);
+        recentlyOpenedAdapter = new RecentlyOpenedAdapter(recentlyOpenedList);
+        recentlyOpenedRecycler.setAdapter(recentlyOpenedAdapter);
+        Log.d(TAG, "Set up recentlyOpenedRecycler");
+
+        LinearLayoutManager studentUpdatesLayoutManager = new LinearLayoutManager(getContext(), LinearLayoutManager.HORIZONTAL, false);
+        studentUpdatesRecycler.setLayoutManager(studentUpdatesLayoutManager);
+        studentAdapter1 = new StudentUpdateAdapter(studentUpdatesList, getContext());
+        studentUpdatesRecycler.setAdapter(studentAdapter1);
+        Log.d(TAG, "Set up studentUpdatesRecycler");
+
+        recyclerStudyMaterial.setLayoutManager(new LinearLayoutManager(getContext(), LinearLayoutManager.HORIZONTAL, false));
+        studyMaterialAdapter = new StudyMaterialAdapter(currentStudyMaterials, getContext());
+        recyclerStudyMaterial.setAdapter(studyMaterialAdapter);
+        Log.d(TAG, "Set up recyclerStudyMaterial");
+
+        LinearLayoutManager storiesPlayerLayoutManager = new LinearLayoutManager(getContext(), LinearLayoutManager.HORIZONTAL, false);
+        storiesPlayer.setLayoutManager(storiesPlayerLayoutManager);
+        PagerSnapHelper snapHelper = new PagerSnapHelper();
+        snapHelper.attachToRecyclerView(storiesPlayer);
+        Log.d(TAG, "Set up storiesPlayer");
+
+        setupClickListeners();
+        Log.d(TAG, "Click listeners set up");
+    }
+
+    private void setupClickListeners() {
+        Log.d(TAG, "setupClickListeners called");
+        allStudentUpdates.setOnClickListener(v -> {
+            FragmentTransaction transaction = getParentFragmentManager().beginTransaction();
+            transaction.replace(R.id.fragment_container, new AllBannersList());
+            transaction.addToBackStack(null);
+            transaction.commit();
+            Log.d(TAG, "Navigated to AllBannersList");
+        });
+
+        assert getView() != null;
+        ConstraintLayout top5Container = getView().findViewById(R.id.top5_container);
+        top5Container.setOnClickListener(v -> {
+            if (top5PdfUrl == null || top5PdfUrl.isEmpty()) {
+                Toast.makeText(getContext(), "No PDF available", Toast.LENGTH_SHORT).show();
+                Log.d(TAG, "Top 5 container clicked, but no PDF available");
+                return;
+            }
+            Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(top5PdfUrl));
+            startActivity(intent);
+            Log.d(TAG, "Opened PDF: " + top5PdfUrl);
+        });
+
+        // Add click listener for student updates
+        studentAdapter1.setOnItemClickListener(item -> {
+            showStudentUpdateDialog(item);
+        });
+
+        admitCard.setOnClickListener(v -> {
+            FragmentTransaction transaction = getParentFragmentManager().beginTransaction();
+            transaction.replace(R.id.fragment_container, new Result_HallTitcket());
+            transaction.addToBackStack(null);
+            transaction.commit();
+            Log.d(TAG, "Navigated to Result_HallTitcket");
+        });
+
+        bankJobs.setOnClickListener(v -> {
+            FragmentTransaction transaction = getParentFragmentManager().beginTransaction();
+            transaction.replace(R.id.fragment_container, new BankingJobs());
+            transaction.addToBackStack(null);
+            transaction.commit();
+            Log.d(TAG, "Navigated to BankingJobs");
+        });
+
+        privateJobs.setOnClickListener(v -> {
+            FragmentTransaction transaction = getParentFragmentManager().beginTransaction();
+            transaction.replace(R.id.fragment_container, new PrivateJobs());
+            transaction.addToBackStack(null);
+            transaction.commit();
+            Log.d(TAG, "Navigated to PrivateJobs");
+        });
+
+        governmentJobs.setOnClickListener(v -> {
+            FragmentTransaction transaction = getParentFragmentManager().beginTransaction();
+            transaction.replace(R.id.fragment_container, new GovernmentJobs());
+            transaction.addToBackStack(null);
+            transaction.commit();
+            Log.d(TAG, "Navigated to GovernmentJobs");
+        });
+
+        profileIcon.setOnClickListener(v -> {
+            FragmentTransaction transaction = getParentFragmentManager().beginTransaction();
+            transaction.replace(R.id.fragment_container, new ProfileFragment());
+            transaction.addToBackStack(null);
+            transaction.commit();
+            Log.d(TAG, "Navigated to ProfileFragment");
+        });
+
+        // Category click listeners with consistent type strings
+        govLinear.setOnClickListener(v -> {
+            Log.d(TAG, "Category clicked: government");
+            filterAndDisplay("government");
+        });
+        policeLinear.setOnClickListener(v -> {
+            Log.d(TAG, "Category clicked: police_defence");
+            filterAndDisplay("police_defence");
+        });
+        bankLinear.setOnClickListener(v -> {
+            Log.d(TAG, "Category clicked: banking");
+            filterAndDisplay("banking");
+        });
+        selfLinear.setOnClickListener(v -> {
+            Log.d(TAG, "Category clicked: self_improvement");
+            filterAndDisplay("self_improvement");
+        });
+    }
+
+    private boolean isNetworkAvailable() {
+        Log.d(TAG, "Checking network availability");
+        ConnectivityManager cm = (ConnectivityManager) requireContext().getSystemService(Context.CONNECTIVITY_SERVICE);
+        NetworkInfo activeNetwork = cm.getActiveNetworkInfo();
+        boolean isAvailable = activeNetwork != null && activeNetwork.isConnectedOrConnecting();
+        Log.d(TAG, "Network available: " + isAvailable);
+        return isAvailable;
+    }
+
+    @RequiresApi(api = Build.VERSION_CODES.O)
+    private void loadData() {
+        Log.d(TAG, "loadData called");
+        if (executorService == null || executorService.isShutdown() || executorService.isTerminated()) {
+            Log.w(TAG, "ExecutorService is shutdown or terminated, creating new one");
+            executorService = Executors.newSingleThreadExecutor();
+        }
+        try {
+            executorService.execute(() -> {
+                loadStories();
+                loadCurrentAffairsData();
+                loadStudentUpdates();
+                loadRecentlyOpened();
+                loadCarouselItems();
+                loadStudyMaterials();
+                loadTop5JobUpdates(); // Added to fetch top 5 jobs
+            });
+            // Load jobs on the main thread and initialize observer
+            if (isNetworkAvailable()) {
+                jobViewModel.loadJobs(client, BuildConfig.JOB_UPDATES_ENDPOINT, requireContext());
+                loadJobUpdates(); // Ensure observer is set up
+            } else {
+                mainHandler.post(() -> {
+                    if (!hasShownJobUpdatesErrorToast) {
+                        Toast.makeText(getContext(), "No network, cannot load job updates", Toast.LENGTH_SHORT).show();
+                        hasShownJobUpdatesErrorToast = true;
+                    }
+                });
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "Error submitting task to ExecutorService", e);
+            mainHandler.post(() -> {
+                Toast.makeText(getContext(), "Failed to load data due to internal error", Toast.LENGTH_SHORT).show();
+            });
+        }
+    }
+
+    private void loadStories() {
+        Log.d(TAG, "loadStories started (API)");
+        if (!isNetworkAvailable()) {
+            Log.w(TAG, "No network available, loading dummy stories");
+            List<Story> dummyStories = new ArrayList<>();
+            dummyStories.add(new Story("dummy1", "Dummy Story", null, "https://example.com/dummy.jpg", "https://example.com/icon.jpg", false, false));
+            mainHandler.post(() -> {
+                storyList.clear();
+                storyList.addAll(dummyStories);
+                storyAdapter.notifyDataSetChanged();
+                Log.d(TAG, "Loaded dummy stories, count: " + storyList.size());
+                if (!hasShownStoriesErrorToast) {
+                    Toast.makeText(getContext(), "No network, loaded dummy stories", Toast.LENGTH_SHORT).show();
+                    hasShownStoriesErrorToast = true;
+                }
+            });
+            return;
+        }
+
+        // Read user preferences used for filtering main stories
+        SharedPreferences prefs = requireContext().getSharedPreferences("UserPrefs", Context.MODE_PRIVATE);
+        String userEducation = prefs.getString("education", "");
+        String userDegree = prefs.getString("degree", "");
+        String userPostGrad = prefs.getString("postGraduation", "");
+        String userDistrict = prefs.getString("district", "");
+        String userTaluka = prefs.getString("taluka", "");
+
+        String url = BuildConfig.BASE_URL + "/api/stories";
+        Request request = new Request.Builder().url(url).build();
+        client.newCall(request).enqueue(new Callback() {
+            @Override
+            public void onFailure(Call call, IOException e) {
+                Log.e(TAG, "Failed to fetch stories: " + e.getMessage());
+                mainHandler.post(() -> {
+                    if (!hasShownStoriesErrorToast) {
+                        Toast.makeText(getContext(), "Failed to load stories", Toast.LENGTH_SHORT).show();
+                        hasShownStoriesErrorToast = true;
+                    }
+                });
+            }
+
+            @RequiresApi(api = Build.VERSION_CODES.O)
+            @Override
+            public void onResponse(Call call, Response response) throws IOException {
+                if (!response.isSuccessful()) {
+                    Log.e(TAG, "Unexpected response: " + response.code());
+                    mainHandler.post(() -> {
+                        if (!hasShownStoriesErrorToast) {
+                            Toast.makeText(getContext(), "Failed to load stories", Toast.LENGTH_SHORT).show();
+                            hasShownStoriesErrorToast = true;
+                        }
+                    });
+                    return;
+                }
+
+                String body = response.body().string();
+                try {
+                    JsonObject root = new Gson().fromJson(body, JsonObject.class);
+                    List<Story> mains = new ArrayList<>();
+                    List<Story> others = new ArrayList<>();
+                    if (root != null && root.has("stories")) {
+                        JsonArray arr = root.getAsJsonArray("stories");
+                        for (int i = 0; i < arr.size(); i++) {
+                            JsonObject o = arr.get(i).getAsJsonObject();
+                            String id = o.has("id") && !o.get("id").isJsonNull() ? o.get("id").getAsString() : null;
+                            String title = o.has("title") && !o.get("title").isJsonNull() ? o.get("title").getAsString() : null;
+                            String iconUrl = o.has("icon_url") && !o.get("icon_url").isJsonNull() ? o.get("icon_url").getAsString() : null;
+                            String bannerUrl = o.has("banner_url") && !o.get("banner_url").isJsonNull() ? o.get("banner_url").getAsString() : null;
+                            boolean isMain = o.has("is_main_story") && !o.get("is_main_story").isJsonNull() && o.get("is_main_story").getAsBoolean();
+                            String type = o.has("type") && !o.get("type").isJsonNull() ? o.get("type").getAsString() : "";
+                            String postDocumentId = o.has("post_document_id") && !o.get("post_document_id").isJsonNull() ? o.get("post_document_id").getAsString() : null;
+                            String webUrl = o.has("web_url") && !o.get("web_url").isJsonNull() ? o.get("web_url").getAsString() : null;
+                            String createdAt = o.has("created_at") && !o.get("created_at").isJsonNull() ? o.get("created_at").getAsString() : null;
+                            iconUrl = buildFullUrl(iconUrl);
+                            bannerUrl = buildFullUrl(bannerUrl);
+
+                            if (bannerUrl == null || bannerUrl.isEmpty() || iconUrl == null || iconUrl.isEmpty()) {
+                                continue; // skip invalid entries
+                            }
+
+                            // Read targeting fields
+                            List<String> educationCats = new ArrayList<>();
+                            List<String> bachelorDegs = new ArrayList<>();
+                            List<String> mastersDegs = new ArrayList<>();
+                            String district = o.has("district") && !o.get("district").isJsonNull() ? o.get("district").getAsString() : "";
+                            String taluka = o.has("taluka") && !o.get("taluka").isJsonNull() ? o.get("taluka").getAsString() : "";
+                            if (o.has("education_categories") && o.get("education_categories").isJsonArray()) {
+                                JsonArray a = o.getAsJsonArray("education_categories");
+                                for (int j = 0; j < a.size(); j++) educationCats.add(a.get(j).getAsString());
+                            }
+                            if (o.has("bachelor_degrees") && o.get("bachelor_degrees").isJsonArray()) {
+                                JsonArray a = o.getAsJsonArray("bachelor_degrees");
+                                for (int j = 0; j < a.size(); j++) bachelorDegs.add(a.get(j).getAsString());
+                            }
+                            if (o.has("masters_degrees") && o.get("masters_degrees").isJsonArray()) {
+                                JsonArray a = o.getAsJsonArray("masters_degrees");
+                                for (int j = 0; j < a.size(); j++) mastersDegs.add(a.get(j).getAsString());
+                            }
+
+                            boolean viewed = id != null && storyPrefs.getBoolean("viewed_" + id, false);
+                            Story story = new Story(id, title, null, bannerUrl, iconUrl, isMain, viewed);
+                            story.setType(type);
+                            story.setPostDocumentId(postDocumentId);
+                            story.setWebUrl(webUrl);
+                            if (createdAt != null && !createdAt.isEmpty()) {
+                                story.setRelativeTime(computeRelativeFromString(createdAt));
+                            }
+
+                            boolean eduOk = educationCats.isEmpty() && bachelorDegs.isEmpty() && mastersDegs.isEmpty()
+                                    || educationCats.contains(userEducation)
+                                    || bachelorDegs.contains(userDegree)
+                                    || mastersDegs.contains(userPostGrad);
+                            boolean districtOk = (district == null || district.isEmpty()) || district.equalsIgnoreCase(userDistrict);
+                            boolean talukaOk = (taluka == null || taluka.isEmpty()) || taluka.equalsIgnoreCase(userTaluka);
+                            if (eduOk && districtOk && talukaOk) {
+                                mains.add(story);
+                            } else {
+                                others.add(story);
+                            }
+                        }
+                    }
+
+                    final List<Story> finalMains = mains;
+                    final List<Story> finalOthers = others;
+                    mainHandler.post(() -> {
+                        storyList.clear();
+                        storyList.addAll(finalMains);
+                        storyList.addAll(finalOthers);
+                        storyAdapter.notifyDataSetChanged();
+                        Log.d(TAG, "Stories loaded (API), total: " + storyList.size() + ", mains: " + finalMains.size());
+                    });
+                } catch (Exception e) {
+                    Log.e(TAG, "Failed to parse stories API response: " + e.getMessage());
+                    mainHandler.post(() -> {
+                        if (!hasShownStoriesErrorToast) {
+                            Toast.makeText(getContext(), "Failed to parse stories", Toast.LENGTH_SHORT).show();
+                            hasShownStoriesErrorToast = true;
+                        }
+                    });
+                }
+            }
+        });
+    }
+
+    private void loadCurrentAffairsData() {
+        Log.d(TAG, "loadCurrentAffairsData started (API)");
+        if (!isNetworkAvailable()) {
+            Log.w(TAG, "No network available, skipping current affairs load");
+            mainHandler.post(() -> {
+                if (!hasShownCurrentAffairsErrorToast) {
+                    Toast.makeText(getContext(), "No network, cannot load current affairs", Toast.LENGTH_SHORT).show();
+                    hasShownCurrentAffairsErrorToast = true;
+                }
+            });
+            return;
+        }
+
+        String url = BuildConfig.BASE_URL + "/api/current-affairs";
+        Request request = new Request.Builder().url(url).build();
+        client.newCall(request).enqueue(new Callback() {
+            @Override
+            public void onFailure(Call call, IOException e) {
+                Log.e(TAG, "Failed to fetch current affairs: " + e.getMessage());
+                mainHandler.post(() -> {
+                    if (!hasShownCurrentAffairsErrorToast) {
+                        Toast.makeText(getContext(), "Failed to load current affairs", Toast.LENGTH_SHORT).show();
+                        hasShownCurrentAffairsErrorToast = true;
+                    }
+                });
+            }
+
+            @Override
+            public void onResponse(Call call, Response response) throws IOException {
+                if (!response.isSuccessful()) {
+                    Log.e(TAG, "Unexpected response: " + response.code());
+                    mainHandler.post(() -> {
+                        if (!hasShownCurrentAffairsErrorToast) {
+                            Toast.makeText(getContext(), "Failed to load current affairs", Toast.LENGTH_SHORT).show();
+                            hasShownCurrentAffairsErrorToast = true;
+                        }
+                    });
+                    return;
+                }
+
+                String body = response.body().string();
+                Log.d(TAG, "Current affairs API response length: " + body.length());
+                try {
+                    JsonObject root = new Gson().fromJson(body, JsonObject.class);
+                    List<CurrentAffairs> fetched = new ArrayList<>();
+                    if (root != null && root.has("currentAffairs")) {
+                        JsonArray arr = root.getAsJsonArray("currentAffairs");
+                        for (int i = 0; i < arr.size(); i++) {
+                            JsonObject o = arr.get(i).getAsJsonObject();
+                            String dateRaw = o.has("date") && !o.get("date").isJsonNull() ? o.get("date").getAsString() : null;
+                            String date = dateRaw != null && dateRaw.length() >= 10 ? dateRaw.substring(0, 10) : dateRaw; // yyyy-MM-dd
+                            String imageUrl = o.has("image_url") && !o.get("image_url").isJsonNull() ? o.get("image_url").getAsString() : null;
+                            String pdfUrl = o.has("pdf_url") && !o.get("pdf_url").isJsonNull() ? o.get("pdf_url").getAsString() : null;
+                            imageUrl = buildFullUrl(imageUrl);
+                            pdfUrl = buildFullUrl(pdfUrl);
+                            if (date == null || date.trim().isEmpty() || imageUrl == null || imageUrl.isEmpty() || pdfUrl == null || pdfUrl.isEmpty()) {
+                                continue;
+                            }
+                            fetched.add(new CurrentAffairs(date, imageUrl, pdfUrl));
+                        }
+                    }
+
+                    final List<CurrentAffairs> finalFetched = fetched;
+                    mainHandler.post(() -> {
+                        currentAffairsList.clear();
+                        currentAffairsList.addAll(finalFetched);
+                        currentAffairsAdapter.notifyDataSetChanged();
+                        Log.d(TAG, "Current affairs loaded (API), count: " + currentAffairsList.size());
+                    });
+                } catch (Exception e) {
+                    Log.e(TAG, "Failed to parse current affairs API response: " + e.getMessage());
+                    mainHandler.post(() -> {
+                        if (!hasShownCurrentAffairsErrorToast) {
+                            Toast.makeText(getContext(), "Failed to parse current affairs", Toast.LENGTH_SHORT).show();
+                            hasShownCurrentAffairsErrorToast = true;
+                        }
+                    });
+                }
+            }
+        });
+    }
+
+    @RequiresApi(api = Build.VERSION_CODES.O)
+    private void loadTop5JobUpdates() {
+        Log.d(TAG, "loadTop5JobUpdates started (API)");
+        if (!isNetworkAvailable()) {
+            Log.w(TAG, "No network available, skipping top 5 job updates load");
+            mainHandler.post(() -> {
+                if (!hasShownTop5JobsErrorToast) {
+                    Toast.makeText(getContext(), "No network, cannot load top 5 job updates", Toast.LENGTH_SHORT).show();
+                    hasShownTop5JobsErrorToast = true;
+                }
+            });
+            return;
+        }
+
+        String url = BuildConfig.BASE_URL + "/api/dpaper";
+        Request request = new Request.Builder().url(url).build();
+        client.newCall(request).enqueue(new Callback() {
+            @Override
+            public void onFailure(Call call, IOException e) {
+                Log.e(TAG, "Failed to fetch top 5 job updates: " + e.getMessage());
+                mainHandler.post(() -> {
+                    if (!hasShownTop5JobsErrorToast) {
+                        Toast.makeText(getContext(), "Failed to load top 5 job updates", Toast.LENGTH_SHORT).show();
+                        hasShownTop5JobsErrorToast = true;
+                    }
+                });
+            }
+
+            @Override
+            public void onResponse(Call call, Response response) throws IOException {
+                if (!response.isSuccessful()) {
+                    Log.e(TAG, "Unexpected response for top 5 job updates: " + response.code());
+                    mainHandler.post(() -> {
+                        if (!hasShownTop5JobsErrorToast) {
+                            Toast.makeText(getContext(), "Failed to load top 5 job updates: " + response.code(), Toast.LENGTH_SHORT).show();
+                            hasShownTop5JobsErrorToast = true;
+                        }
+                    });
+                    return;
+                }
+
+                String body = response.body().string();
+                Log.d(TAG, "Top 5 job updates API response length: " + body.length());
+                try {
+                    JsonObject root = new Gson().fromJson(body, JsonObject.class);
+                    if (root != null && root.has("dPaper") && !root.get("dPaper").isJsonNull()) {
+                        JsonObject dPaper = root.getAsJsonObject("dPaper");
+                        String iconUrl = dPaper.has("icon_url") && !dPaper.get("icon_url").isJsonNull() ? dPaper.get("icon_url").getAsString() : null;
+                        String pdfUrl = dPaper.has("pdf_url") && !dPaper.get("pdf_url").isJsonNull() ? dPaper.get("pdf_url").getAsString() : null;
+                        String createdAt = dPaper.has("created_at") && !dPaper.get("created_at").isJsonNull() ? dPaper.get("created_at").getAsString() : null;
+
+                        iconUrl = buildFullUrl(iconUrl);
+                        pdfUrl = buildFullUrl(pdfUrl);
+
+                        if (iconUrl == null || iconUrl.isEmpty() || pdfUrl == null || pdfUrl.isEmpty()) {
+                            Log.w(TAG, "Invalid icon_url or pdf_url in response");
+                            mainHandler.post(() -> {
+                                if (!hasShownTop5JobsErrorToast) {
+                                    Toast.makeText(getContext(), "No valid data available", Toast.LENGTH_SHORT).show();
+                                    hasShownTop5JobsErrorToast = true;
+                                }
+                            });
+                            return;
+                        }
+
+                        final String finalIconUrl = iconUrl;
+                        final String finalPdfUrl = pdfUrl;
+                        String timeAgo = "";
+                        if (createdAt != null && !createdAt.isEmpty()) {
+                            timeAgo = computeRelativeFromString(createdAt);
+                        }
+                        final String finalTimeAgo = timeAgo;
+
+                        mainHandler.post(() -> {
+                            Glide.with(getContext())
+                                    .load(finalIconUrl)
+                                    .placeholder(R.drawable.placeholder_image) // Add a placeholder if needed
+                                    .error(R.drawable.error_image) // Add an error image if needed
+                                    .into(top5ImageView);
+                            top5TitleView.setText("Daily Paper");
+                            top5TimeAgoView.setText(finalTimeAgo);
+                            top5PdfUrl = finalPdfUrl;
+                            Log.d(TAG, "Loaded daily paper icon and set PDF URL");
+                        });
+                    } else {
+                        Log.e(TAG, "Invalid top 5 job updates response: missing or null 'dPaper' field");
+                        mainHandler.post(() -> {
+                            if (!hasShownTop5JobsErrorToast) {
+                                Toast.makeText(getContext(), "Invalid top 5 job updates data", Toast.LENGTH_SHORT).show();
+                                hasShownTop5JobsErrorToast = true;
+                            }
+                        });
+                    }
+                } catch (Exception e) {
+                    Log.e(TAG, "Failed to parse top 5 job updates API response: " + e.getMessage());
+                    mainHandler.post(() -> {
+                        if (!hasShownTop5JobsErrorToast) {
+                            Toast.makeText(getContext(), "Failed to parse top 5 job updates", Toast.LENGTH_SHORT).show();
+                            hasShownTop5JobsErrorToast = true;
+                        }
+                    });
+                }
+            }
+        });
+    }
+
+    private String buildFullUrl(String filePath) {
+        if (filePath == null || filePath.isEmpty()) return null;
+        String url = filePath.startsWith("http") ? filePath : BuildConfig.BASE_URL + filePath;
+        if (url.startsWith("http://")) {
+            url = url.replace("http://", "https://");
+        }
+        return url;
+    }
+
+    @RequiresApi(api = Build.VERSION_CODES.O)
+    private String computeRelativeFromString(String createdAt) {
+        if (createdAt == null || createdAt.trim().isEmpty()) return "";
+
+        Long epochMillis = null;
+        // 1) Try ISO-8601 with offset or zone
+        try {
+            epochMillis = java.time.OffsetDateTime.parse(createdAt).toInstant().toEpochMilli();
+        } catch (Exception ignored) {}
+
+        if (epochMillis == null) {
+            try {
+                epochMillis = java.time.ZonedDateTime.parse(createdAt).toInstant().toEpochMilli();
+            } catch (Exception ignored) {}
+        }
+
+        // 2) Try Instant
+        if (epochMillis == null) {
+            try {
+                epochMillis = java.time.Instant.parse(createdAt).toEpochMilli();
+            } catch (Exception ignored) {}
+        }
+
+        // 3) Try local datetime without zone, assume UTC
+        if (epochMillis == null) {
+            try {
+                java.time.LocalDateTime ldt = java.time.LocalDateTime.parse(createdAt, java.time.format.DateTimeFormatter.ISO_DATE_TIME);
+                epochMillis = ldt.toInstant(java.time.ZoneOffset.UTC).toEpochMilli();
+            } catch (Exception ignored) {}
+        }
+
+        // 4) Try common custom patterns
+        if (epochMillis == null) {
+            String[] patterns = new String[] {
+                    "yyyy-MM-dd'T'HH:mm:ss'Z'",
+                    "yyyy-MM-dd HH:mm:ss",
+                    "yyyy/MM/dd HH:mm:ss",
+                    "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'",
+                    "yyyy-MM-dd'T'HH:mm:ss.SSSXXX"
+            };
+            for (String p : patterns) {
+                try {
+                    java.time.format.DateTimeFormatter f = java.time.format.DateTimeFormatter.ofPattern(p).withZone(java.time.ZoneOffset.UTC);
+                    epochMillis = java.time.Instant.from(f.parse(createdAt)).toEpochMilli();
+                    break;
+                } catch (Exception ignored) {}
+            }
+        }
+
+        // 5) If it's just a number, treat as epoch seconds or millis
+        if (epochMillis == null) {
+            try {
+                long numeric = Long.parseLong(createdAt.trim());
+                if (createdAt.trim().length() <= 10) {
+                    epochMillis = numeric * 1000L;
+                } else {
+                    epochMillis = numeric;
+                }
+            } catch (Exception ignored) {}
+        }
+
+        if (epochMillis == null) return "";
+
+        long now = System.currentTimeMillis();
+        long diff = Math.max(0, now - epochMillis);
+        long seconds = diff / 1000;
+        long minutes = seconds / 60;
+        long hours = minutes / 60;
+        long days = hours / 24;
+        if (seconds < 60) return seconds + "s ago";
+        if (minutes < 60) return minutes + "m ago";
+        if (hours < 24) return hours + "h ago";
+        if (days < 7) return days + "d ago";
+        return (days / 7) + "w ago";
+    }
+
+    private void loadJobUpdates() {
+        Log.d(TAG, "loadJobUpdates started");
+        if (!isNetworkAvailable()) {
+            Log.w(TAG, "No network available, skipping job updates load");
+            mainHandler.post(() -> {
+                if (!hasShownJobUpdatesErrorToast) {
+                    Toast.makeText(getContext(), "No network, cannot load job updates", Toast.LENGTH_SHORT).show();
+                    hasShownJobUpdatesErrorToast = true;
+                }
+            });
+            return;
+        }
+
+        // Observe job updates
+        jobViewModel.getJobs().observe(getViewLifecycleOwner(), jobs -> {
+            if (jobs != null) {
+                Log.d(TAG, "Job updates observed, total count: " + jobs.size());
+                jobUpdatesList.clear();
+                // Take the 5 most recent jobs (assuming sorted by timestamp descending)
+                int limit = Math.min(5, jobs.size());
+                jobUpdatesList.addAll(jobs.subList(0, limit));
+                updateRecentRecycler();
+                Log.d(TAG, "Loaded " + jobUpdatesList.size() + " recent job updates");
+            } else {
+                Log.w(TAG, "No job updates available");
+                mainHandler.post(() -> {
+                    if (!hasShownJobUpdatesErrorToast) {
+                        Toast.makeText(getContext(), "No job updates available", Toast.LENGTH_SHORT).show();
+                        hasShownJobUpdatesErrorToast = true;
+                    }
+                });
+            }
+        });
+
+        jobViewModel.getErrorMessage().observe(getViewLifecycleOwner(), message -> {
+            if (message != null) {
+                Log.e(TAG, "Error loading job updates: " + message);
+                mainHandler.post(() -> {
+                    if (!hasShownJobUpdatesErrorToast) {
+                        Toast.makeText(getContext(), "Failed to load job updates: " + message, Toast.LENGTH_SHORT).show();
+                        hasShownJobUpdatesErrorToast = true;
+                    }
+                });
+            }
+        });
+    }
+
+    private void updateRecentRecycler() {
+        Log.d(TAG, "updateRecentRecycler called");
+        final List<JobUpdate> finalJobUpdatesList = new ArrayList<>(jobUpdatesList);
+        mainHandler.post(() -> {
+            recentRecycler.removeAllViews();
+            LayoutInflater inflater = LayoutInflater.from(getContext());
+            for (JobUpdate item : finalJobUpdatesList) {
+                View itemView = inflater.inflate(R.layout.job_update_item, recentRecycler, false);
+                TextView titleView = itemView.findViewById(R.id.title);
+                TextView lastDate = itemView.findViewById(R.id.txt_lastDate);
+                TextView timeAgo = itemView.findViewById(R.id.txt_time_ago);
+                ImageView logo = itemView.findViewById(R.id.imageView18);
+
+                titleView.setText(item.getTitle());
+                lastDate.setText(item.getFormattedLastDateMarathi());
+                timeAgo.setText(item.getTimeAgo());
+                Glide.with(getContext()).load(item.getIconUrl()).into(logo);
+
+                itemView.setOnClickListener(v -> {
+                    JobUpdateDetails fragment = JobUpdateDetails.newInstance(item); // Pass full JobUpdate object
+                    FragmentTransaction transaction = getParentFragmentManager().beginTransaction();
+                    transaction.replace(R.id.fragment_container, fragment);
+                    transaction.addToBackStack(null);
+                    transaction.commit();
+                    Log.d(TAG, "Navigated to JobUpdateDetails with job: " + item.getTitle());
+                });
+
+                recentRecycler.addView(itemView);
+            }
+            Log.d(TAG, "Updated recentRecycler with " + finalJobUpdatesList.size() + " items");
+        });
+    }
+
+    private void loadStudentUpdates() {
+        Log.d(TAG, "loadStudentUpdates started (API)");
+        if (!isNetworkAvailable()) {
+            Log.w(TAG, "No network available, skipping student updates load");
+            mainHandler.post(() -> {
+                if (!hasShownStudentUpdatesErrorToast) {
+                    Toast.makeText(getContext(), "No network, cannot load student updates", Toast.LENGTH_SHORT).show();
+                    hasShownStudentUpdatesErrorToast = true;
+                }
+            });
+            return;
+        }
+
+        String url = BuildConfig.BASE_URL + "/api/student-updates";
+        Request request = new Request.Builder().url(url).build();
+        client.newCall(request).enqueue(new Callback() {
+            @Override
+            public void onFailure(Call call, IOException e) {
+                Log.e(TAG, "Failed to fetch student updates: " + e.getMessage());
+                mainHandler.post(() -> {
+                    if (!hasShownStudentUpdatesErrorToast) {
+                        Toast.makeText(getContext(), "Failed to load student updates", Toast.LENGTH_SHORT).show();
+                        hasShownStudentUpdatesErrorToast = true;
+                    }
+                });
+            }
+
+            @Override
+            public void onResponse(Call call, Response response) throws IOException {
+                if (!response.isSuccessful()) {
+                    Log.e(TAG, "Unexpected response: " + response.code());
+                    mainHandler.post(() -> {
+                        if (!hasShownStudentUpdatesErrorToast) {
+                            Toast.makeText(getContext(), "Failed to load student updates", Toast.LENGTH_SHORT).show();
+                            hasShownStudentUpdatesErrorToast = true;
+                        }
+                    });
+                    return;
+                }
+
+                String body = response.body().string();
+                Log.d(TAG, "Student updates API response length: " + body.length());
+                try {
+                    JsonObject root = new Gson().fromJson(body, JsonObject.class);
+                    List<StudentUpdateItem> fetched = new ArrayList<>();
+                    if (root != null && root.has("studentUpdates")) {
+                        JsonArray arr = root.getAsJsonArray("studentUpdates");
+                        for (int i = 0; i < arr.size(); i++) {
+                            JsonObject o = arr.get(i).getAsJsonObject();
+                            int id = o.has("id") && !o.get("id").isJsonNull() ? o.get("id").getAsInt() : 0;
+                            String title = o.has("title") && !o.get("title").isJsonNull() ? o.get("title").getAsString() : "";
+                            String education = o.has("education") && !o.get("education").isJsonNull() ? o.get("education").getAsString() : "";
+                            String ageRestriction = o.has("age_restriction") && !o.get("age_restriction").isJsonNull() ? o.get("age_restriction").getAsString() : "";
+                            String applicationMethod = o.has("application_method") && !o.get("application_method").isJsonNull() ? o.get("application_method").getAsString() : "";
+                            String description = o.has("description") && !o.get("description").isJsonNull() ? o.get("description").getAsString() : "";
+                            String applicationLink = o.has("application_link") && !o.get("application_link").isJsonNull() ? o.get("application_link").getAsString() : "";
+                            String lastDate = o.has("last_date") && !o.get("last_date").isJsonNull() ? o.get("last_date").getAsString() : "";
+                            String imageUrl = o.has("image_url") && !o.get("image_url").isJsonNull() ? o.get("image_url").getAsString() : "";
+                            String notificationPdfUrl = o.has("notification_pdf_url") && !o.get("notification_pdf_url").isJsonNull() ? o.get("notification_pdf_url").getAsString() : "";
+                            String selectionPdfUrl = o.has("selection_pdf_url") && !o.get("selection_pdf_url").isJsonNull() ? o.get("selection_pdf_url").getAsString() : "";
+                            String createdAt = o.has("created_at") && !o.get("created_at").isJsonNull() ? o.get("created_at").getAsString() : "";
+
+                            imageUrl = buildFullUrl(imageUrl);
+                            notificationPdfUrl = buildFullUrl(notificationPdfUrl);
+                            selectionPdfUrl = buildFullUrl(selectionPdfUrl);
+                            applicationLink = buildFullUrl(applicationLink);
+
+                            if (imageUrl == null || imageUrl.isEmpty()) continue;
+
+                            fetched.add(new StudentUpdateItem(id, title, education, ageRestriction, applicationMethod,
+                                    description, applicationLink, lastDate, imageUrl, notificationPdfUrl, selectionPdfUrl, createdAt));
+                            Log.d(TAG, "student update image url " + imageUrl);
+                        }
+                    }
+
+                    final List<StudentUpdateItem> finalFetched = fetched;
+                    final StudentUpdateAdapter finalStudentAdapter1 = studentAdapter1;
+                    final StudentUpdateAdapter finalStudentAdapter2 = studentAdapter2;
+                    final StudentUpdateAdapter finalStudentAdapter3 = studentAdapter3;
+                    final StudentUpdateAdapter finalStudentAdapter4 = studentAdapter4;
+                    final StudentUpdateAdapter finalStudentAdapter5 = studentAdapter5;
+                    mainHandler.post(() -> {
+                        studentUpdatesList.clear();
+                        studentUpdatesList.addAll(finalFetched);
+                        if (finalStudentAdapter1 != null) finalStudentAdapter1.notifyDataSetChanged();
+                        if (finalStudentAdapter2 != null) finalStudentAdapter2.notifyDataSetChanged();
+                        if (finalStudentAdapter3 != null) finalStudentAdapter3.notifyDataSetChanged();
+                        if (finalStudentAdapter4 != null) finalStudentAdapter4.notifyDataSetChanged();
+                        if (finalStudentAdapter5 != null) finalStudentAdapter5.notifyDataSetChanged();
+                        Log.d(TAG, "Student updates loaded (API), count: " + studentUpdatesList.size());
+                    });
+                } catch (Exception e) {
+                    Log.e(TAG, "Failed to parse student updates API response: " + e.getMessage());
+                    mainHandler.post(() -> {
+                        if (!hasShownStudentUpdatesErrorToast) {
+                            Toast.makeText(getContext(), "Failed to parse student updates", Toast.LENGTH_SHORT).show();
+                            hasShownStudentUpdatesErrorToast = true;
+                        }
+                    });
+                }
+            }
+        });
+    }
+
+    public void showStudentUpdateDialog(@NonNull StudentUpdateItem item) {
+        Context context = this.getContext();
+        if (context == null) return;
+
+        // Create Dialog with BlurDialogTheme
+        Dialog dialog = new Dialog(context, R.style.BlurDialogTheme);
+        dialog.setContentView(R.layout.student_update);
+
+        // Set window attributes to match news dialog
+        WindowManager.LayoutParams lp = new WindowManager.LayoutParams();
+        lp.copyFrom(dialog.getWindow().getAttributes());
+        lp.width = WindowManager.LayoutParams.MATCH_PARENT;
+        lp.height = WindowManager.LayoutParams.MATCH_PARENT;
+        lp.flags |= WindowManager.LayoutParams.FLAG_DIM_BEHIND;
+        lp.dimAmount = 0.6f;
+        dialog.getWindow().setAttributes(lp);
+        dialog.getWindow().addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
+        dialog.getWindow().setStatusBarColor(android.graphics.Color.TRANSPARENT);
+
+        // Initialize views
+        ImageView bannerImage = dialog.findViewById(R.id.imageView31);
+        TextView educationValue = dialog.findViewById(R.id.education_requirement_value);
+        TextView ageValue = dialog.findViewById(R.id.age_requirement_value);
+        TextView applicationMethodValue = dialog.findViewById(R.id.application_fees_value);
+        TextView descriptionText = dialog.findViewById(R.id.textView6);
+        TextView applicationLinkText = dialog.findViewById(R.id.textView45);
+        TextView notificationPdfText = dialog.findViewById(R.id.textView34);
+        TextView selectionPdfText = dialog.findViewById(R.id.textView48);
+
+        // Load image safely with placeholder
+        Glide.with(context)
+                .load(item.getImageUrl())
+                .placeholder(R.drawable.student_update_banner)
+                .error(R.drawable.student_update_banner)
+                .into(bannerImage);
+
+        // Set text data
+        educationValue.setText(item.getEducation() != null ? item.getEducation() : "N/A");
+        ageValue.setText(item.getAgeRestriction() != null ? item.getAgeRestriction() : "N/A");
+        applicationMethodValue.setText(item.getApplicationMethod() != null ? item.getApplicationMethod() : "N/A");
+        descriptionText.setText(item.getDescription() != null ? item.getDescription() : "N/A");
+
+        // 🔗 Application Link Click
+        applicationLinkText.setOnClickListener(v -> {
+            String link = item.getApplicationLink();
+            if (link != null && !link.isEmpty()) {
+                Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(link));
+                context.startActivity(intent);
+            } else {
+                Toast.makeText(context, "अर्जाची लिंक उपलब्ध नाही", Toast.LENGTH_SHORT).show();
+            }
+        });
+
+        // 📄 Notification PDF
+        notificationPdfText.setOnClickListener(v -> {
+            String pdfUrl = item.getNotificationPdfUrl();
+            if (pdfUrl != null && !pdfUrl.isEmpty()) {
+                Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(pdfUrl));
+                context.startActivity(intent);
+            } else {
+                Toast.makeText(context, "नोटिफिकेशन PDF उपलब्ध नाही", Toast.LENGTH_SHORT).show();
+            }
+        });
+
+        // 📄 Selection PDF
+        selectionPdfText.setOnClickListener(v -> {
+            String pdfUrl = item.getSelectionPdfUrl();
+            if (pdfUrl != null && !pdfUrl.isEmpty()) {
+                Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(pdfUrl));
+                context.startActivity(intent);
+            } else {
+                Toast.makeText(context, "सिलेक्शन PDF उपलब्ध नाही", Toast.LENGTH_SHORT).show();
+            }
+        });
+
+        // Show dialog
+        dialog.setCancelable(true);
+        dialog.show();
+    }
+
+    private void loadStudyMaterials() {
+        Log.d(TAG, "loadStudyMaterials started (API)");
+        if (!isNetworkAvailable()) {
+            Log.w(TAG, "No network available, skipping study materials load");
+            mainHandler.post(() -> {
+                if (!hasShownStudyMaterialsErrorToast) {
+                    Toast.makeText(getContext(), "No network, cannot load study materials", Toast.LENGTH_SHORT).show();
+                    hasShownStudyMaterialsErrorToast = true;
+                }
+            });
+            return;
+        }
+
+        String url = BuildConfig.BASE_URL + "/api/study-materials/";
+        Request request = new Request.Builder().url(url).build();
+        client.newCall(request).enqueue(new Callback() {
+            @Override
+            public void onFailure(Call call, IOException e) {
+                Log.e(TAG, "Failed to fetch study materials: " + e.getMessage());
+                mainHandler.post(() -> {
+                    if (!hasShownStudyMaterialsErrorToast) {
+                        Toast.makeText(getContext(), "Failed to load study materials", Toast.LENGTH_SHORT).show();
+                        hasShownStudyMaterialsErrorToast = true;
+                    }
+                });
+            }
+
+            @Override
+            public void onResponse(Call call, Response response) throws IOException {
+                if (!response.isSuccessful()) {
+                    Log.e(TAG, "Unexpected response: " + response.code());
+                    mainHandler.post(() -> {
+                        if (!hasShownStudyMaterialsErrorToast) {
+                            Toast.makeText(getContext(), "Failed to load study materials", Toast.LENGTH_SHORT).show();
+                            hasShownStudyMaterialsErrorToast = true;
+                        }
+                    });
+                    return;
+                }
+
+                String body = response.body().string();
+                Log.d(TAG, "Study materials API response length: " + body.length());
+                try {
+                    JsonObject root = new Gson().fromJson(body, JsonObject.class);
+                    List<StudyMaterial> fetched = new ArrayList<>();
+                    if (root != null && root.has("studyMaterials")) {
+                        JsonArray arr = root.getAsJsonArray("studyMaterials");
+                        for (int i = 0; i < arr.size(); i++) {
+                            JsonObject o = arr.get(i).getAsJsonObject();
+                            String id = o.has("id") && !o.get("id").isJsonNull() ? o.get("id").getAsString() : null;
+                            String title = o.has("title") && !o.get("title").isJsonNull() ? o.get("title").getAsString() : null;
+                            String type = o.has("type") && !o.get("type").isJsonNull() ? o.get("type").getAsString() : null;
+                            String imageUrl = o.has("image_url") && !o.get("image_url").isJsonNull() ? o.get("image_url").getAsString() : null;
+                            String pdfUrl = o.has("pdf_url") && !o.get("pdf_url").isJsonNull() ? o.get("pdf_url").getAsString() : null;
+                            imageUrl = buildFullUrl(imageUrl);
+                            pdfUrl = buildFullUrl(pdfUrl);
+                            if (id == null || title == null || type == null || imageUrl == null || imageUrl.isEmpty() || pdfUrl == null || pdfUrl.isEmpty()) {
+                                continue;
+                            }
+                            fetched.add(new StudyMaterial(id, title, type, imageUrl, pdfUrl));
+                        }
+                    }
+
+                    final List<StudyMaterial> finalFetched = fetched;
+                    mainHandler.post(() -> {
+                        studyMaterialsAll.clear();
+                        studyMaterialsAll.addAll(finalFetched);
+                        filterAndDisplay("government"); // Default to government
+                        Log.d(TAG, "Study materials loaded (API), count: " + studyMaterialsAll.size());
+                    });
+                } catch (Exception e) {
+                    Log.e(TAG, "Failed to parse study materials API response: " + e.getMessage());
+                    mainHandler.post(() -> {
+                        if (!hasShownStudyMaterialsErrorToast) {
+                            Toast.makeText(getContext(), "Failed to parse study materials", Toast.LENGTH_SHORT).show();
+                            hasShownStudyMaterialsErrorToast = true;
+                        }
+                    });
+                }
+            }
+        });
+    }
+
+    private void filterAndDisplay(String type) {
+        Log.d(TAG, "Filtering study materials for category: " + type);
+        currentStudyMaterials.clear();
+        String normalizedType = type; // Normalize input type to match API data
+        switch (type) {
+            case "self_improvement":
+                normalizedType = "self improvement";
+                break;
+            case "police_defence":
+                normalizedType = "police & defence";
+                break;
+        }
+        for (StudyMaterial material : studyMaterialsAll) {
+            if (material.getType().equals(normalizedType)) {
+                currentStudyMaterials.add(material);
+            }
+        }
+        studyMaterialAdapter.notifyDataSetChanged();
+        Log.d(TAG, "Data fetch status for " + type + ": " + (currentStudyMaterials.isEmpty() ? "No data fetched" : "Fetched " + currentStudyMaterials.size() + " items"));
+        if (currentStudyMaterials.isEmpty()) {
+            mainHandler.post(() -> {
+                Toast.makeText(getContext(), "No study materials available for " + type, Toast.LENGTH_SHORT).show();
+            });
+        }
+        updateCategoryBackgrounds(type);
+    }
+
+    private void updateCategoryBackgrounds(String activeType) {
+        // Update government category
+        govLinear.setBackgroundResource(activeType.equals("government") ? R.drawable.study_material_active : R.drawable.study_material_inactive);
+        TextView govText = (TextView) govLinear.getChildAt(1);
+        govText.setTextColor(ContextCompat.getColor(requireContext(), activeType.equals("government") ? R.color.white : R.color.black));
+
+        // Update police_defence category
+        policeLinear.setBackgroundResource(activeType.equals("police_defence") ? R.drawable.study_material_active : R.drawable.study_material_inactive);
+        TextView policeText = (TextView) policeLinear.getChildAt(1);
+        policeText.setTextColor(ContextCompat.getColor(requireContext(), activeType.equals("police_defence") ? R.color.white : R.color.black));
+
+        // Update banking category
+        bankLinear.setBackgroundResource(activeType.equals("banking") ? R.drawable.study_material_active : R.drawable.study_material_inactive);
+        TextView bankText = (TextView) bankLinear.getChildAt(1);
+        bankText.setTextColor(ContextCompat.getColor(requireContext(), activeType.equals("banking") ? R.color.white : R.color.black));
+
+        // Update self_improvement category
+        selfLinear.setBackgroundResource(activeType.equals("self_improvement") ? R.drawable.study_material_active : R.drawable.study_material_inactive);
+        TextView selfText = (TextView) selfLinear.getChildAt(1);
+        selfText.setTextColor(ContextCompat.getColor(requireContext(), activeType.equals("self_improvement") ? R.color.white : R.color.black));
+    }
+
+    private void loadRecentlyOpened() {
+        Log.d(TAG, "loadRecentlyOpened started");
+        List<RecentlyOpenedItem> dummyList = new ArrayList<>();
+        dummyList.add(new RecentlyOpenedItem(R.drawable.hdfc_bank3x, "३१ सप्टेंबर २०२४", "सार्वजनिक सेवा विभाग", "प्रशासकीय सहाय्यक"));
+        dummyList.add(new RecentlyOpenedItem(R.drawable.hdfc_bank3x, "१५ ऑक्टोबर २०२४", "महानगरपालिका", "लिपिक"));
+        dummyList.add(new RecentlyOpenedItem(R.drawable.hdfc_bank3x, "०५ नोव्हेंबर २०२४", "पोलीस भरती", "कॉन्स्टेबल"));
+        dummyList.add(new RecentlyOpenedItem(R.drawable.hdfc_bank3x, "३१ सप्टेंबर २०२४", "सार्वजनिक सेवा विभाग", "प्रशासकीय सहाय्यक"));
+        dummyList.add(new RecentlyOpenedItem(R.drawable.hdfc_bank3x, "१५ ऑक्टोबर २०२४", "महानगरपालिका", "लिपिक"));
+        dummyList.add(new RecentlyOpenedItem(R.drawable.hdfc_bank3x, "०५ नोव्हेंबर २०२४", "पोलीस भरती", "कॉन्स्टेबल"));
+
+        final List<RecentlyOpenedItem> finalDummyList = dummyList;
+        mainHandler.post(() -> {
+            recentlyOpenedList.clear();
+            recentlyOpenedList.addAll(finalDummyList);
+            recentlyOpenedAdapter.notifyDataSetChanged();
+            Log.d(TAG, "Recently opened loaded, count: " + recentlyOpenedList.size());
+        });
+    }
+
+    private void loadCarouselItems() {
+        Log.d(TAG, "loadCarouselItems started (Home API)");
+
+        if (carousel == null) {
+            Log.e(TAG, "ImageCarousel is null, check layout or initialization");
+            mainHandler.post(() -> {
+                if (!hasShownCarouselItemsErrorToast) {
+                    Toast.makeText(getContext(), "Carousel not initialized", Toast.LENGTH_SHORT).show();
+                    hasShownCarouselItemsErrorToast = true;
+                }
+            });
+            return;
+        }
+
+        if (!isNetworkAvailable()) {
+            Log.w(TAG, "No network available, loading dummy carousel items");
+            mainHandler.post(() -> {
+                if (!hasShownCarouselItemsErrorToast) {
+                    Toast.makeText(getContext(), "No network, cannot load carousel items", Toast.LENGTH_SHORT).show();
+                    hasShownCarouselItemsErrorToast = true;
+                }
+                List<CarouselItem> dummyCarouselItems = new ArrayList<>();
+                dummyCarouselItems.add(new CarouselItem("https://picsum.photos/200/300", "Test Image 1"));
+                dummyCarouselItems.add(new CarouselItem("https://picsum.photos/200/301", "Test Image 2"));
+                dummyCarouselItems.add(new CarouselItem("https://picsum.photos/200/302", "Test Image 3"));
+                final List<CarouselItem> finalDummyCarouselItems = dummyCarouselItems;
+                carouselItemsList.clear();
+                carouselItemsList.addAll(finalDummyCarouselItems);
+                carousel.addData(carouselItemsList);
+                carousel.invalidate();
+            });
+            return;
+        }
+
+        final Map<String, JobUpdate> jobUpdateCache = new HashMap<>();
+        SharedPreferences sharedPreferences = requireContext().getSharedPreferences("UserPrefs", Context.MODE_PRIVATE);
+        String userEducation = sharedPreferences.getString("education", "");
+        String userDegree = sharedPreferences.getString("degree", "");
+        String userTwelfth = sharedPreferences.getString("twelfth", "");
+        String userPostGraduation = sharedPreferences.getString("postGraduation", "");
+        String userDistrict = sharedPreferences.getString("district", "");
+        String userTaluka = sharedPreferences.getString("taluka", "");
+
+        String url = "https://test.gangainstitute.in/api/sliders/home";
+        Request request = new Request.Builder().url(url).build();
+        client.newCall(request).enqueue(new Callback() {
+            @Override
+            public void onFailure(Call call, IOException e) {
+                Log.e(TAG, "Failed to fetch home carousel items: " + e.getMessage());
+                mainHandler.post(() -> {
+                    if (!hasShownCarouselItemsErrorToast) {
+                        Toast.makeText(getContext(), "Failed to load home carousel items", Toast.LENGTH_SHORT).show();
+                        hasShownCarouselItemsErrorToast = true;
+                    }
+                });
+            }
+
+            @Override
+            public void onResponse(Call call, Response response) throws IOException {
+                if (!response.isSuccessful()) {
+                    Log.e(TAG, "Unexpected response: " + response.code());
+                    mainHandler.post(() -> {
+                        if (!hasShownCarouselItemsErrorToast) {
+                            Toast.makeText(getContext(), "Failed to load home carousel items: " + response.code(), Toast.LENGTH_SHORT).show();
+                            hasShownCarouselItemsErrorToast = true;
+                        }
+                    });
+                    return;
+                }
+
+                String body = response.body().string();
+                try {
+                    JsonObject root = new Gson().fromJson(body, JsonObject.class);
+                    List<Slider> sliders = new ArrayList<>();
+                    if (root != null && root.has("sliders")) {
+                        JsonArray arr = root.getAsJsonArray("sliders");
+                        for (int i = 0; i < arr.size(); i++) {
+                            JsonObject o = arr.get(i).getAsJsonObject();
+                            Slider slider = new Gson().fromJson(o, Slider.class);
+                            if (slider.getImageUrl() == null || slider.getImageUrl().isEmpty()) continue;
+
+                            boolean isUniversal = false, educationMatch = false, locationMatch = false;
+                            List<String> sliderEducationCategories = slider.getEducationCategories();
+                            List<String> sliderBachelorDegrees = slider.getBachelorDegrees();
+                            List<String> sliderMastersDegrees = slider.getMastersDegrees();
+                            String sliderDistrict = slider.getDistrict() != null ? slider.getDistrict() : "";
+                            String sliderTaluka = slider.getTaluka() != null ? slider.getTaluka() : "";
+
+                            if (!slider.isSpecific()) {
+                                isUniversal = true;
+                            } else {
+                                if (sliderEducationCategories != null &&
+                                        (sliderEducationCategories.contains("All") || sliderEducationCategories.contains("10th_12th"))) {
+                                    isUniversal = true;
+                                } else {
+                                    if (!userEducation.isEmpty() && sliderEducationCategories != null &&
+                                            sliderEducationCategories.contains(userEducation)) educationMatch = true;
+                                    if (!userDegree.isEmpty() && sliderBachelorDegrees != null &&
+                                            sliderBachelorDegrees.contains(userDegree)) educationMatch = true;
+                                    if (!userPostGraduation.isEmpty() && sliderMastersDegrees != null &&
+                                            sliderMastersDegrees.contains(userPostGraduation)) educationMatch = true;
+                                    if (!userTwelfth.isEmpty() && sliderEducationCategories != null &&
+                                            sliderEducationCategories.contains("10th_12th")) educationMatch = true;
+                                }
+
+                                if (slider.isSpecific() && !userDistrict.isEmpty() && userDistrict.equals(sliderDistrict) &&
+                                        !userTaluka.isEmpty() && userTaluka.equals(sliderTaluka)) {
+                                    locationMatch = true;
+                                }
+                            }
+
+                            if (isUniversal || educationMatch || locationMatch) {
+                                sliders.add(slider);
+                                if ("post".equalsIgnoreCase(slider.getType())) {
+                                    String id = slider.getPostDocumentId();
+                                    if (id != null && !id.trim().isEmpty()) {
+                                        JobViewModel.fetchJobUpdate(id, jobUpdateCache, getContext(), null);
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    List<CarouselItem> carouselItems = new ArrayList<>();
+                    for (Slider slider : sliders) {
+                        String imageUrl = slider.getImageUrl().replace("http://", "https://");
+                        carouselItems.add(new CarouselItem(imageUrl, slider.getTitle()));
+                    }
+
+                    final List<CarouselItem> finalCarouselItems = carouselItems;
+                    final List<Slider> finalSliders = sliders;
+                    final Map<String, JobUpdate> finalJobUpdateCache = jobUpdateCache;
+                    mainHandler.post(() -> {
+                        carouselItemsList.clear();
+                        carouselItemsList.addAll(finalCarouselItems);
+                        carousel.addData(carouselItemsList);
+                        carousel.invalidate();
+
+                        carousel.setCarouselListener(new CarouselListener() {
+                            @Override
+                            public void onLongClick(int i, @NonNull CarouselItem carouselItem) {
+                            }
+
+                            @Override
+                            public void onBindViewHolder(@NonNull ViewBinding viewBinding, @NonNull CarouselItem carouselItem, int i) {
+                            }
+
+                            @Nullable
+                            @Override
+                            public ViewBinding onCreateViewHolder(@NonNull LayoutInflater layoutInflater, @NonNull ViewGroup viewGroup) {
+                                return null;
+                            }
+
+                            @Override
+                            public void onClick(int position, CarouselItem carouselItem) {
+                                if (position < 0 || position >= finalSliders.size()) return;
+                                Slider selectedSlider = finalSliders.get(position);
+                                String id = selectedSlider.getPostDocumentId();
+                                if (id == null || id.trim().isEmpty()) {
+                                    Toast.makeText(getContext(), "Content unavailable", Toast.LENGTH_SHORT).show();
+                                    return;
+                                }
+
+                                android.app.ProgressDialog progressDialog = new android.app.ProgressDialog(getContext());
+                                progressDialog.setMessage("Loading...");
+                                progressDialog.setCancelable(false);
+                                progressDialog.show();
+
+                                final String finalId = id;
+                                final Slider finalSelectedSlider = selectedSlider;
+                                if ("post".equalsIgnoreCase(finalSelectedSlider.getType())) {
+                                    JobUpdate job = finalJobUpdateCache.get(finalId);
+                                    if (job != null) {
+                                        JobViewModel.navigateToJobDetails(job, getContext(), progressDialog);
+                                    } else {
+                                        JobViewModel.fetchJobUpdate(finalId, finalJobUpdateCache, getContext(), () -> {
+                                            JobUpdate fetchedJob = finalJobUpdateCache.get(finalId);
+                                            if (fetchedJob != null) {
+                                                JobViewModel.navigateToJobDetails(fetchedJob, getContext(), progressDialog);
+                                            }
+                                        });
+                                    }
+                                } else if ("news".equalsIgnoreCase(finalSelectedSlider.getType())) {
+                                    News news = newsCache.get(finalId);
+                                    if (news != null) {
+                                        NewsUtils.showNewsDialog(news, getContext(), progressDialog);
+                                    } else {
+                                        NewsUtils.fetchNews(finalId, newsCache, getContext(), () -> {
+                                            News fetchedNews = newsCache.get(finalId);
+                                            if (fetchedNews != null) {
+                                                NewsUtils.showNewsDialog(fetchedNews, getContext(), progressDialog);
+                                            }
+                                        });
+                                    }
+                                }
+                            }
+                        });
+                    });
+                } catch (Exception e) {
+                    Log.e(TAG, "Failed to parse home carousel items: " + e.getMessage(), e);
+                    mainHandler.post(() -> {
+                        if (!hasShownCarouselItemsErrorToast) {
+                            Toast.makeText(getContext(), "Failed to parse home carousel items", Toast.LENGTH_SHORT).show();
+                            hasShownCarouselItemsErrorToast = true;
+                        }
+                    });
+                }
+            }
+        });
+    }
+
+    @Override
+    public void onDestroyView() {
+        super.onDestroyView();
+        storiesPlayer = null;
+        Log.d(TAG, "onDestroyView called, storiesPlayer set to null");
+    }
+
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+        if (executorService != null && !executorService.isShutdown()) {
+            executorService.shutdown();
+            Log.d(TAG, "onDestroy called, executor service shut down");
+        }
+    }
+
+    private void setBottomMarginsBasedOnAndroidVersion() {
+        if (android.os.Build.VERSION.SDK_INT >= 34) { // Android 15 is API 34
+            // Set larger margins for Android 15+
+            if (mainScrollView != null) {
+                ViewGroup.MarginLayoutParams params = (ViewGroup.MarginLayoutParams) mainScrollView.getLayoutParams();
+                params.bottomMargin = dpToPx(48);
+                mainScrollView.setLayoutParams(params);
+                Log.d(TAG, "Set mainScrollView bottom margin to 48dp for Android 15+");
+            }
+        }
+    }
+
+    private int dpToPx(int dp) {
+        float density = getResources().getDisplayMetrics().density;
+        return Math.round(dp * density);
+    }
+}

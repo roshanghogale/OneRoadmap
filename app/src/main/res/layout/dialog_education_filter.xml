@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="16dp"
+    android:background="@android:color/white">
+
+    <!-- Title -->
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Education Filter"
+        android:textColor="@android:color/black"
+        android:textSize="22sp"
+        android:textStyle="bold"
+        android:layout_marginBottom="8dp"/>
+
+    <!-- Subtitle -->
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="शिक्षण संबंधित माहिती भरा"
+        android:textColor="@android:color/black"
+        android:textSize="14sp"
+        android:layout_marginBottom="24dp"/>
+
+    <!-- Education -->
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="तुमचे शिक्षण"
+        android:textStyle="bold"
+        android:textSize="14sp"
+        android:layout_marginTop="8dp"
+        android:layout_marginBottom="8dp"/>
+
+    <Spinner
+        android:id="@+id/spinnerEducation"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@drawable/spinner_background"
+        android:paddingStart="12dp"/>
+
+    <!-- Degree -->
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="डिग्री"
+        android:textStyle="bold"
+        android:textSize="14sp"
+        android:layout_marginBottom="8dp"
+        android:layout_marginTop="16dp"/>
+
+    <Spinner
+        android:id="@+id/spinnerDegree"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@drawable/spinner_background"
+        android:paddingStart="12dp"/>
+
+    <!-- Post Graduation -->
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="पोस्ट ग्रॅज्युएशन (Optional)"
+        android:textStyle="bold"
+        android:textSize="14sp"
+        android:layout_marginBottom="8dp"
+        android:layout_marginTop="16dp"/>
+
+    <Spinner
+        android:id="@+id/spinnerPostGrad"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="8dp"
+        android:background="@drawable/spinner_background"
+        android:paddingStart="12dp"/>
+
+    <!-- Buttons -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center"
+        android:layout_marginTop="30dp">
+
+        <Button
+            android:id="@+id/btnCancel"
+            android:layout_width="0dp"
+            android:layout_height="55dp"
+            android:layout_weight="1"
+            android:text="Cancel"
+            android:backgroundTint="#D3D3D3"
+            android:textColor="@android:color/black"
+            android:drawableStart="@drawable/arrow_back"
+            android:drawableTint="@color/black"
+            android:drawablePadding="8dp"/>
+
+        <Space
+            android:layout_width="12dp"
+            android:layout_height="wrap_content"/>
+
+        <Button
+            android:id="@+id/btnSave"
+            android:layout_width="0dp"
+            android:layout_height="55dp"
+            android:layout_weight="1"
+            android:text="Save"
+            android:textColor="@android:color/white"
+            android:backgroundTint="@color/purple"
+            android:drawableEnd="@drawable/arrow_right"
+            android:drawableTint="@color/white"
+            android:drawablePadding="8dp"/>
+    </LinearLayout>
+</LinearLayout>

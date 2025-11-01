@@ -1,0 +1,559 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+
+        <ImageView
+            android:id="@+id/imageView25"
+            android:layout_width="match_parent"
+            android:layout_height="400dp"
+            android:scaleType="centerCrop"
+            android:src="@drawable/job_details"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <androidx.cardview.widget.CardView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="32dp"
+            android:layout_marginBottom="58dp"
+            android:clipChildren="false"
+            android:clipToPadding="false"
+            android:padding="6dp"
+            app:cardBackgroundColor="@color/white"
+            app:cardCornerRadius="50dp"
+            app:cardElevation="12dp"
+            app:layout_constraintBottom_toBottomOf="@+id/imageView25"
+            app:layout_constraintEnd_toEndOf="parent">
+
+            <ImageView
+                android:id="@+id/imageView3"
+                android:layout_width="44dp"
+                android:layout_height="44dp"
+                android:padding="10dp"
+                android:src="@drawable/save"
+                app:tint="#5645C0" />
+        </androidx.cardview.widget.CardView>
+
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:id="@+id/constraintLayout3"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="320dp"
+            android:clipChildren="false"
+            android:clipToPadding="false"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent">
+
+            <LinearLayout
+                android:id="@+id/cardContainer"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="#DAEBFF"
+                android:clipChildren="false"
+                android:clipToPadding="false"
+                android:orientation="vertical"
+                android:paddingBottom="16dp"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent">
+
+                <androidx.constraintlayout.widget.ConstraintLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:clipChildren="false"
+                    android:clipToPadding="false"
+                    android:orientation="vertical">
+
+                    <androidx.cardview.widget.CardView
+                        android:id="@+id/cardView19"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="16dp"
+                        android:layout_marginTop="32dp"
+                        android:layout_marginEnd="16dp"
+                        android:layout_marginBottom="16dp"
+                        android:clipChildren="false"
+                        android:clipToPadding="false"
+                        app:cardBackgroundColor="#5645C0"
+                        app:cardCornerRadius="18dp"
+                        app:cardElevation="4dp"
+                        app:layout_constraintBottom_toBottomOf="parent"
+                        app:layout_constraintEnd_toEndOf="parent"
+                        app:layout_constraintStart_toStartOf="parent"
+                        app:layout_constraintTop_toTopOf="parent">
+
+                        <androidx.cardview.widget.CardView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="8dp"
+                            app:cardCornerRadius="18dp"
+                            app:cardElevation="0dp">
+
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="match_parent"
+                                android:layout_margin="24dp"
+                                android:orientation="vertical">
+
+                                <LinearLayout
+                                    android:layout_width="match_parent"
+                                    android:layout_height="match_parent"
+                                    android:orientation="horizontal"
+                                    android:weightSum="3">
+
+                                    <TextView
+                                        android:id="@+id/post_name"
+                                        android:layout_width="match_parent"
+                                        android:layout_height="wrap_content"
+                                        android:layout_weight="1.8"
+                                        android:fontFamily="@font/yantramanav_bold"
+                                        android:text="पदाचे नाव :"
+                                        android:textColor="#000000"
+                                        android:textSize="16sp"
+                                        android:textStyle="bold"
+                                        android:visibility="visible" />
+
+                                    <TextView
+                                        android:id="@+id/post_value"
+                                        android:layout_width="match_parent"
+                                        android:layout_height="wrap_content"
+                                        android:layout_marginBottom="4dp"
+                                        android:layout_weight="1"
+                                        android:fontFamily="@font/yantramanav_regular"
+                                        android:text="पशुधन विकास अधिकारी"
+                                        android:textSize="16sp" />
+                                </LinearLayout>
+
+                                <LinearLayout
+                                    android:layout_width="match_parent"
+                                    android:layout_height="match_parent"
+                                    android:layout_marginTop="6dp"
+                                    android:orientation="horizontal"
+                                    android:weightSum="3">
+
+                                    <TextView
+                                        android:id="@+id/education_requirement_title"
+                                        android:layout_width="match_parent"
+                                        android:layout_height="wrap_content"
+                                        android:layout_weight="1.8"
+                                        android:fontFamily="@font/yantramanav_bold"
+                                        android:text="शैक्षणिक पात्रता :"
+                                        android:textColor="#000000"
+                                        android:textSize="16sp"
+                                        android:textStyle="bold"
+                                        android:visibility="visible" />
+
+                                    <TextView
+                                        android:id="@+id/education_requirement_value"
+                                        android:layout_width="match_parent"
+                                        android:layout_height="wrap_content"
+                                        android:layout_marginBottom="4dp"
+                                        android:layout_weight="1"
+                                        android:fontFamily="@font/yantramanav_regular"
+                                        android:text="B.Sc IT, BCA, B.Tech, MCA"
+                                        android:textSize="16sp" />
+                                </LinearLayout>
+
+                                <LinearLayout
+                                    android:layout_width="match_parent"
+                                    android:layout_height="match_parent"
+                                    android:layout_marginTop="6dp"
+                                    android:orientation="horizontal"
+                                    android:weightSum="3">
+
+                                    <TextView
+                                        android:id="@+id/age_requirement_title"
+                                        android:layout_width="match_parent"
+                                        android:layout_height="wrap_content"
+                                        android:layout_weight="1.8"
+                                        android:fontFamily="@font/yantramanav_bold"
+                                        android:text="वयाची अट :"
+                                        android:textColor="#000000"
+                                        android:textSize="16sp"
+                                        android:textStyle="bold"
+                                        android:visibility="visible" />
+
+                                    <TextView
+                                        android:id="@+id/age_requirement_value"
+                                        android:layout_width="match_parent"
+                                        android:layout_height="wrap_content"
+                                        android:layout_marginBottom="4dp"
+                                        android:layout_weight="1"
+                                        android:fontFamily="@font/yantramanav_regular"
+                                        android:text="जन्म 01 ऑक्टोबर 2004 \n\n ते 01 एप्रिल 2008 दरम्यान. \n "
+                                        android:textSize="16sp" />
+                                </LinearLayout>
+
+                                <LinearLayout
+                                    android:layout_width="match_parent"
+                                    android:layout_height="match_parent"
+                                    android:layout_marginTop="6dp"
+                                    android:orientation="horizontal"
+                                    android:weightSum="3">
+
+                                    <TextView
+                                        android:id="@+id/job_place_title"
+                                        android:layout_width="match_parent"
+                                        android:layout_height="wrap_content"
+                                        android:layout_weight="1.8"
+                                        android:fontFamily="@font/yantramanav_bold"
+                                        android:text="नोकरी ठिकाण :"
+                                        android:textColor="#000000"
+                                        android:textSize="16sp"
+                                        android:textStyle="bold"
+                                        android:visibility="visible" />
+
+                                    <TextView
+                                        android:id="@+id/job_place_value"
+                                        android:layout_width="match_parent"
+                                        android:layout_height="wrap_content"
+                                        android:layout_marginBottom="4dp"
+                                        android:layout_weight="1"
+                                        android:fontFamily="@font/yantramanav_regular"
+                                        android:text="संपूर्ण भारत "
+                                        android:textSize="16sp" />
+                                </LinearLayout>
+
+                                <LinearLayout
+                                    android:layout_width="match_parent"
+                                    android:layout_height="match_parent"
+                                    android:layout_marginTop="6dp"
+                                    android:orientation="horizontal"
+                                    android:weightSum="3">
+
+                                    <TextView
+                                        android:id="@+id/application_fees_title"
+                                        android:layout_width="match_parent"
+                                        android:layout_height="wrap_content"
+                                        android:layout_weight="1.8"
+                                        android:fontFamily="@font/yantramanav_bold"
+                                        android:text="अर्जाची फीज :"
+                                        android:textColor="#000000"
+                                        android:textSize="16sp"
+                                        android:textStyle="bold"
+                                        android:visibility="visible" />
+
+                                    <TextView
+                                        android:id="@+id/application_fees_value"
+                                        android:layout_width="match_parent"
+                                        android:layout_height="wrap_content"
+                                        android:layout_marginBottom="4dp"
+                                        android:layout_weight="1"
+                                        android:fontFamily="@font/yantramanav_regular"
+                                        android:text="250ru"
+                                        android:textSize="16sp" />
+                                </LinearLayout>
+
+                                <LinearLayout
+                                    android:layout_width="match_parent"
+                                    android:layout_height="match_parent"
+                                    android:layout_marginTop="6dp"
+                                    android:orientation="horizontal"
+                                    android:weightSum="3">
+
+                                    <TextView
+                                        android:id="@+id/last_date_title"
+                                        android:layout_width="match_parent"
+                                        android:layout_height="wrap_content"
+                                        android:layout_weight="1.8"
+                                        android:fontFamily="@font/yantramanav_bold"
+                                        android:text="शेवटची तारीख :"
+                                        android:textColor="#000000"
+                                        android:textSize="16sp"
+                                        android:textStyle="bold"
+                                        android:visibility="visible" />
+
+                                    <TextView
+                                        android:id="@+id/last_date_value"
+                                        android:layout_width="match_parent"
+                                        android:layout_height="wrap_content"
+                                        android:layout_marginBottom="4dp"
+                                        android:layout_weight="1"
+                                        android:fontFamily="@font/yantramanav_regular"
+                                        android:text="10 एप्रिल 2025 "
+                                        android:textSize="16sp" />
+                                </LinearLayout>
+
+                                <LinearLayout
+                                    android:layout_width="match_parent"
+                                    android:layout_height="match_parent"
+                                    android:layout_marginTop="6dp"
+                                    android:orientation="horizontal"
+                                    android:weightSum="3">
+
+                                    <TextView
+                                        android:id="@+id/note_title"
+                                        android:layout_width="match_parent"
+                                        android:layout_height="wrap_content"
+                                        android:layout_weight="1.8"
+                                        android:fontFamily="@font/yantramanav_bold"
+                                        android:text="Note :"
+                                        android:textColor="#000000"
+                                        android:textSize="18sp"
+                                        android:textStyle="bold"
+                                        android:visibility="visible" />
+
+                                    <TextView
+                                        android:id="@+id/note_value"
+                                        android:layout_width="match_parent"
+                                        android:layout_height="wrap_content"
+                                        android:layout_marginBottom="4dp"
+                                        android:layout_weight="1"
+                                        android:fontFamily="@font/yantramanav_regular"
+                                        android:text="कंपनीचा इंटरव्यू जे आहे ते मालक हरिओम भाऊ घेतील इंटरव्यूवर तुला टाईम वर हजर राहणे आवश्यक आहे"
+                                        android:textSize="16sp" />
+                                </LinearLayout>
+
+                            </LinearLayout>
+                        </androidx.cardview.widget.CardView>
+                    </androidx.cardview.widget.CardView>
+
+                </androidx.constraintlayout.widget.ConstraintLayout>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical">
+
+                    <androidx.cardview.widget.CardView
+                        android:id="@+id/cardView10"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="16dp"
+                        android:layout_marginTop="8dp"
+                        android:layout_marginEnd="16dp"
+                        android:layout_marginBottom="8dp"
+                        app:cardBackgroundColor="#5645C0"
+                        app:cardCornerRadius="18dp"
+                        app:cardElevation="4dp">
+
+                        <androidx.cardview.widget.CardView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="8dp"
+                            app:cardCornerRadius="18dp"
+                            app:cardElevation="0dp">
+
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="match_parent"
+                                android:orientation="vertical"
+                                android:visibility="visible">
+
+                                <LinearLayout
+                                    android:layout_width="match_parent"
+                                    android:layout_height="match_parent"
+                                    android:layout_marginTop="24dp"
+                                    android:layout_marginBottom="4dp"
+                                    android:gravity="center"
+                                    android:orientation="horizontal">
+
+                                    <androidx.cardview.widget.CardView
+                                        android:id="@+id/application_link_container"
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="35dp"
+                                        android:layout_marginStart="16dp"
+                                        android:layout_marginTop="6dp"
+                                        android:layout_marginEnd="8dp"
+                                        android:layout_marginBottom="10dp"
+                                        app:cardBackgroundColor="#5645C0"
+                                        app:cardCornerRadius="6dp"
+                                        app:cardElevation="6dp">
+
+                                        <LinearLayout
+                                            android:layout_width="wrap_content"
+                                            android:layout_height="wrap_content"
+                                            android:layout_gravity="center"
+                                            android:layout_marginStart="12dp"
+                                            android:layout_marginEnd="12dp"
+                                            android:gravity="center"
+                                            android:orientation="horizontal">
+
+                                            <ImageView
+                                                android:id="@+id/imageView4"
+                                                android:layout_width="23dp"
+                                                android:layout_height="23dp"
+                                                android:src="@drawable/link" />
+
+                                            <TextView
+                                                android:id="@+id/textView45"
+                                                android:layout_width="wrap_content"
+                                                android:layout_height="wrap_content"
+                                                android:fontFamily="@font/yantramanav_medium"
+                                                android:text=" अर्जाची लिंक "
+                                                android:textAlignment="center"
+                                                android:textColor="#FFFFFF"
+                                                android:textSize="16sp" />
+                                        </LinearLayout>
+                                    </androidx.cardview.widget.CardView>
+
+                                    <androidx.cardview.widget.CardView
+                                        android:id="@+id/notification_pdf_container"
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="35dp"
+                                        android:layout_marginStart="8dp"
+                                        android:layout_marginTop="6dp"
+                                        android:layout_marginEnd="16dp"
+                                        android:layout_marginBottom="10dp"
+                                        app:cardBackgroundColor="#FFFFFF"
+                                        app:cardCornerRadius="6dp"
+                                        app:cardElevation="6dp">
+
+                                        <TextView
+                                            android:id="@+id/textView34"
+                                            android:layout_width="wrap_content"
+                                            android:layout_height="wrap_content"
+                                            android:layout_gravity="center"
+                                            android:layout_marginStart="12dp"
+                                            android:layout_marginEnd="12dp"
+                                            android:fontFamily="@font/yantramanav_medium"
+                                            android:text=" नोटिफिकेशन PDF"
+                                            android:textAlignment="center"
+                                            android:textColor="#002EAD"
+                                            android:textSize="16sp" />
+                                    </androidx.cardview.widget.CardView>
+                                </LinearLayout>
+
+                                <LinearLayout
+                                    android:layout_width="match_parent"
+                                    android:layout_height="match_parent"
+                                    android:layout_marginStart="12dp"
+                                    android:layout_marginEnd="12dp"
+                                    android:layout_marginBottom="24dp"
+                                    android:background="@drawable/rectangle_back_green_dotted"
+                                    android:orientation="vertical">
+
+                                    <LinearLayout
+                                        android:layout_width="match_parent"
+                                        android:layout_height="wrap_content"
+                                        android:gravity="center"
+                                        android:orientation="horizontal">
+
+                                        <ImageView
+                                            android:id="@+id/imageView5"
+                                            android:layout_width="20dp"
+                                            android:layout_height="20dp"
+                                            android:src="@drawable/green_tick" />
+
+                                        <TextView
+                                            android:id="@+id/textView2"
+                                            android:layout_width="wrap_content"
+                                            android:layout_height="wrap_content"
+                                            android:layout_marginStart="8dp"
+                                            android:layout_marginTop="12dp"
+                                            android:layout_marginEnd="8dp"
+                                            android:layout_marginBottom="12dp"
+                                            android:fontFamily="@font/poppins_medium"
+                                            android:text="Free Resources For Better Understand"
+                                            android:textColor="#2F7F23"
+                                            android:textSize="12sp" />
+                                    </LinearLayout>
+
+                                    <androidx.cardview.widget.CardView
+                                        android:id="@+id/selection_pdf_container"
+                                        android:layout_width="match_parent"
+                                        android:layout_height="40dp"
+                                        android:layout_gravity="center"
+                                        android:layout_marginStart="36dp"
+                                        android:layout_marginTop="12dp"
+                                        android:layout_marginEnd="36dp"
+                                        android:layout_marginBottom="16dp"
+                                        app:cardBackgroundColor="#000000"
+                                        app:cardCornerRadius="6dp"
+                                        app:cardElevation="4dp">
+
+                                        <TextView
+                                            android:id="@+id/textView48"
+                                            android:layout_width="match_parent"
+                                            android:layout_height="match_parent"
+                                            android:layout_gravity="center"
+                                            android:background="@drawable/gradient_for_link_button"
+                                            android:gravity="center"
+                                            android:text="सिलेक्शन PDF"
+                                            android:textColor="#FFFFFF"
+                                            android:textSize="18sp"
+                                            android:textStyle="bold" />
+                                    </androidx.cardview.widget.CardView>
+
+                                    <androidx.cardview.widget.CardView
+                                        android:id="@+id/syllabus_pdf_container"
+                                        android:layout_width="match_parent"
+                                        android:layout_height="40dp"
+                                        android:layout_gravity="center"
+                                        android:layout_marginStart="36dp"
+                                        android:layout_marginEnd="36dp"
+                                        android:layout_marginBottom="24dp"
+                                        app:cardBackgroundColor="#000000"
+                                        app:cardCornerRadius="6dp"
+                                        app:cardElevation="4dp">
+
+                                        <TextView
+                                            android:id="@+id/textView44"
+                                            android:layout_width="match_parent"
+                                            android:layout_height="match_parent"
+                                            android:layout_gravity="center"
+                                            android:gravity="center"
+                                            android:text="अभ्यासक्रम PDF"
+                                            android:textColor="#FFFFFF"
+                                            android:textSize="18sp"
+                                            android:textStyle="bold" />
+                                    </androidx.cardview.widget.CardView>
+                                </LinearLayout>
+
+                            </LinearLayout>
+                        </androidx.cardview.widget.CardView>
+                    </androidx.cardview.widget.CardView>
+                </LinearLayout>
+            </LinearLayout>
+
+            <TextView
+                android:id="@+id/textView38"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="16dp"
+                android:layout_marginTop="8dp"
+                android:text="Recent Result"
+                android:textSize="20sp"
+                android:textStyle="bold"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@+id/cardContainer" />
+
+            <TextView
+                android:id="@+id/textView39"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="3dp"
+                android:layout_marginEnd="16dp"
+                android:text="See All"
+                android:textColor="#7E18EB"
+                android:textSize="16sp"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintTop_toTopOf="@+id/textView38" />
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/recent_post_recyler"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="10dp"
+                android:layout_marginTop="8dp"
+                android:layout_marginEnd="10dp"
+                android:layout_marginBottom="16dp"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@+id/textView38" />
+        </androidx.constraintlayout.widget.ConstraintLayout>
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+    </ScrollView>

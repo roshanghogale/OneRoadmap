@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Bottom margins for Android 15+ -->
+    <dimen name="home_bottom_margin">128dp</dimen>
+    <dimen name="chat_recycler_bottom_margin">128dp</dimen>
+    <dimen name="fab_main_bottom_margin">144dp</dimen>
+</resources>
