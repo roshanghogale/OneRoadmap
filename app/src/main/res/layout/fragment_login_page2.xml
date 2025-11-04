@@ -53,13 +53,31 @@
 
                 <!-- Education -->
                 <TextView
+                    android:textColor="@color/black"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="तुमचे शिक्षण"
-                    android:textStyle="bold"
+                    android:layout_marginTop="16dp"
+                    android:layout_marginBottom="8dp"
+                    android:text="सध्या दहावी बारावी ला आहे का ?"
                     android:textSize="14sp"
-                    android:layout_marginTop="8dp"
-                    android:layout_marginBottom="8dp"/>
+                    android:textStyle="bold" />
+
+                <Spinner
+                    android:id="@+id/spinnerTwelfth"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:background="@drawable/spinner_background"
+                    android:paddingStart="12dp" />
+
+                <TextView
+                    android:textColor="@color/black"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:layout_marginBottom="8dp"
+                    android:text="तुमचे शिक्षण"
+                    android:textSize="14sp"
+                    android:textStyle="bold" />
 
                 <Spinner
                     android:id="@+id/spinnerEducation"
@@ -69,31 +87,17 @@
                     android:paddingStart="12dp"/>
 
                 <!-- 12th Grade -->
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="बारावी कशा मध्ये झाली ?"
-                    android:textStyle="bold"
-                    android:textSize="14sp"
-                    android:layout_marginTop="16dp"
-                    android:layout_marginBottom="8dp"/>
-
-                <Spinner
-                    android:id="@+id/spinnerTwelfth"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:background="@drawable/spinner_background"
-                    android:paddingStart="12dp"/>
 
                 <!-- Degree -->
                 <TextView
+                    android:textColor="@color/black"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="डिग्री"
-                    android:textStyle="bold"
-                    android:textSize="14sp"
+                    android:layout_marginTop="12dp"
                     android:layout_marginBottom="8dp"
-                    android:layout_marginTop="16dp"/>
+                    android:text="डिग्री"
+                    android:textSize="14sp"
+                    android:textStyle="bold" />
 
                 <Spinner
                     android:id="@+id/spinnerDegree"
@@ -104,6 +108,7 @@
 
                 <!-- Post Graduation -->
                 <TextView
+                    android:textColor="@color/black"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="पोस्ट ग्रॅज्युएशन (Optional)"

@@ -389,7 +389,7 @@
                     android:orientation="vertical">
 
                     <TextView
-                        android:id="@+id/profile_10th_and_12th_jobs"
+                        android:id="@+id/profileTxtJobByStream"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginEnd="12dp"
@@ -570,7 +570,7 @@
             android:textStyle="bold"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/radioGroupGender" />
+            app:layout_constraintTop_toBottomOf="@id/spinnerEducationContainer" />
 
         <com.google.android.material.textfield.TextInputLayout
             android:id="@+id/spinnerDegreeContainer"
@@ -619,7 +619,7 @@
             android:textStyle="bold"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/spinnerDegreeContainer" />
+            app:layout_constraintTop_toBottomOf="@id/radioGroupGender" />
 
         <com.google.android.material.textfield.TextInputLayout
             android:id="@+id/spinnerTwelfthContainer"
@@ -668,7 +668,7 @@
             android:textStyle="bold"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/spinnerTwelfthContainer" />
+            app:layout_constraintTop_toBottomOf="@id/spinnerDegreeContainer" />
 
         <com.google.android.material.textfield.TextInputLayout
             android:id="@+id/spinnerPostGraduationContainer"
@@ -864,7 +864,7 @@
             android:textStyle="bold"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/spinnerAgeGroupContainer" />
+            app:layout_constraintTop_toBottomOf="@id/spinnerTwelfthContainer" />
 
         <com.google.android.material.textfield.TextInputLayout
             android:id="@+id/spinnerEducationContainer"
@@ -920,7 +920,7 @@
             android:focusable="true"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/spinnerEducationContainer" />
+            app:layout_constraintTop_toBottomOf="@id/spinnerAgeGroupContainer" />
 
         <androidx.constraintlayout.widget.ConstraintLayout
             android:layout_width="match_parent"

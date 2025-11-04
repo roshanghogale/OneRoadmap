@@ -17,19 +17,29 @@ public class DataConstants {
 
     public static final Map<String, List<String>> TALUKA_MAP = new HashMap<>();
 
-    public static final List<String> EDUCATION_OPTIONS = Arrays.asList(
-            "Select Education Category",
-            "Engineering", "Medical", "Dental", "Pharmacy", "Nursing", "Paramedical",
-            "Biotechnology", "Agriculture", "Veterinary", "Law", "Management", "Commerce",
-            "Arts", "Pure Science", "Computer Science/IT", "Architecture", "Hotel Management",
-            "Design", "Journalism", "Education", "Polytechnic", "ITI", "Home Science",
-            "Performing Arts", "Visual Arts", "Animation & Multimedia", "Aviation",
-            "Social Work", "Other"
+    public static final List<String> TWELFTH_OPTIONS = Arrays.asList(
+            "तुमचं शिक्षण निवाडा", "सध्या दहावीला आहे", "सध्या बारावीला आह", "नाही या पुढील शिक्षण आहे ", "दहावी बारावी नंतर शाळा सोडली"
     );
 
-    public static final List<String> TWELFTH_OPTIONS = Arrays.asList(
-            "Select 12th Stream", "Science", "Commerce", "Arts", "Vocational", "None"
+    /** NEW – text that must appear in the two TextViews */
+    public static final List<String> JOB_TEXT_BY_TWELFTH = Arrays.asList(
+            "दहावी,बारावी आधारित जॉब पाहिजेत ?",          // default (index 0)
+            "बारावी व डीग्री आधारित जॉब पाहिजेत ?",      // index 1
+            "दहावी व डीग्री आधारित जॉब पाहिजेत ?",      // index 2
+            "दहावी व बारावी आधारित जॉब पाहिजेत ?",      // index 3
+            "डीग्री आधारित जॉब पाहिजेत ?"               // index 4
     );
+
+
+    public static final List<String> EDUCATION_OPTIONS = Arrays.asList(
+            "Select Education Category",
+            "Education", "Arts", "Commerce", "Engineering", "Diploma",
+            "Medical", "Dental", "ITI", "Pharmacy", "Agriculture",
+            "Computer Science/IT", "Nursing", "Law", "Veterinary",
+            "Journalism", "Management", "Hotel Management",
+            "Animation & Multimedia", "Other B.Sc", "Other"
+    );
+
 
     public static final Map<String, List<String>> DEGREE_MAP = new HashMap<>();
     public static final Map<String, List<String>> POST_GRAD_MAP = new HashMap<>();
@@ -75,65 +85,229 @@ public class DataConstants {
         TALUKA_MAP.put("Select District", Arrays.asList("Select Taluka"));
 
         // Initialize DEGREE_MAP (same as in LoginPage2)
-        DEGREE_MAP.put("Engineering", Arrays.asList("Select Degree", "B.Tech", "B.E", "B.Sc Engineering", "Diploma in Engineering", "Other"));
-        DEGREE_MAP.put("Medical", Arrays.asList("Select Degree", "MBBS", "BAMS", "BHMS", "BUMS", "Other"));
-        DEGREE_MAP.put("Dental", Arrays.asList("Select Degree", "BDS", "Other"));
-        DEGREE_MAP.put("Pharmacy", Arrays.asList("Select Degree", "B.Pharm", "D.Pharm", "Other"));
-        DEGREE_MAP.put("Nursing", Arrays.asList("Select Degree", "B.Sc Nursing", "GNM", "ANM", "Other"));
-        DEGREE_MAP.put("Paramedical", Arrays.asList("Select Degree", "BPT", "B.Sc MLT", "B.Sc Radiology", "Other"));
-        DEGREE_MAP.put("Biotechnology", Arrays.asList("Select Degree", "B.Sc Biotechnology", "B.Tech Biotechnology", "Other"));
-        DEGREE_MAP.put("Agriculture", Arrays.asList("Select Degree", "B.Sc Agriculture", "B.Tech Agriculture", "Other"));
-        DEGREE_MAP.put("Veterinary", Arrays.asList("Select Degree", "BVSc", "Other"));
-        DEGREE_MAP.put("Law", Arrays.asList("Select Degree", "LLB", "BA LLB", "BBA LLB", "Other"));
-        DEGREE_MAP.put("Management", Arrays.asList("Select Degree", "BBA", "BMS", "Other"));
-        DEGREE_MAP.put("Commerce", Arrays.asList("Select Degree", "B.Com", "B.Com (Hons)", "Other"));
-        DEGREE_MAP.put("Arts", Arrays.asList("Select Degree", "BA", "BA (Hons)", "Other"));
-        DEGREE_MAP.put("Pure Science", Arrays.asList("Select Degree", "B.Sc Physics", "B.Sc Chemistry", "B.Sc Maths", "B.Sc Biology", "Other"));
-        DEGREE_MAP.put("Computer Science/IT", Arrays.asList("Select Degree", "BCA", "B.Sc IT", "B.Sc Computer Science", "Other"));
-        DEGREE_MAP.put("Architecture", Arrays.asList("Select Degree", "B.Arch", "Other"));
-        DEGREE_MAP.put("Hotel Management", Arrays.asList("Select Degree", "BHM", "B.Sc Hospitality", "Other"));
-        DEGREE_MAP.put("Design", Arrays.asList("Select Degree", "B.Des Fashion", "B.Des Interior", "BFA", "Other"));
-        DEGREE_MAP.put("Journalism", Arrays.asList("Select Degree", "BA Journalism", "B.Sc Mass Comm", "Other"));
-        DEGREE_MAP.put("Education", Arrays.asList("Select Degree", "B.Ed", "BA B.Ed", "Other"));
-        DEGREE_MAP.put("Polytechnic", Arrays.asList("Select Degree", "Diploma in Civil", "Diploma in Mechanical", "Diploma in Electrical", "Other"));
-        DEGREE_MAP.put("ITI", Arrays.asList("Select Degree", "ITI in Electrician", "ITI in Fitter", "ITI in Welder", "Other"));
-        DEGREE_MAP.put("Home Science", Arrays.asList("Select Degree", "B.Sc Home Science", "BA Home Science", "Other"));
-        DEGREE_MAP.put("Performing Arts", Arrays.asList("Select Degree", "BPA Music", "BPA Dance", "BPA Theatre", "Other"));
-        DEGREE_MAP.put("Visual Arts", Arrays.asList("Select Degree", "BFA Painting", "BFA Sculpture", "BFA Applied Arts", "Other"));
-        DEGREE_MAP.put("Animation & Multimedia", Arrays.asList("Select Degree", "B.Sc Animation", "B.Des Animation", "Other"));
-        DEGREE_MAP.put("Aviation", Arrays.asList("Select Degree", "B.Sc Aviation", "BBA Aviation", "Other"));
-        DEGREE_MAP.put("Social Work", Arrays.asList("Select Degree", "BSW", "BA Social Work", "Other"));
-        DEGREE_MAP.put("Other", Arrays.asList("Select Degree", "Other"));
+    // ====================== DEGREE_MAP ======================
+
+                DEGREE_MAP.put("Education", Arrays.asList("Select Degree",
+                        "B.Ed", "BA B.Ed", "Other"
+                ));
+
+        DEGREE_MAP.put("Arts", Arrays.asList("Select Degree",
+                "BA", "BA (Hons)", "Home Science", "Social Work", "Journalism", "BA LLB", "Other"
+        ));
+
+        DEGREE_MAP.put("Commerce", Arrays.asList("Select Degree",
+                "B.Com",
+                "B.Com (Hons)",
+                "Chartered Accountancy (CA)",
+                "Cost and Management Accountancy (CMA)",
+                "Company Secretary (CS)",
+                "Other"
+        ));
+
+        DEGREE_MAP.put("Engineering", Arrays.asList("Select Degree",
+                "Computer Science Engineering (CSE)",
+                "Information Technology (IT)",
+                "Artificial Intelligence & Machine Learning (AIML)",
+                "Data Science Engineering",
+                "Cyber Security",
+                "Robotics Engineering",
+                "Software Engineering",
+                "Computer Engineering",
+                "Electronics & Communication (ECE)",
+                "Electrical Engineering (EE)",
+                "Electronics & Telecommunication (ENTC)",
+                "Instrumentation Engineering",
+                "Electrical & Electronics Engineering (EEE)",
+                "Mechanical Engineering (ME)",
+                "Automobile Engineering",
+                "Mechatronics Engineering",
+                "Production Engineering",
+                "Civil Engineering (CE)",
+                "Architecture (B.Arch)",
+                "Structural Engineering (Specialization)",
+                "Chemical Engineering",
+                "Industrial Engineering",
+                "Petroleum Engineering",
+                "Mining Engineering",
+                "Agricultural Engineering",
+                "Food Technology",
+                "Aerospace Engineering",
+                "Aeronautical Engineering",
+                "Marine Engineering",
+                "Naval Architecture",
+                "Environmental Engineering",
+                "Textile Engineering",
+                "Plastic Engineering",
+                "Metallurgical Engineering",
+                "Other"
+        ));
+
+// DIPLOMA — ADDED LAB & RADIOLOGY
+        DEGREE_MAP.put("Diploma", Arrays.asList("Select Degree",
+                "Diploma in Computer Engineering",
+                "Diploma in Information Technology",
+                "Diploma in Computer Science",
+                "Diploma in Artificial Intelligence",
+                "Diploma in Cyber Security",
+                "Diploma in Electronics & Telecommunication (ETC / ENTC)",
+                "Diploma in Electrical Engineering",
+                "Diploma in Electronics Engineering",
+                "Diploma in Instrumentation Engineering",
+                "Diploma in Electrical & Electronics Engineering (EEE)",
+                "Diploma in Mechanical Engineering",
+                "Diploma in Automobile Engineering",
+                "Diploma in Mechatronics",
+                "Diploma in Tool & Die Making",
+                "Diploma in Production Engineering",
+                "Diploma in Robotics",
+                "Diploma in Civil Engineering",
+                "Diploma in Architecture (D.Arch)",
+                "Diploma in Structural Engineering",
+                "Diploma in Construction Technology",
+                "Diploma in Chemical Engineering",
+                "Diploma in Industrial Engineering",
+                "Diploma in Petrochemical Engineering",
+                "Diploma in Petroleum Engineering",
+                "Diploma in Mining Engineering",
+                "Diploma in Aeronautical Engineering",
+                "Diploma in Aerospace Engineering",
+                "Diploma in Marine Engineering",
+                "Diploma in Naval Architecture",
+                "Diploma in Textile Engineering",
+                "Diploma in Lab Technology",
+                "Diploma in Radiology",
+                "Diploma in X-Ray Technology",
+                "Diploma in Engineering", "Advanced Diploma", "Other"
+        ));
+
+        DEGREE_MAP.put("ITI", Arrays.asList("Select Degree",
+                "Electrician",
+                "Wireman",
+                "Electronics Mechanic",
+                "Instrument Mechanic",
+                "Electrical Maintenance",
+                "Solar Technician",
+                "Fitter",
+                "Turner",
+                "Machinist",
+                "Mechanic Motor Vehicle (MMV)",
+                "Diesel Mechanic",
+                "Tool & Die Maker",
+                "Foundryman",
+                "Welder (Gas & Electric)",
+                "Computer Operator (COPA)",
+                "Desktop Publishing Operator (DTP)",
+                "Carpenter",
+                "Mechanic Diesel Engine",
+                "Mechanic Motor Cycle",
+                "Fashion Design Technology",
+                "Plumber",
+                "Painter",
+                "Plastic Processing Operator",
+                "Fire & Safety",
+                "Interior Decoration",
+                "Printing Technology",
+                "Other"
+        ));
+
+        DEGREE_MAP.put("Pharmacy", Arrays.asList("Select Degree",
+                "B.Pharm", "D.Pharm", "Other"
+        ));
+
+        DEGREE_MAP.put("Agriculture", Arrays.asList("Select Degree",
+                "B.Sc Agri",
+                "Diploma in Agriculture",
+                "Agricultural Engineering",
+                "Other"
+        ));
+
+        DEGREE_MAP.put("Computer Science/IT", Arrays.asList("Select Degree",
+                "BCA", "B.Sc IT", "B.Sc CS", "Other"
+        ));
+
+        DEGREE_MAP.put("Nursing", Arrays.asList("Select Degree",
+                "B.Sc Nursing", "GNM", "ANM", "Other"
+        ));
+
+        DEGREE_MAP.put("Law", Arrays.asList("Select Degree",
+                "LLB", "BA LLB", "BBA LLB", "Other"
+        ));
+
+        DEGREE_MAP.put("Veterinary", Arrays.asList("Select Degree",
+                "BVSc", "Other"
+        ));
+
+        DEGREE_MAP.put("Journalism", Arrays.asList("Select Degree",
+                "BA Journalism", "Mass Comm", "Other"
+        ));
+
+        DEGREE_MAP.put("Management", Arrays.asList("Select Degree",
+                "BBA", "BMS", "Aviation", "BBA LLB", "Other"
+        ));
+
+        DEGREE_MAP.put("Hotel Management", Arrays.asList("Select Degree",
+                "BHM",
+                "Diploma in Hotel Management",
+                "Hospitality",
+                "Other"
+        ));
+
+        DEGREE_MAP.put("Animation & Multimedia", Arrays.asList("Select Degree",
+                "Animation", "Animation Design", "Other"
+        ));
+
+// MEDICAL — ADDED LAB & RADIOLOGY
+        DEGREE_MAP.put("Medical", Arrays.asList("Select Degree",
+                "MBBS",
+                "BAMS",
+                "BHMS",
+                "BUMS",
+                "Lab Technology",
+                "Diploma in Radiology",
+                "Diploma in X-Ray Technology",
+                "Other"
+        ));
+
+        DEGREE_MAP.put("Dental", Arrays.asList("Select Degree",
+                "BDS", "Other"
+        ));
+
+// OTHER B.Sc — Clean
+        DEGREE_MAP.put("Other B.Sc", Arrays.asList("Select Degree",
+                "Physics", "Chemistry", "Maths", "Biology",
+                "Biotech", "Home Science", "MLT", "Radiology",
+                "Stats", "Geology", "Env Science", "Other"
+        ));
+
+// OTHER — Clean
+        DEGREE_MAP.put("Other", Arrays.asList("Select Degree",
+                "Planning", "Fashion", "Interior",
+                "Fine Arts", "Painting", "Sculpture", "Applied Arts",
+                "Music", "Dance", "Theatre",
+                "Physiotherapy", "Social Work", "Other"
+        ));
+
 
         // Initialize POST_GRAD_MAP (same as in LoginPage2)
+        POST_GRAD_MAP.put("Education", Arrays.asList("Select Post Graduation", "M.Ed", "None"));
+        POST_GRAD_MAP.put("Arts", Arrays.asList("Select Post Graduation", "MA", "None"));
+        POST_GRAD_MAP.put("Commerce", Arrays.asList("Select Post Graduation", "M.Com", "MBA", "None"));
         POST_GRAD_MAP.put("Engineering", Arrays.asList("Select Post Graduation", "M.Tech", "M.E", "MBA", "None"));
+        POST_GRAD_MAP.put("Diploma", Arrays.asList("Select Post Graduation", "Advanced Diploma", "None"));
         POST_GRAD_MAP.put("Medical", Arrays.asList("Select Post Graduation", "MD", "MS", "M.Sc", "None"));
         POST_GRAD_MAP.put("Dental", Arrays.asList("Select Post Graduation", "MDS", "None"));
-        POST_GRAD_MAP.put("Pharmacy", Arrays.asList("Select Post Graduation", "M.Pharm", "None"));
-        POST_GRAD_MAP.put("Nursing", Arrays.asList("Select Post Graduation", "M.Sc Nursing", "None"));
-        POST_GRAD_MAP.put("Paramedical", Arrays.asList("Select Post Graduation", "MPT", "M.Sc", "None"));
-        POST_GRAD_MAP.put("Biotechnology", Arrays.asList("Select Post Graduation", "M.Sc Biotechnology", "M.Tech", "None"));
-        POST_GRAD_MAP.put("Agriculture", Arrays.asList("Select Post Graduation", "M.Sc Agriculture", "None"));
-        POST_GRAD_MAP.put("Veterinary", Arrays.asList("Select Post Graduation", "MVSc", "None"));
-        POST_GRAD_MAP.put("Law", Arrays.asList("Select Post Graduation", "LLM", "None"));
-        POST_GRAD_MAP.put("Management", Arrays.asList("Select Post Graduation", "MBA", "PGDM", "None"));
-        POST_GRAD_MAP.put("Commerce", Arrays.asList("Select Post Graduation", "M.Com", "MBA", "None"));
-        POST_GRAD_MAP.put("Arts", Arrays.asList("Select Post Graduation", "MA", "None"));
-        POST_GRAD_MAP.put("Pure Science", Arrays.asList("Select Post Graduation", "M.Sc", "None"));
-        POST_GRAD_MAP.put("Computer Science/IT", Arrays.asList("Select Post Graduation", "MCA", "M.Sc IT", "None"));
-        POST_GRAD_MAP.put("Architecture", Arrays.asList("Select Post Graduation", "M.Arch", "None"));
-        POST_GRAD_MAP.put("Hotel Management", Arrays.asList("Select Post Graduation", "MHM", "MBA Hospitality", "None"));
-        POST_GRAD_MAP.put("Design", Arrays.asList("Select Post Graduation", "M.Des", "None"));
-        POST_GRAD_MAP.put("Journalism", Arrays.asList("Select Post Graduation", "MA Journalism", "None"));
-        POST_GRAD_MAP.put("Education", Arrays.asList("Select Post Graduation", "M.Ed", "None"));
-        POST_GRAD_MAP.put("Polytechnic", Arrays.asList("Select Post Graduation", "Advanced Diploma", "None"));
         POST_GRAD_MAP.put("ITI", Arrays.asList("Select Post Graduation", "None"));
-        POST_GRAD_MAP.put("Home Science", Arrays.asList("Select Post Graduation", "M.Sc Home Science", "None"));
-        POST_GRAD_MAP.put("Performing Arts", Arrays.asList("Select Post Graduation", "MPA", "None"));
-        POST_GRAD_MAP.put("Visual Arts", Arrays.asList("Select Post Graduation", "MFA", "None"));
+        POST_GRAD_MAP.put("Pharmacy", Arrays.asList("Select Post Graduation", "M.Pharm", "None"));
+        POST_GRAD_MAP.put("Agriculture", Arrays.asList("Select Post Graduation", "M.Sc Agri", "None"));
+        POST_GRAD_MAP.put("Computer Science/IT", Arrays.asList("Select Post Graduation", "MCA", "M.Sc IT", "M.Tech", "None"));
+        POST_GRAD_MAP.put("Nursing", Arrays.asList("Select Post Graduation", "M.Sc Nursing", "None"));
+        POST_GRAD_MAP.put("Law", Arrays.asList("Select Post Graduation", "LLM", "None"));
+        POST_GRAD_MAP.put("Veterinary", Arrays.asList("Select Post Graduation", "MVSc", "None"));
+        POST_GRAD_MAP.put("Journalism", Arrays.asList("Select Post Graduation", "MA Journalism", "None"));
+        POST_GRAD_MAP.put("Management", Arrays.asList("Select Post Graduation", "MBA", "PGDM", "None"));
+        POST_GRAD_MAP.put("Hotel Management", Arrays.asList("Select Post Graduation", "MHM", "MBA Hospitality", "None"));
         POST_GRAD_MAP.put("Animation & Multimedia", Arrays.asList("Select Post Graduation", "M.Sc Animation", "None"));
-        POST_GRAD_MAP.put("Aviation", Arrays.asList("Select Post Graduation", "M.Sc Aviation", "MBA Aviation", "None"));
-        POST_GRAD_MAP.put("Social Work", Arrays.asList("Select Post Graduation", "MSW", "None"));
+        POST_GRAD_MAP.put("Other B.Sc", Arrays.asList("Select Post Graduation", "M.Sc", "None"));
         POST_GRAD_MAP.put("Other", Arrays.asList("Select Post Graduation", "None"));
     }
 }

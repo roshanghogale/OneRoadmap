@@ -62,6 +62,7 @@ import com.newsproject.oneroadmap.R;
 import com.newsproject.oneroadmap.Utils.BuildConfig;
 import com.newsproject.oneroadmap.Models.JobViewModel;
 import com.newsproject.oneroadmap.Utils.NewsUtils;
+import com.newsproject.oneroadmap.database.RecentlyOpenedDatabaseHelper;
 
 import org.imaginativeworld.whynotimagecarousel.ImageCarousel;
 import org.imaginativeworld.whynotimagecarousel.listener.CarouselListener;
@@ -133,6 +134,7 @@ public class HomeFragment extends Fragment {
     private LinearLayout govLinear, policeLinear, bankLinear, selfLinear;
     private Map<String, News> newsCache = new HashMap<>(); // Cache for news items
     private String top5PdfUrl = "";
+    private RecentlyOpenedDatabaseHelper recentDb;
 
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
@@ -263,6 +265,7 @@ public class HomeFragment extends Fragment {
         db = FirebaseFirestore.getInstance();
         firebaseStorage = FirebaseStorage.getInstance();
         storyPrefs = requireContext().getSharedPreferences("StoryPrefs", Context.MODE_PRIVATE);
+        recentDb = new RecentlyOpenedDatabaseHelper(requireContext());
         initViews(view);
         loadData();
 
@@ -351,7 +354,6 @@ public class HomeFragment extends Fragment {
 
         LinearLayoutManager recentlyOpenedLayoutManager = new LinearLayoutManager(getContext(), LinearLayoutManager.HORIZONTAL, false);
         recentlyOpenedRecycler.setLayoutManager(recentlyOpenedLayoutManager);
-        recentlyOpenedAdapter = new RecentlyOpenedAdapter(recentlyOpenedList);
         recentlyOpenedRecycler.setAdapter(recentlyOpenedAdapter);
         Log.d(TAG, "Set up recentlyOpenedRecycler");
 
@@ -1359,21 +1361,44 @@ public class HomeFragment extends Fragment {
     }
 
     private void loadRecentlyOpened() {
-        Log.d(TAG, "loadRecentlyOpened started");
-        List<RecentlyOpenedItem> dummyList = new ArrayList<>();
-        dummyList.add(new RecentlyOpenedItem(R.drawable.hdfc_bank3x, "३१ सप्टेंबर २०२४", "सार्वजनिक सेवा विभाग", "प्रशासकीय सहाय्यक"));
-        dummyList.add(new RecentlyOpenedItem(R.drawable.hdfc_bank3x, "१५ ऑक्टोबर २०२४", "महानगरपालिका", "लिपिक"));
-        dummyList.add(new RecentlyOpenedItem(R.drawable.hdfc_bank3x, "०५ नोव्हेंबर २०२४", "पोलीस भरती", "कॉन्स्टेबल"));
-        dummyList.add(new RecentlyOpenedItem(R.drawable.hdfc_bank3x, "३१ सप्टेंबर २०२४", "सार्वजनिक सेवा विभाग", "प्रशासकीय सहाय्यक"));
-        dummyList.add(new RecentlyOpenedItem(R.drawable.hdfc_bank3x, "१५ ऑक्टोबर २०२४", "महानगरपालिका", "लिपिक"));
-        dummyList.add(new RecentlyOpenedItem(R.drawable.hdfc_bank3x, "०५ नोव्हेंबर २०२४", "पोलीस भरती", "कॉन्स्टेबल"));
+        Log.d(TAG, "loadRecentlyOpened started (SQLite)");
 
-        final List<RecentlyOpenedItem> finalDummyList = dummyList;
+        List<JobUpdate> recentJobs = recentDb.getAllRecent();   // MRU order, max 5
+
         mainHandler.post(() -> {
-            recentlyOpenedList.clear();
-            recentlyOpenedList.addAll(finalDummyList);
-            recentlyOpenedAdapter.notifyDataSetChanged();
-            Log.d(TAG, "Recently opened loaded, count: " + recentlyOpenedList.size());
+            // ---- 1. Find the views that belong to the block -----------------
+            View titleContainer   = getView().findViewById(R.id.all_linear5);   // "You Recently Opened"
+            RecyclerView recycler = recentlyOpenedRecycler;                    // already a field
+
+            // ---- 2. Decide visibility ---------------------------------------
+            boolean hasItems = !recentJobs.isEmpty();
+
+            titleContainer.setVisibility(hasItems ? View.VISIBLE : View.GONE);
+            recycler.setVisibility(hasItems ? View.VISIBLE : View.GONE);
+
+            // ---- 3. Setup / update adapter only when there are items -------
+            if (hasItems) {
+                if (recycler.getAdapter() == null) {
+                    recycler.setLayoutManager(
+                            new LinearLayoutManager(getContext(), LinearLayoutManager.HORIZONTAL, false));
+
+                    RecentlyOpenedAdapter adapter = new RecentlyOpenedAdapter(recentJobs, job -> {
+                        requireActivity().getSupportFragmentManager()
+                                .beginTransaction()
+                                .replace(R.id.fragment_container, JobUpdateDetails.newInstance(job))
+                                .addToBackStack(null)
+                                .commit();
+                    });
+                    recycler.setAdapter(adapter);
+                } else {
+                    ((RecentlyOpenedAdapter) recycler.getAdapter()).updateList(recentJobs);
+                }
+            } else {
+                // No items → clear adapter to avoid empty space
+                recycler.setAdapter(null);
+            }
+
+            Log.d(TAG, "Recently opened loaded from DB, count: " + recentJobs.size());
         });
     }
 

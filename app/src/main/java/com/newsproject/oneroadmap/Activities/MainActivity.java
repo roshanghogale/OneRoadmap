@@ -1,13 +1,13 @@
 package com.newsproject.oneroadmap.Activities;
 
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
-import android.view.ViewGroup;
 
 import androidx.activity.OnBackPressedCallback;
 import androidx.annotation.NonNull;
@@ -23,9 +23,14 @@ import android.content.pm.PackageManager;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.firebase.messaging.FirebaseMessaging;
 import com.newsproject.oneroadmap.Fragments.*;
+import com.newsproject.oneroadmap.Models.User;
 import com.newsproject.oneroadmap.R;
+import com.newsproject.oneroadmap.Utils.DataConstants;
+import com.newsproject.oneroadmap.Utils.DatabaseHelper;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class MainActivity extends AppCompatActivity {
@@ -38,10 +43,15 @@ public class MainActivity extends AppCompatActivity {
     private boolean isProgrammaticNavigation = false;
     private final Handler uiHandler = new Handler(Looper.getMainLooper());
 
+    private DatabaseHelper databaseHelper;
+    private boolean hasSubscribedToTopics = false; // Prevent duplicate subscriptions
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        databaseHelper = new DatabaseHelper(this);
 
         // Request notification permission (API 33+)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
@@ -53,19 +63,6 @@ public class MainActivity extends AppCompatActivity {
             }
         }
 
-        // Subscribe to Firebase topics
-        String[] topics = {"science", "arts", "commerce", "business"};
-        for (String topic : topics) {
-            FirebaseMessaging.getInstance().subscribeToTopic(topic)
-                    .addOnCompleteListener(task -> {
-                        if (task.isSuccessful()) {
-                            Log.d("notification testing", "Subscribed to topic: " + topic);
-                        } else {
-                            Log.e("notification testing", "Failed to subscribe topic: " + topic);
-                        }
-                    });
-        }
-
         // Handle deep link to profile
         Intent intent = getIntent();
         Uri data = intent.getData();
@@ -75,6 +72,7 @@ public class MainActivity extends AppCompatActivity {
 
         bottomNavigationView = findViewById(R.id.bottom_navigation);
 
+        // Map fragments to navigation items
         fragmentToNavItemMap.put(HomeFragment.class, R.id.nav_home);
         fragmentToNavItemMap.put(ChatFragment.class, R.id.nav_chat);
         fragmentToNavItemMap.put(MainFragment.class, R.id.nav_main);
@@ -95,14 +93,13 @@ public class MainActivity extends AppCompatActivity {
                 Fragment topFragment = getSupportFragmentManager().findFragmentById(R.id.fragment_container);
 
                 if (item.getItemId() == R.id.nav_home) {
-                    // Clear back stack when Home is clicked
                     clearBackStack();
                     if (topFragment == null || topFragment.getClass() != selectedFragment.getClass()) {
                         showFragment(selectedFragment, false);
                     }
                 } else {
                     if (topFragment == null || topFragment.getClass() != selectedFragment.getClass()) {
-                        showFragment(selectedFragment, true); // add to back stack
+                        showFragment(selectedFragment, true);
                     }
                 }
                 return true;
@@ -126,7 +123,7 @@ public class MainActivity extends AppCompatActivity {
                     if (HomeFragment.isStoriesPlayerVisible()) {
                         HomeFragment.stopStory(MainActivity.this);
                     } else {
-                        finishAffinity(); // exit app
+                        finishAffinity();
                     }
                 } else if (fm.getBackStackEntryCount() > 0) {
                     fm.popBackStack();
@@ -139,22 +136,111 @@ public class MainActivity extends AppCompatActivity {
         if (savedInstanceState == null) {
             showFragment(navItemToFragmentMap.get(R.id.nav_home), false);
         }
+
+        // Subscribe to user-specific topics after login
+        subscribeToUserSpecificTopics();
+    }
+
+    private void subscribeToUserSpecificTopics() {
+        if (hasSubscribedToTopics) return;
+
+        // Get userId from SharedPreferences
+        SharedPreferences sp = getSharedPreferences("UserPrefs", MODE_PRIVATE);
+        String userId = sp.getString("userId", null);
+
+        if (userId == null) {
+            Log.d("FCM", "No userId in SharedPreferences. Skipping topic subscription.");
+            return;
+        }
+
+        User user = databaseHelper.getUser(userId);
+        if (user == null) {
+            Log.d("FCM", "No user in SQLite yet. Skipping topic subscription.");
+            return;
+        }
+
+        List<String> topics = new ArrayList<>();
+        FirebaseMessaging fm = FirebaseMessaging.getInstance();
+
+        // 1. Twelfth-based topics
+        String twelfth = user.getTwelfth();
+        int twelfthIndex = DataConstants.TWELFTH_OPTIONS.indexOf(twelfth);
+
+        if (twelfthIndex == 1) {
+            topics.add("10th");
+        } else if (twelfthIndex == 2) {
+            topics.add("12th");
+        } else if (twelfthIndex == 3) {
+            String degree = user.getDegree();
+            if (degree != null && !degree.equals("Select Degree") && !degree.isEmpty()) {
+                String clean = degree.replaceAll("[^A-Za-z0-9]", "").toLowerCase();
+                if (!clean.isEmpty()) topics.add(clean);
+            }
+        } else if (twelfthIndex == 4) {
+            topics.add("10th");
+            topics.add("12th");
+        }
+
+        // 2. Taluka
+        String taluka = user.getTaluka();
+        if (taluka != null && !taluka.equals("Select Taluka") && !taluka.isEmpty()) {
+            String clean = taluka.replaceAll("[^A-Za-z0-9]", "").toLowerCase();
+            if (!clean.isEmpty()) topics.add(clean);
+        }
+
+        // 3. Free Study Materials
+        if (user.isStudyGovernment()) topics.add("governmentfree");
+        if (user.isStudyPoliceDefence()) topics.add("policefree");
+        if (user.isStudyBanking()) topics.add("bankingfree");
+        if (user.isStudySelfImprovement()) topics.add("selfimprovementfree");
+
+        // 4. Job by Stream
+        if (user.isJobs()) {
+            topics.add("jobsteam");
+        }
+
+        // 5. NEW: Current Affairs
+        if (user.isCurrentAffairs()) {
+            topics.add("currentaffairs");
+        }
+
+        topics.add("all");
+        topics.add("d_paper");
+        topics.add("news");
+
+
+        // Subscribe to all
+        for (String topic : topics) {
+            fm.subscribeToTopic(topic).addOnCompleteListener(task -> {
+                if (task.isSuccessful()) {
+                    Log.d("FCM", "Subscribed to: " + topic);
+                } else {
+                    Log.e("FCM", "Failed to subscribe: " + topic);
+                }
+            });
+        }
+
+        hasSubscribedToTopics = true;
+        Log.d("FCM", "User-specific topics subscribed: " + topics);
     }
 
     private void showFragment(Fragment fragment, boolean addToBackStack) {
         FragmentManager fm = getSupportFragmentManager();
         FragmentTransaction ft = fm.beginTransaction();
 
-        // Hide all fragments
         for (Fragment frag : fm.getFragments()) {
             if (frag != null && frag.isVisible()) ft.hide(frag);
         }
 
-        // Show or add the fragment
-        if (fragment.isAdded()) ft.show(fragment);
-        else ft.add(R.id.fragment_container, fragment, fragment.getClass().getSimpleName());
+        if (fragment.isAdded()) {
+            ft.show(fragment);
+        } else {
+            ft.add(R.id.fragment_container, fragment, fragment.getClass().getSimpleName());
+        }
 
-        if (addToBackStack) ft.addToBackStack(fragment.getClass().getSimpleName());
+        if (addToBackStack) {
+            ft.addToBackStack(fragment.getClass().getSimpleName());
+        }
         ft.commit();
 
         updateBottomNavigationView(fragment);
@@ -182,7 +268,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void handleBottomNavigationVisibility(Fragment fragment) {
-        if (fragment instanceof AllCategory
+        boolean hide = fragment instanceof AllCategory
                 || fragment instanceof BankingJobs
                 || fragment instanceof PrivateJobs
                 || fragment instanceof GovernmentJobs
@@ -190,11 +276,10 @@ public class MainActivity extends AppCompatActivity {
                 || fragment instanceof JobUpdateDetails
                 || fragment instanceof AllBannersList
                 || fragment instanceof VideoFragment
-                || fragment instanceof PDFViewerFragment) {
-            hideBottomNavigation();
-        } else {
-            showBottomNavigation();
-        }
+                || fragment instanceof PDFViewerFragment;
+
+        if (hide) hideBottomNavigation();
+        else showBottomNavigation();
     }
 
     @Override
@@ -203,9 +288,9 @@ public class MainActivity extends AppCompatActivity {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
         if (requestCode == NOTIFICATION_PERMISSION_REQUEST_CODE) {
             if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                Log.d("Permission", "POST_NOTIFICATIONS permission granted");
+                Log.d("Permission", "POST_NOTIFICATIONS granted");
             } else {
-                Log.w("Permission", "POST_NOTIFICATIONS permission denied");
+                Log.w("Permission", "POST_NOTIFICATIONS denied");
             }
         }
     }

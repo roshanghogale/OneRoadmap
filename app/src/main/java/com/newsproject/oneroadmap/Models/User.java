@@ -5,29 +5,42 @@ public class User {
     private String name;
     private String gender;
     private String avatar;
-    private boolean upsc;
-    private boolean mpsc;
+
+    // NEW: 4 study-material booleans
+    private boolean studyGovernment;
+    private boolean studyPoliceDefence;
+    private boolean studyBanking;
+    private boolean studySelfImprovement;
+
     private String degree;
     private String postGraduation;
     private String district;
     private String taluka;
-    private boolean currentAffairs; // Changed to boolean
-    private boolean jobs;           // Changed to boolean
+    private boolean currentAffairs;
+    private boolean jobs;
     private String ageGroup;
     private String education;
-    private String twelfth;         // Added twelfth field
+    private String twelfth;
 
     public User() {} // Required for Firestore
 
-    public User(String userId, String name, String gender, String avatar, boolean upsc, boolean mpsc,
-                String degree, String postGraduation, String district, String taluka,
-                boolean currentAffairs, boolean jobs, String ageGroup, String education, String twelfth) {
+    /** Constructor used by LoginPage3 & ProfileFragment */
+    public User(String userId, String name, String gender, String avatar,
+                boolean studyGovernment, boolean studyPoliceDefence,
+                boolean studyBanking, boolean studySelfImprovement,
+                String degree, String postGraduation,
+                String district, String taluka,
+                boolean currentAffairs, boolean jobs,
+                String ageGroup, String education, String twelfth) {
+
         this.userId = userId;
         this.name = name;
         this.gender = gender;
         this.avatar = avatar;
-        this.upsc = upsc;
-        this.mpsc = mpsc;
+        this.studyGovernment = studyGovernment;
+        this.studyPoliceDefence = studyPoliceDefence;
+        this.studyBanking = studyBanking;
+        this.studySelfImprovement = studySelfImprovement;
         this.degree = degree;
         this.postGraduation = postGraduation;
         this.district = district;
@@ -39,124 +52,56 @@ public class User {
         this.twelfth = twelfth;
     }
 
-    // Getters and Setters
-    public String getAvatar() {
-        return avatar;
-    }
+    // ---------- Getters & Setters ----------
+    public String getUserId() { return userId; }
+    public void setUserId(String userId) { this.userId = userId; }
 
-    public void setAvatar(String avatar) {
-        this.avatar = avatar;
-    }
+    public String getName() { return name; }
+    public void setName(String name) { this.name = name; }
 
-    public String getUserId() {
-        return userId;
-    }
+    public String getGender() { return gender; }
+    public void setGender(String gender) { this.gender = gender; }
 
-    public void setUserId(String userId) {
-        this.userId = userId;
-    }
+    public String getAvatar() { return avatar; }
+    public void setAvatar(String avatar) { this.avatar = avatar; }
 
-    public String getName() {
-        return name;
-    }
+    // Study-material booleans
+    public boolean isStudyGovernment() { return studyGovernment; }
+    public void setStudyGovernment(boolean v) { this.studyGovernment = v; }
 
-    public void setName(String name) {
-        this.name = name;
-    }
+    public boolean isStudyPoliceDefence() { return studyPoliceDefence; }
+    public void setStudyPoliceDefence(boolean v) { this.studyPoliceDefence = v; }
 
-    public String getGender() {
-        return gender;
-    }
+    public boolean isStudyBanking() { return studyBanking; }
+    public void setStudyBanking(boolean v) { this.studyBanking = v; }
 
-    public void setGender(String gender) {
-        this.gender = gender;
-    }
+    public boolean isStudySelfImprovement() { return studySelfImprovement; }
+    public void setStudySelfImprovement(boolean v) { this.studySelfImprovement = v; }
 
-    public boolean isUpsc() {
-        return upsc;
-    }
+    public String getDegree() { return degree; }
+    public void setDegree(String degree) { this.degree = degree; }
 
-    public void setUpsc(boolean upsc) {
-        this.upsc = upsc;
-    }
+    public String getPostGraduation() { return postGraduation; }
+    public void setPostGraduation(String postGraduation) { this.postGraduation = postGraduation; }
 
-    public boolean isMpsc() {
-        return mpsc;
-    }
+    public String getDistrict() { return district; }
+    public void setDistrict(String district) { this.district = district; }
 
-    public void setMpsc(boolean mpsc) {
-        this.mpsc = mpsc;
-    }
+    public String getTaluka() { return taluka; }
+    public void setTaluka(String taluka) { this.taluka = taluka; }
 
-    public String getDegree() {
-        return degree;
-    }
+    public boolean isCurrentAffairs() { return currentAffairs; }
+    public void setCurrentAffairs(boolean currentAffairs) { this.currentAffairs = currentAffairs; }
 
-    public void setDegree(String degree) {
-        this.degree = degree;
-    }
+    public boolean isJobs() { return jobs; }
+    public void setJobs(boolean jobs) { this.jobs = jobs; }
 
-    public String getPostGraduation() {
-        return postGraduation;
-    }
+    public String getAgeGroup() { return ageGroup; }
+    public void setAgeGroup(String ageGroup) { this.ageGroup = ageGroup; }
 
-    public void setPostGraduation(String postGraduation) {
-        this.postGraduation = postGraduation;
-    }
+    public String getEducation() { return education; }
+    public void setEducation(String education) { this.education = education; }
 
-    public String getDistrict() {
-        return district;
-    }
-
-    public void setDistrict(String district) {
-        this.district = district;
-    }
-
-    public String getTaluka() {
-        return taluka;
-    }
-
-    public void setTaluka(String taluka) {
-        this.taluka = taluka;
-    }
-
-    public boolean isCurrentAffairs() { // Changed to boolean
-        return currentAffairs;
-    }
-
-    public void setCurrentAffairs(boolean currentAffairs) {
-        this.currentAffairs = currentAffairs;
-    }
-
-    public boolean isJobs() { // Changed to boolean
-        return jobs;
-    }
-
-    public void setJobs(boolean jobs) {
-        this.jobs = jobs;
-    }
-
-    public String getAgeGroup() {
-        return ageGroup;
-    }
-
-    public void setAgeGroup(String ageGroup) {
-        this.ageGroup = ageGroup;
-    }
-
-    public String getEducation() {
-        return education;
-    }
-
-    public void setEducation(String education) {
-        this.education = education;
-    }
-
-    public String getTwelfth() { // Added getter
-        return twelfth;
-    }
-
-    public void setTwelfth(String twelfth) { // Added setter
-        this.twelfth = twelfth;
-    }
+    public String getTwelfth() { return twelfth; }
+    public void setTwelfth(String twelfth) { this.twelfth = twelfth; }
 }

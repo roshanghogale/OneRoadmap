@@ -41,7 +41,7 @@ public class StudyMaterialAdapter extends RecyclerView.Adapter<StudyMaterialAdap
         StudyMaterial material = studyMaterials.get(position);
         Glide.with(context)
                 .load(material.getImageUrl())
-                .diskCacheStrategy(DiskCacheStrategy.NONE)
+                .diskCacheStrategy(DiskCacheStrategy.AUTOMATIC)
                 .skipMemoryCache(true)
                 .placeholder(R.drawable.placeholder_image)
                 .error(R.drawable.error_image)

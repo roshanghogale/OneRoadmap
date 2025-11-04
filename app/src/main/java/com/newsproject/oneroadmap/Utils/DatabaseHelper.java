@@ -4,7 +4,6 @@ import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
-import android.database.sqlite.SQLiteException;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.util.Log;
 
@@ -14,26 +13,34 @@ import java.util.HashSet;
 import java.util.Set;
 
 public class DatabaseHelper extends SQLiteOpenHelper {
+
     private static final String DATABASE_NAME = "user_db";
     private static final String TABLE_NAME = "users";
-    private static final String COL_USER_ID = "userId";
-    private static final String COL_USER_AVATAR = "userAvatar";
-    private static final String COL_NAME = "name";
-    private static final String COL_GENDER = "gender";
-    private static final String COL_UPSC = "upsc";
-    private static final String COL_MPSC = "mpsc";
-    private static final String COL_DEGREE = "degree";
-    private static final String COL_TWELFTH = "twelfth";
-    private static final String COL_POST_GRADUATION = "postGraduation";
-    private static final String COL_DISTRICT = "district";
-    private static final String COL_TALUKA = "taluka";
-    private static final String COL_CURRENT_AFFAIRS = "currentAffairs";
-    private static final String COL_JOBS = "jobs";
-    private static final String COL_AGE_GROUP = "ageGroup";
-    private static final String COL_COINS = "coins";
-    private static final String COL_EDUCATION = "education";
 
-    private static final int DATABASE_VERSION = 6; // Incremented due to schema changes
+    // Columns
+    private static final String COL_USER_ID          = "userId";
+    private static final String COL_USER_AVATAR      = "userAvatar";
+    private static final String COL_NAME             = "name";
+    private static final String COL_GENDER           = "gender";
+
+    // NEW study-material columns
+    private static final String COL_STUDY_GOV        = "study_Government";
+    private static final String COL_STUDY_POLICE     = "study_Police___Defence";
+    private static final String COL_STUDY_BANK       = "study_Banking";
+    private static final String COL_STUDY_SELF       = "study_Self_Improvement";
+
+    private static final String COL_DEGREE           = "degree";
+    private static final String COL_TWELFTH          = "twelfth";
+    private static final String COL_POST_GRADUATION  = "postGraduation";
+    private static final String COL_DISTRICT         = "district";
+    private static final String COL_TALUKA           = "taluka";
+    private static final String COL_CURRENT_AFFAIRS  = "currentAffairs";
+    private static final String COL_JOBS             = "jobs";
+    private static final String COL_AGE_GROUP        = "ageGroup";
+    private static final String COL_COINS            = "coins";
+    private static final String COL_EDUCATION        = "education";
+
+    private static final int DATABASE_VERSION = 7;   // <-- bump
 
     public DatabaseHelper(Context context) {
         super(context, DATABASE_NAME, null, DATABASE_VERSION);
@@ -41,249 +48,216 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
     @Override
     public void onCreate(SQLiteDatabase db) {
-        String createTable = "CREATE TABLE " + TABLE_NAME + " (" +
+        String sql = "CREATE TABLE " + TABLE_NAME + " (" +
                 COL_USER_ID + " TEXT PRIMARY KEY, " +
                 COL_USER_AVATAR + " TEXT, " +
                 COL_NAME + " TEXT, " +
                 COL_GENDER + " TEXT, " +
-                COL_UPSC + " INTEGER, " +
-                COL_MPSC + " INTEGER, " +
+
+                COL_STUDY_GOV + " INTEGER, " +
+                COL_STUDY_POLICE + " INTEGER, " +
+                COL_STUDY_BANK + " INTEGER, " +
+                COL_STUDY_SELF + " INTEGER, " +
+
                 COL_DEGREE + " TEXT, " +
                 COL_TWELFTH + " TEXT, " +
                 COL_POST_GRADUATION + " TEXT, " +
                 COL_DISTRICT + " TEXT, " +
                 COL_TALUKA + " TEXT, " +
-                COL_CURRENT_AFFAIRS + " INTEGER, " + // Changed to INTEGER
-                COL_JOBS + " INTEGER, " +            // Changed to INTEGER
+                COL_CURRENT_AFFAIRS + " INTEGER, " +
+                COL_JOBS + " INTEGER, " +
                 COL_AGE_GROUP + " TEXT, " +
                 COL_COINS + " INTEGER DEFAULT 0, " +
                 COL_EDUCATION + " TEXT)";
-        db.execSQL(createTable);
+        db.execSQL(sql);
     }
 
     @Override
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
+        // Keep previous upgrades (coins, education, etc.) …
         if (oldVersion < 2) {
             db.execSQL("ALTER TABLE " + TABLE_NAME + " ADD COLUMN " + COL_COINS + " INTEGER DEFAULT 0");
         }
         if (oldVersion < 3) {
-            String[] expectedColumns = {
-                    COL_USER_ID, COL_USER_AVATAR, COL_NAME, COL_GENDER, COL_UPSC, COL_MPSC,
-                    COL_DEGREE, COL_TWELFTH, COL_POST_GRADUATION, COL_DISTRICT, COL_TALUKA,
-                    COL_CURRENT_AFFAIRS, COL_JOBS, COL_AGE_GROUP, COL_COINS, COL_EDUCATION
-            };
-            Set<String> existingColumns = getExistingColumns(db);
-            for (String column : expectedColumns) {
-                if (!existingColumns.contains(column)) {
-                    String columnType = column.equals(COL_COINS) || column.equals(COL_UPSC) ||
-                            column.equals(COL_MPSC) || column.equals(COL_CURRENT_AFFAIRS) ||
-                            column.equals(COL_JOBS) ? "INTEGER" : "TEXT";
-                    try {
-                        db.execSQL("ALTER TABLE " + TABLE_NAME + " ADD COLUMN " + column + " " + columnType);
-                    } catch (SQLiteException e) {
-                        // Log error but continue
-                    }
-                }
-            }
+            // add missing columns safely
+            addMissingColumns(db);
         }
         if (oldVersion < 4) {
-            try {
-                db.execSQL("ALTER TABLE " + TABLE_NAME + " ADD COLUMN " + COL_EDUCATION + " TEXT");
-            } catch (SQLiteException e) {
-                // Log error but continue
-            }
+            try { db.execSQL("ALTER TABLE " + TABLE_NAME + " ADD COLUMN " + COL_EDUCATION + " TEXT"); }
+            catch (Exception ignored) {}
         }
         if (oldVersion < 5) {
-            try {
-                db.execSQL("ALTER TABLE " + TABLE_NAME + " ADD COLUMN " + COL_UPSC + " INTEGER");
-                db.execSQL("ALTER TABLE " + TABLE_NAME + " ADD COLUMN " + COL_MPSC + " INTEGER");
-                db.execSQL("ALTER TABLE " + TABLE_NAME + " DROP COLUMN studyMaterial");
-            } catch (SQLiteException e) {
-                // Log error but continue
-            }
+            // old upsc/mpsc handling – remove them if they exist
+            try { db.execSQL("ALTER TABLE " + TABLE_NAME + " ADD COLUMN upsc INTEGER"); }
+            catch (Exception ignored) {}
+            try { db.execSQL("ALTER TABLE " + TABLE_NAME + " ADD COLUMN mpsc INTEGER"); }
+            catch (Exception ignored) {}
         }
         if (oldVersion < 6) {
-            try {
-                // Convert currentAffairs and jobs to INTEGER
-                db.execSQL("ALTER TABLE " + TABLE_NAME + " RENAME TO temp_users");
-                onCreate(db); // Create new table with updated schema
-                db.execSQL("INSERT INTO " + TABLE_NAME + " (" +
-                        COL_USER_ID + "," + COL_USER_AVATAR + "," + COL_NAME + "," + COL_GENDER + "," +
-                        COL_UPSC + "," + COL_MPSC + "," + COL_DEGREE + "," + COL_TWELFTH + "," +
-                        COL_POST_GRADUATION + "," + COL_DISTRICT + "," + COL_TALUKA + "," +
-                        COL_CURRENT_AFFAIRS + "," + COL_JOBS + "," + COL_AGE_GROUP + "," +
-                        COL_COINS + "," + COL_EDUCATION + ") " +
-                        "SELECT " +
-                        COL_USER_ID + "," + COL_USER_AVATAR + "," + COL_NAME + "," + COL_GENDER + "," +
-                        COL_UPSC + "," + COL_MPSC + "," + COL_DEGREE + "," + COL_TWELFTH + "," +
-                        COL_POST_GRADUATION + "," + COL_DISTRICT + "," + COL_TALUKA + "," +
-                        "CASE WHEN " + COL_CURRENT_AFFAIRS + " = 'हो' THEN 1 ELSE 0 END," +
-                        "CASE WHEN " + COL_JOBS + " = 'हो' THEN 1 ELSE 0 END," +
-                        COL_AGE_GROUP + "," + COL_COINS + "," + COL_EDUCATION + " " +
-                        "FROM temp_users");
-                db.execSQL("DROP TABLE temp_users");
-            } catch (SQLiteException e) {
-                // Log error but continue
+            // convert currentAffairs / jobs to INTEGER (same as before)
+            convertBooleanColumnsToInt(db);
+        }
+
+        // ---- NEW VERSION 7: add the 4 study columns & drop old upsc/mpsc ----
+        if (oldVersion < 7) {
+            // Add new columns if missing
+            String[] newCols = {COL_STUDY_GOV, COL_STUDY_POLICE, COL_STUDY_BANK, COL_STUDY_SELF};
+            for (String col : newCols) {
+                try { db.execSQL("ALTER TABLE " + TABLE_NAME + " ADD COLUMN " + col + " INTEGER"); }
+                catch (Exception ignored) {}
+            }
+
+            // Remove old upsc/mpsc if they exist
+            try { db.execSQL("ALTER TABLE " + TABLE_NAME + " DROP COLUMN upsc"); }
+            catch (Exception ignored) {}
+            try { db.execSQL("ALTER TABLE " + TABLE_NAME + " DROP COLUMN mpsc"); }
+            catch (Exception ignored) {}
+        }
+    }
+
+    private void addMissingColumns(SQLiteDatabase db) {
+        String[] expected = {
+                COL_USER_ID, COL_USER_AVATAR, COL_NAME, COL_GENDER,
+                COL_STUDY_GOV, COL_STUDY_POLICE, COL_STUDY_BANK, COL_STUDY_SELF,
+                COL_DEGREE, COL_TWELFTH, COL_POST_GRADUATION,
+                COL_DISTRICT, COL_TALUKA, COL_CURRENT_AFFAIRS,
+                COL_JOBS, COL_AGE_GROUP, COL_COINS, COL_EDUCATION
+        };
+        Set<String> existing = getExistingColumns(db);
+        for (String col : expected) {
+            if (!existing.contains(col)) {
+                String type = (col.contains("study_") || col.equals(COL_CURRENT_AFFAIRS) ||
+                        col.equals(COL_JOBS) || col.equals(COL_COINS)) ? "INTEGER" : "TEXT";
+                try { db.execSQL("ALTER TABLE " + TABLE_NAME + " ADD COLUMN " + col + " " + type); }
+                catch (Exception ignored) {}
             }
         }
+    }
+
+    private void convertBooleanColumnsToInt(SQLiteDatabase db) {
+        // Same logic you already had for version 6
+        try {
+            db.execSQL("ALTER TABLE " + TABLE_NAME + " RENAME TO temp_users");
+            onCreate(db);
+            db.execSQL("INSERT INTO " + TABLE_NAME + " SELECT *, " +
+                    "CASE WHEN currentAffairs='हो' THEN 1 ELSE 0 END, " +
+                    "CASE WHEN jobs='हो' THEN 1 ELSE 0 END " +
+                    "FROM temp_users");
+            db.execSQL("DROP TABLE temp_users");
+        } catch (Exception ignored) {}
     }
 
     private Set<String> getExistingColumns(SQLiteDatabase db) {
-        Set<String> columns = new HashSet<>();
-        try (Cursor cursor = db.rawQuery("PRAGMA table_info(" + TABLE_NAME + ")", null)) {
-            if (cursor != null) {
-                int nameIndex = cursor.getColumnIndex("name");
-                while (cursor.moveToNext()) {
-                    if (nameIndex != -1) {
-                        columns.add(cursor.getString(nameIndex));
-                    }
-                }
+        Set<String> set = new HashSet<>();
+        try (Cursor c = db.rawQuery("PRAGMA table_info(" + TABLE_NAME + ")", null)) {
+            int nameIdx = c.getColumnIndex("name");
+            while (c.moveToNext()) {
+                if (nameIdx != -1) set.add(c.getString(nameIdx));
             }
-        } catch (Exception e) {
-            // Handle error silently
-        }
-        return columns;
+        } catch (Exception ignored) {}
+        return set;
     }
 
+    /* ---------------------------------------------------- */
     public User getUser(String userId) {
         SQLiteDatabase db = this.getReadableDatabase();
-        Cursor cursor = null;
-        User user = null;
-
+        Cursor cur = null;
+        User u = null;
         try {
-            cursor = db.query(TABLE_NAME,
-                    new String[]{COL_USER_ID, COL_USER_AVATAR, COL_NAME, COL_GENDER, COL_UPSC, COL_MPSC,
-                            COL_DEGREE, COL_TWELFTH, COL_POST_GRADUATION, COL_DISTRICT,
-                            COL_TALUKA, COL_CURRENT_AFFAIRS, COL_JOBS, COL_AGE_GROUP,
-                            COL_COINS, COL_EDUCATION},
-                    COL_USER_ID + "=?", new String[]{userId},
-                    null, null, null);
+            cur = db.query(TABLE_NAME,
+                    new String[]{COL_USER_ID, COL_USER_AVATAR, COL_NAME, COL_GENDER,
+                            COL_STUDY_GOV, COL_STUDY_POLICE, COL_STUDY_BANK, COL_STUDY_SELF,
+                            COL_DEGREE, COL_TWELFTH, COL_POST_GRADUATION,
+                            COL_DISTRICT, COL_TALUKA, COL_CURRENT_AFFAIRS,
+                            COL_JOBS, COL_AGE_GROUP, COL_COINS, COL_EDUCATION},
+                    COL_USER_ID + "=?", new String[]{userId}, null, null, null);
 
-            if (cursor != null && cursor.moveToFirst()) {
-                user = new User(
-                        cursor.getString(cursor.getColumnIndexOrThrow(COL_USER_ID)),
-                        cursor.getString(cursor.getColumnIndexOrThrow(COL_NAME)),
-                        cursor.getString(cursor.getColumnIndexOrThrow(COL_GENDER)),
-                        cursor.getString(cursor.getColumnIndexOrThrow(COL_USER_AVATAR)),
-                        cursor.getInt(cursor.getColumnIndexOrThrow(COL_UPSC)) == 1,
-                        cursor.getInt(cursor.getColumnIndexOrThrow(COL_MPSC)) == 1,
-                        cursor.getString(cursor.getColumnIndexOrThrow(COL_DEGREE)),
-                        cursor.getString(cursor.getColumnIndexOrThrow(COL_POST_GRADUATION)),
-                        cursor.getString(cursor.getColumnIndexOrThrow(COL_DISTRICT)),
-                        cursor.getString(cursor.getColumnIndexOrThrow(COL_TALUKA)),
-                        cursor.getInt(cursor.getColumnIndexOrThrow(COL_CURRENT_AFFAIRS)) == 1,
-                        cursor.getInt(cursor.getColumnIndexOrThrow(COL_JOBS)) == 1,
-                        cursor.getString(cursor.getColumnIndexOrThrow(COL_AGE_GROUP)),
-                        cursor.getString(cursor.getColumnIndexOrThrow(COL_EDUCATION)),
-                        cursor.getString(cursor.getColumnIndexOrThrow(COL_TWELFTH))
+            if (cur != null && cur.moveToFirst()) {
+                u = new User(
+                        cur.getString(cur.getColumnIndexOrThrow(COL_USER_ID)),
+                        cur.getString(cur.getColumnIndexOrThrow(COL_NAME)),
+                        cur.getString(cur.getColumnIndexOrThrow(COL_GENDER)),
+                        cur.getString(cur.getColumnIndexOrThrow(COL_USER_AVATAR)),
+
+                        cur.getInt(cur.getColumnIndexOrThrow(COL_STUDY_GOV)) == 1,
+                        cur.getInt(cur.getColumnIndexOrThrow(COL_STUDY_POLICE)) == 1,
+                        cur.getInt(cur.getColumnIndexOrThrow(COL_STUDY_BANK)) == 1,
+                        cur.getInt(cur.getColumnIndexOrThrow(COL_STUDY_SELF)) == 1,
+
+                        cur.getString(cur.getColumnIndexOrThrow(COL_DEGREE)),
+                        cur.getString(cur.getColumnIndexOrThrow(COL_POST_GRADUATION)),
+                        cur.getString(cur.getColumnIndexOrThrow(COL_DISTRICT)),
+                        cur.getString(cur.getColumnIndexOrThrow(COL_TALUKA)),
+                        cur.getInt(cur.getColumnIndexOrThrow(COL_CURRENT_AFFAIRS)) == 1,
+                        cur.getInt(cur.getColumnIndexOrThrow(COL_JOBS)) == 1,
+                        cur.getString(cur.getColumnIndexOrThrow(COL_AGE_GROUP)),
+                        cur.getString(cur.getColumnIndexOrThrow(COL_EDUCATION)),
+                        cur.getString(cur.getColumnIndexOrThrow(COL_TWELFTH))
                 );
             }
-        } catch (SQLiteException e) {
-            Log.e("DatabaseHelper", "Error retrieving user: " + e.getMessage());
+        } catch (Exception e) {
+            Log.e("DB", "getUser error: " + e.getMessage());
         } finally {
-            if (cursor != null) {
-                cursor.close();
-            }
-            if (db != null && db.isOpen()) {
-                db.close();
-            }
+            if (cur != null) cur.close();
+            db.close();
         }
-        return user;
+        return u;
     }
 
-    public void insertUser(User user) throws Exception {
-        SQLiteDatabase db = null;
-        try {
-            db = this.getWritableDatabase();
-            ContentValues values = new ContentValues();
-            values.put(COL_USER_ID, user.getUserId());
-            values.put(COL_USER_AVATAR, user.getAvatar());
-            values.put(COL_NAME, user.getName());
-            values.put(COL_GENDER, user.getGender());
-            values.put(COL_UPSC, user.isUpsc() ? 1 : 0);
-            values.put(COL_MPSC, user.isMpsc() ? 1 : 0);
-            values.put(COL_DEGREE, user.getDegree());
-            values.put(COL_TWELFTH, user.getTwelfth());
-            values.put(COL_POST_GRADUATION, user.getPostGraduation());
-            values.put(COL_DISTRICT, user.getDistrict());
-            values.put(COL_TALUKA, user.getTaluka());
-            values.put(COL_CURRENT_AFFAIRS, user.isCurrentAffairs() ? 1 : 0);
-            values.put(COL_JOBS, user.isJobs() ? 1 : 0);
-            values.put(COL_AGE_GROUP, user.getAgeGroup());
-            values.put(COL_COINS, 0);
-            values.put(COL_EDUCATION, user.getEducation());
+    public void insertUser(User u) throws Exception {
+        SQLiteDatabase db = this.getWritableDatabase();
+        ContentValues cv = new ContentValues();
+        cv.put(COL_USER_ID, u.getUserId());
+        cv.put(COL_USER_AVATAR, u.getAvatar());
+        cv.put(COL_NAME, u.getName());
+        cv.put(COL_GENDER, u.getGender());
 
-            String query = "INSERT INTO " + TABLE_NAME + " (" +
-                    COL_USER_ID + "," + COL_USER_AVATAR + "," + COL_NAME + "," + COL_GENDER + "," +
-                    COL_UPSC + "," + COL_MPSC + "," + COL_DEGREE + "," + COL_TWELFTH + "," +
-                    COL_POST_GRADUATION + "," + COL_DISTRICT + "," + COL_TALUKA + "," +
-                    COL_CURRENT_AFFAIRS + "," + COL_JOBS + "," + COL_AGE_GROUP + "," +
-                    COL_COINS + "," + COL_EDUCATION + ") VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
-            String params = "Parameters: [" +
-                    user.getUserId() + ", " + user.getAvatar() + ", " + user.getName() + ", " +
-                    user.getGender() + ", " + (user.isUpsc() ? 1 : 0) + ", " + (user.isMpsc() ? 1 : 0) + ", " +
-                    user.getDegree() + ", " + user.getTwelfth() + ", " + user.getPostGraduation() + ", " +
-                    user.getDistrict() + ", " + user.getTaluka() + ", " + (user.isCurrentAffairs() ? 1 : 0) + ", " +
-                    (user.isJobs() ? 1 : 0) + ", " + user.getAgeGroup() + ", 0, " + user.getEducation() + "]";
+        cv.put(COL_STUDY_GOV, u.isStudyGovernment() ? 1 : 0);
+        cv.put(COL_STUDY_POLICE, u.isStudyPoliceDefence() ? 1 : 0);
+        cv.put(COL_STUDY_BANK, u.isStudyBanking() ? 1 : 0);
+        cv.put(COL_STUDY_SELF, u.isStudySelfImprovement() ? 1 : 0);
 
-            long result = db.insertOrThrow(TABLE_NAME, null, values);
-            if (result == -1) {
-                throw new SQLiteException("Failed to insert user: Unknown database error\nQuery: " + query + "\n" + params);
-            }
-        } catch (SQLiteException e) {
-            throw new Exception("SQLite error: " + e.getMessage() + "\nStackTrace: " + getStackTraceAsString(e));
-        } finally {
-            if (db != null && db.isOpen()) {
-                db.close();
-            }
-        }
+        cv.put(COL_DEGREE, u.getDegree());
+        cv.put(COL_TWELFTH, u.getTwelfth());
+        cv.put(COL_POST_GRADUATION, u.getPostGraduation());
+        cv.put(COL_DISTRICT, u.getDistrict());
+        cv.put(COL_TALUKA, u.getTaluka());
+        cv.put(COL_CURRENT_AFFAIRS, u.isCurrentAffairs() ? 1 : 0);
+        cv.put(COL_JOBS, u.isJobs() ? 1 : 0);
+        cv.put(COL_AGE_GROUP, u.getAgeGroup());
+        cv.put(COL_COINS, 0);
+        cv.put(COL_EDUCATION, u.getEducation());
+
+        long r = db.insertOrThrow(TABLE_NAME, null, cv);
+        db.close();
+        if (r == -1) throw new Exception("Insert failed");
     }
 
-    public void updateUser(User user) throws Exception {
-        SQLiteDatabase db = null;
-        try {
-            db = this.getWritableDatabase();
-            ContentValues values = new ContentValues();
-            values.put(COL_USER_AVATAR, user.getAvatar());
-            values.put(COL_NAME, user.getName());
-            values.put(COL_GENDER, user.getGender());
-            values.put(COL_UPSC, user.isUpsc() ? 1 : 0);
-            values.put(COL_MPSC, user.isMpsc() ? 1 : 0);
-            values.put(COL_DEGREE, user.getDegree());
-            values.put(COL_TWELFTH, user.getTwelfth());
-            values.put(COL_POST_GRADUATION, user.getPostGraduation());
-            values.put(COL_DISTRICT, user.getDistrict());
-            values.put(COL_TALUKA, user.getTaluka());
-            values.put(COL_CURRENT_AFFAIRS, user.isCurrentAffairs() ? 1 : 0);
-            values.put(COL_JOBS, user.isJobs() ? 1 : 0);
-            values.put(COL_AGE_GROUP, user.getAgeGroup());
-            values.put(COL_EDUCATION, user.getEducation());
+    public void updateUser(User u) throws Exception {
+        SQLiteDatabase db = this.getWritableDatabase();
+        ContentValues cv = new ContentValues();
+        cv.put(COL_USER_AVATAR, u.getAvatar());
+        cv.put(COL_NAME, u.getName());
+        cv.put(COL_GENDER, u.getGender());
 
-            String query = "UPDATE " + TABLE_NAME + " SET " +
-                    COL_USER_AVATAR + "=?, " + COL_NAME + "=?, " + COL_GENDER + "=?, " +
-                    COL_UPSC + "=?, " + COL_MPSC + "=?, " + COL_DEGREE + "=?, " +
-                    COL_TWELFTH + "=?, " + COL_POST_GRADUATION + "=?, " + COL_DISTRICT + "=?, " +
-                    COL_TALUKA + "=?, " + COL_CURRENT_AFFAIRS + "=?, " + COL_JOBS + "=?, " +
-                    COL_AGE_GROUP + "=?, " + COL_EDUCATION + "=? WHERE " + COL_USER_ID + "=?";
-            String params = "Parameters: [" +
-                    user.getAvatar() + ", " + user.getName() + ", " + user.getGender() + ", " +
-                    (user.isUpsc() ? 1 : 0) + ", " + (user.isMpsc() ? 1 : 0) + ", " +
-                    user.getDegree() + ", " + user.getTwelfth() + ", " + user.getPostGraduation() + ", " +
-                    user.getDistrict() + ", " + user.getTaluka() + ", " + (user.isCurrentAffairs() ? 1 : 0) + ", " +
-                    (user.isJobs() ? 1 : 0) + ", " + user.getAgeGroup() + ", " + user.getEducation() + ", " +
-                    user.getUserId() + "]";
+        cv.put(COL_STUDY_GOV, u.isStudyGovernment() ? 1 : 0);
+        cv.put(COL_STUDY_POLICE, u.isStudyPoliceDefence() ? 1 : 0);
+        cv.put(COL_STUDY_BANK, u.isStudyBanking() ? 1 : 0);
+        cv.put(COL_STUDY_SELF, u.isStudySelfImprovement() ? 1 : 0);
 
-            int rowsAffected = db.update(TABLE_NAME, values, COL_USER_ID + "=?", new String[]{user.getUserId()});
-            if (rowsAffected == 0) {
-                throw new SQLiteException("User not found for update: " + user.getUserId() + "\nQuery: " + query + "\n" + params);
-            }
-        } catch (SQLiteException e) {
-            throw new Exception("SQLite update error: " + e.getMessage() + "\nStackTrace: " + getStackTraceAsString(e));
-        } finally {
-            if (db != null && db.isOpen()) {
-                db.close();
-            }
-        }
+        cv.put(COL_DEGREE, u.getDegree());
+        cv.put(COL_TWELFTH, u.getTwelfth());
+        cv.put(COL_POST_GRADUATION, u.getPostGraduation());
+        cv.put(COL_DISTRICT, u.getDistrict());
+        cv.put(COL_TALUKA, u.getTaluka());
+        cv.put(COL_CURRENT_AFFAIRS, u.isCurrentAffairs() ? 1 : 0);
+        cv.put(COL_JOBS, u.isJobs() ? 1 : 0);
+        cv.put(COL_AGE_GROUP, u.getAgeGroup());
+        cv.put(COL_EDUCATION, u.getEducation());
+
+        int rows = db.update(TABLE_NAME, cv, COL_USER_ID + "=?", new String[]{u.getUserId()});
+        db.close();
+        if (rows == 0) throw new Exception("User not found for update");
     }
 
     public void updateUserCoins(String userId, int coins) {

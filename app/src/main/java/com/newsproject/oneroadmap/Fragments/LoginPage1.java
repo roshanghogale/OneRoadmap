@@ -76,7 +76,7 @@ public class LoginPage1 extends Fragment implements AvatarAdapter.OnAvatarClickL
 
         // Setup Spinner
         List<String> ageGroupOptions = new ArrayList<>(Arrays.asList(
-                "Select Age Group", "18-25", "26-35", "36-45", "46+"
+                "Select Age Group", "१४ ते १८ ", "१९ ते २५", "२६ ते ३१", "३२ पेक्षा जास्त "
         ));
         ArrayAdapter<String> adapter = new ArrayAdapter<>(
                 requireContext(),
