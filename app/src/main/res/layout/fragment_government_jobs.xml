@@ -105,16 +105,14 @@
                 android:id="@+id/carousel_card"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginStart="12dp"
                 android:layout_marginTop="12dp"
-                android:layout_marginEnd="12dp"
-                app:cardCornerRadius="24dp"
+                app:cardCornerRadius="0dp"
                 app:cardElevation="0dp">
 
                 <org.imaginativeworld.whynotimagecarousel.ImageCarousel
                     android:id="@+id/carousel"
                     android:layout_width="match_parent"
-                    android:layout_height="195dp"
+                    android:layout_height="213.3dp"
                     app:autoPlay="true"
                     app:showBottomShadow="false"
                     app:showCaption="false"

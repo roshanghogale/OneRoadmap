@@ -21,20 +21,20 @@ import com.bumptech.glide.Glide;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.newsproject.oneroadmap.Adapters.RecentlyOpenedAdapter;
 import com.newsproject.oneroadmap.Models.JobUpdate;
-import com.newsproject.oneroadmap.Models.RecentlyOpenedItem;
 import com.newsproject.oneroadmap.R;
 import com.newsproject.oneroadmap.Utils.TimeAgoUtil;
+import com.newsproject.oneroadmap.database.RecentlyOpenedDatabaseHelper;
 import com.newsproject.oneroadmap.database.SavedJobsDatabaseHelper;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 public class JobUpdateDetails extends Fragment {
     private static final String TAG = "JobUpdateDetails";
     private Handler handler;
     private JobUpdate jobUpdate;
     private SavedJobsDatabaseHelper dbHelper;
+    private RecentlyOpenedDatabaseHelper recentDb;
     private ImageView saveButton;
 
     public JobUpdateDetails() {
@@ -85,12 +85,13 @@ public class JobUpdateDetails extends Fragment {
 
         handler = new Handler(Looper.getMainLooper());
         dbHelper = new SavedJobsDatabaseHelper(requireContext());
+        recentDb = new RecentlyOpenedDatabaseHelper(requireContext());
         saveButton = view.findViewById(R.id.imageView3); // Save icon
 
-// Set initial icon
+        // Set initial icon
         updateSaveButtonIcon();
 
-// Save/Unsave on click
+        // Save/Unsave on click
         saveButton.setOnClickListener(v -> {
             if (jobUpdate == null) return;
 
@@ -161,6 +162,10 @@ public class JobUpdateDetails extends Fragment {
         setupLink(view, R.id.selection_pdf_container, R.id.textView48, jobUpdate.getSelectionPdfLink(), "सिलेक्शन PDF");
         setupLink(view, R.id.syllabus_pdf_container, R.id.textView44, jobUpdate.getSyllabusPdf(), "अभ्यासक्रम PDF");
 
+        // Save to Recently Opened FIRST
+        recentDb.addOrUpdateJob(jobUpdate);
+
+        // Then load the list (excludes current job)
         loadRecentlyOpened(view);
     }
 
@@ -181,12 +186,6 @@ public class JobUpdateDetails extends Fragment {
     }
 
     private void fetchJobUpdate(String documentId, View view) {
-        if (jobUpdate != null) {
-            Log.d(TAG, "JobUpdate already available, skipping Firebase fetch");
-            populateUIFromObject(view);
-            return;
-        }
-
         FirebaseFirestore db = FirebaseFirestore.getInstance();
         db.collection("jobUpdate").document(documentId).get()
                 .addOnSuccessListener(documentSnapshot -> {
@@ -197,7 +196,7 @@ public class JobUpdateDetails extends Fragment {
                             if (jobUpdate != null) {
                                 jobUpdate.setDocumentId(documentId);
                                 jobUpdate.setTimeAgo(TimeAgoUtil.getTimeAgo(jobUpdate.getTimestamp()));
-                                populateUIFromObject(view);
+                                populateUIFromObject(view);  // This handles save + load
                             } else {
                                 Log.e(TAG, "Failed to deserialize JobUpdate for document: " + documentId);
                                 Toast.makeText(requireContext(), "Failed to load job data", Toast.LENGTH_SHORT).show();
@@ -222,17 +221,47 @@ public class JobUpdateDetails extends Fragment {
 
     private void loadRecentlyOpened(View view) {
         RecyclerView recyclerView = view.findViewById(R.id.recent_post_recyler);
-        recyclerView.setLayoutManager(new LinearLayoutManager(getContext(), LinearLayoutManager.HORIZONTAL, false));
 
-        List<RecentlyOpenedItem> dummyList = new ArrayList<>();
-        dummyList.add(new RecentlyOpenedItem(R.drawable.hdfc_bank3x, "३१ सप्टेंबर २०२४", "सार्वजनिक सेवा विभाग", "प्रशासकीय सहाय्यक"));
-        dummyList.add(new RecentlyOpenedItem(R.drawable.hdfc_bank3x, "१५ ऑक्टोबर २०२४", "महानगरपालिका", "लिपिक"));
-        dummyList.add(new RecentlyOpenedItem(R.drawable.hdfc_bank3x, "०५ नोव्हेंबर २०२४", "पोलीस भरती", "कॉन्स्टेबल"));
-        dummyList.add(new RecentlyOpenedItem(R.drawable.hdfc_bank3x, "३१ सप्टेंबर २०२४", "सार्वजनिक सेवा विभाग", "प्रशासकीय सहाय्यक"));
-        dummyList.add(new RecentlyOpenedItem(R.drawable.hdfc_bank3x, "१५ ऑक्टोबर २०२४", "महानगरपालिका", "लिपिक"));
-        dummyList.add(new RecentlyOpenedItem(R.drawable.hdfc_bank3x, "०५ नोव्हेंबर २०२४", "पोलीस भरती", "कॉन्स्टेबल"));
+        // ---- 1. find the views that belong to the block -----------------
+        TextView tvTitle   = view.findViewById(R.id.textView38);   // "Recent Result"
+        // (optional) you could also hide the whole container if you wrap them
 
-        RecentlyOpenedAdapter adapter = new RecentlyOpenedAdapter(dummyList);
-        recyclerView.setAdapter(adapter);
+        recyclerView.setLayoutManager(
+                new LinearLayoutManager(getContext(), LinearLayoutManager.HORIZONTAL, false));
+
+        List<JobUpdate> allRecent = recentDb.getAllRecent();
+        List<JobUpdate> filtered = new ArrayList<>();
+
+        // Exclude current job
+        if (jobUpdate != null) {
+            for (JobUpdate j : allRecent) {
+                if (!j.getDocumentId().equals(jobUpdate.getDocumentId())) {
+                    filtered.add(j);
+                }
+            }
+        } else {
+            filtered.addAll(allRecent);
+        }
+
+        // ---- 2. decide visibility ---------------------------------------
+        int itemCount = filtered.size();
+        boolean hasItems = itemCount > 0;
+
+        tvTitle.setVisibility(hasItems ? View.VISIBLE : View.GONE);
+        recyclerView.setVisibility(hasItems ? View.VISIBLE : View.GONE);
+
+        // ---- 3. set adapter (only when there are items) -----------------
+        if (hasItems) {
+            RecentlyOpenedAdapter adapter = new RecentlyOpenedAdapter(filtered, job -> {
+                requireActivity().getSupportFragmentManager()
+                        .beginTransaction()
+                        .replace(R.id.fragment_container, JobUpdateDetails.newInstance(job))
+                        .addToBackStack(null)
+                        .commit();
+            });
+            recyclerView.setAdapter(adapter);
+        } else {
+            recyclerView.setAdapter(null);   // clear any previous adapter
+        }
     }
 }
