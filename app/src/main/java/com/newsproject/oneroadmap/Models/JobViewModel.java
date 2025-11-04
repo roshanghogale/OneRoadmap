@@ -20,10 +20,14 @@ import com.newsproject.oneroadmap.R;
 import com.newsproject.oneroadmap.Utils.BuildConfig;
 
 import java.io.IOException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
+import java.util.TimeZone;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -680,12 +684,18 @@ public class JobViewModel extends ViewModel {
             }
             String created = job.getCreatedAtString();
             if (created != null && !created.isEmpty()) {
-                java.text.SimpleDateFormat iso = new java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", java.util.Locale.US);
-                java.util.Date d = iso.parse(created);
-                if (d != null) return d.getTime();
+                // New format: "28/10/2025, 4:09:31 pm"
+                SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy, h:mm:ss a", Locale.US);
+                sdf.setTimeZone(TimeZone.getTimeZone("Asia/Kolkata")); // IST
+                Date date = sdf.parse(created);
+                if (date != null) {
+                    return date.getTime();
+                }
             }
-        } catch (Exception ignored) {}
-        return 0L;
+        } catch (Exception e) {
+            Log.e(TAG, "Failed to parse created_at: " + job.getCreatedAtString(), e);
+        }
+        return 0L; // fallback
     }
 
     private String normalizeBankingSubType(String value) {

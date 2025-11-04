@@ -85,7 +85,7 @@ import okhttp3.Response;
 
 public class HomeFragment extends Fragment {
     private CircleImageView top5ImageView;
-    private LinearLayout circularProgressBar;
+    private LinearLayout circularProgressBar, saveButton;
     private TextView top5TitleView;
     private TextView top5TimeAgoView;
     private RecyclerView storyRecycler;
@@ -276,6 +276,7 @@ public class HomeFragment extends Fragment {
 
     private void initViews(View view) {
         Log.d(TAG, "initViews called");
+        saveButton = view.findViewById(R.id.save_button);
         circularProgressBar = view.findViewById(R.id.top5_progress_border);
         top5ImageView = view.findViewById(R.id.top5_image_view);
         top5TitleView = view.findViewById(R.id.top5_title);
@@ -377,6 +378,16 @@ public class HomeFragment extends Fragment {
 
     private void setupClickListeners() {
         Log.d(TAG, "setupClickListeners called");
+        saveButton.setOnClickListener(v -> {
+            // No JobUpdate or DBHelper needed here – we just open the list
+            requireActivity()
+                    .getSupportFragmentManager()
+                    .beginTransaction()
+                    .replace(R.id.fragment_container, new SavedJobsFragment())
+                    .addToBackStack(null)          // optional – lets user press Back
+                    .commit();
+        });
+
         allStudentUpdates.setOnClickListener(v -> {
             FragmentTransaction transaction = getParentFragmentManager().beginTransaction();
             transaction.replace(R.id.fragment_container, new AllBannersList());
@@ -810,12 +821,23 @@ public class HomeFragment extends Fragment {
                         mainHandler.post(() -> {
                             Glide.with(getContext())
                                     .load(finalIconUrl)
-                                    .placeholder(R.drawable.placeholder_image) // Add a placeholder if needed
-                                    .error(R.drawable.error_image) // Add an error image if needed
+                                    .placeholder(R.drawable.placeholder_image)
+                                    .error(R.drawable.error_image)
                                     .into(top5ImageView);
+
                             top5TitleView.setText("Daily Paper");
                             top5TimeAgoView.setText(finalTimeAgo);
-                            top5PdfUrl = finalPdfUrl;
+                            top5PdfUrl = finalPdfUrl;  // <-- you already have this
+
+                            // ADD THIS CLICK LISTENER
+                            top5ImageView.setOnClickListener(v -> {
+                                if (finalPdfUrl != null && !finalPdfUrl.isEmpty()) {
+                                    openPdfViewer(finalPdfUrl);
+                                } else {
+                                    Toast.makeText(getContext(), "PDF not available", Toast.LENGTH_SHORT).show();
+                                }
+                            });
+
                             Log.d(TAG, "Loaded daily paper icon and set PDF URL");
                         });
                     } else {
@@ -838,6 +860,21 @@ public class HomeFragment extends Fragment {
                 }
             }
         });
+    }
+
+    private void openPdfViewer(String pdfUrl) {
+        PDFViewerFragment pdfFragment = PDFViewerFragment.newInstance(pdfUrl);
+        getParentFragmentManager()
+                .beginTransaction()
+                .setCustomAnimations(
+                        R.anim.slide_in_up,      // enter
+                        R.anim.fade_out,         // exit
+                        R.anim.fade_in,          // popEnter
+                        R.anim.slide_out_down    // popExit
+                )
+                .replace(R.id.fragment_container, pdfFragment)  // your container ID
+                .addToBackStack("pdf_viewer")
+                .commit();
     }
 
     private String buildFullUrl(String filePath) {

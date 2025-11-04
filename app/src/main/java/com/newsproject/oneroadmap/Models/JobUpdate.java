@@ -2,7 +2,6 @@ package com.newsproject.oneroadmap.Models;
 
 import android.os.Parcel;
 import android.os.Parcelable;
-import android.util.Log;
 
 import androidx.annotation.NonNull;
 
@@ -190,17 +189,16 @@ public class JobUpdate implements Parcelable {
     }
 
     public String getFormattedLastDate() {
-        return getFormattedLastDateInternal(Locale.US, false);
+        // Use India locale, English digits
+        return getFormattedLastDateInternal(new Locale("en", "IN"), false);
     }
+
 
     public String getTimeAgo() {
         if (timestamp != null) {
             return TimeAgoUtil.getTimeAgo(timestamp);
         }
-        if (createdAtString != null && !createdAtString.isEmpty()) {
-            return TimeAgoUtil.getTimeAgo(createdAtString);
-        }
-        return "Unknown";
+        return TimeAgoUtil.getTimeAgo(createdAtString);
     }
 
     public String getEducationSummary() {

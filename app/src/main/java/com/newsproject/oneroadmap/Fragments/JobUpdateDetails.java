@@ -24,6 +24,7 @@ import com.newsproject.oneroadmap.Models.JobUpdate;
 import com.newsproject.oneroadmap.Models.RecentlyOpenedItem;
 import com.newsproject.oneroadmap.R;
 import com.newsproject.oneroadmap.Utils.TimeAgoUtil;
+import com.newsproject.oneroadmap.database.SavedJobsDatabaseHelper;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -33,6 +34,8 @@ public class JobUpdateDetails extends Fragment {
     private static final String TAG = "JobUpdateDetails";
     private Handler handler;
     private JobUpdate jobUpdate;
+    private SavedJobsDatabaseHelper dbHelper;
+    private ImageView saveButton;
 
     public JobUpdateDetails() {
         // Required empty public constructor
@@ -81,6 +84,25 @@ public class JobUpdateDetails extends Fragment {
         View view = inflater.inflate(R.layout.fragment_job_update_details, container, false);
 
         handler = new Handler(Looper.getMainLooper());
+        dbHelper = new SavedJobsDatabaseHelper(requireContext());
+        saveButton = view.findViewById(R.id.imageView3); // Save icon
+
+// Set initial icon
+        updateSaveButtonIcon();
+
+// Save/Unsave on click
+        saveButton.setOnClickListener(v -> {
+            if (jobUpdate == null) return;
+
+            if (dbHelper.isJobSaved(jobUpdate.getDocumentId())) {
+                dbHelper.deleteJob(jobUpdate.getDocumentId());
+                Toast.makeText(requireContext(), "Removed from saved", Toast.LENGTH_SHORT).show();
+            } else {
+                dbHelper.saveJob(jobUpdate);
+                Toast.makeText(requireContext(), "Saved!", Toast.LENGTH_SHORT).show();
+            }
+            updateSaveButtonIcon();
+        });
 
         if (jobUpdate != null) {
             Log.d(TAG, "Using passed JobUpdate object for ID: " + jobUpdate.getDocumentId());
@@ -97,6 +119,14 @@ public class JobUpdateDetails extends Fragment {
         }
 
         return view;
+    }
+
+    private void updateSaveButtonIcon() {
+        if (jobUpdate != null && dbHelper.isJobSaved(jobUpdate.getDocumentId())) {
+            saveButton.setImageResource(R.drawable.save_filled);
+        } else {
+            saveButton.setImageResource(R.drawable.save);
+        }
     }
 
     private void populateUIFromObject(View view) {

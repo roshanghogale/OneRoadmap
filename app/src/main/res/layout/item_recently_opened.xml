@@ -80,24 +80,13 @@
             app:layout_constraintTop_toBottomOf="@+id/linear1">
 
             <TextView
-                android:id="@+id/job_update_type"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginBottom="4dp"
-                android:layout_weight="1"
-                android:fontFamily="@font/yantramanav_regular"
-                android:text="सार्वजनिक सेवा विभाग"
-                android:textColor="#7A7C7F"
-                android:textSize="12sp" />
-
-            <TextView
                 android:id="@+id/job_update_title"
                 android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
+                android:layout_height="40dp"
                 android:layout_weight="1"
-                android:fontFamily="@font/poppins_medium"
-                android:text="प्रशासकीय सहाय्यक"
-                android:textColor="#0C0F14"
+                android:fontFamily="sans-serif-medium"
+                android:text="महराष्ट्र जनसंपदा विभागात ७०० जागांची भरती ७०० जागांची भरती "
+                android:textColor="@color/black"
                 android:textSize="14sp" />
         </LinearLayout>
 

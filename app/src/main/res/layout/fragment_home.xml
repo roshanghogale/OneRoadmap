@@ -43,6 +43,7 @@
                 app:layout_constraintTop_toTopOf="parent">
 
                 <LinearLayout
+                    android:id="@+id/save_button"
                     android:layout_width="45dp"
                     android:layout_height="45dp"
                     android:layout_marginTop="36dp"

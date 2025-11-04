@@ -189,7 +189,8 @@ public class MainActivity extends AppCompatActivity {
                 || fragment instanceof Result_HallTitcket
                 || fragment instanceof JobUpdateDetails
                 || fragment instanceof AllBannersList
-                || fragment instanceof VideoFragment) {
+                || fragment instanceof VideoFragment
+                || fragment instanceof PDFViewerFragment) {
             hideBottomNavigation();
         } else {
             showBottomNavigation();
