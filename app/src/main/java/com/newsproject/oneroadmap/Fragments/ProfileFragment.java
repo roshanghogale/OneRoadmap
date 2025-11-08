@@ -32,8 +32,9 @@ import androidx.appcompat.app.AlertDialog;
 import androidx.core.content.FileProvider;
 import androidx.fragment.app.Fragment;
 
-import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.gson.Gson;
 import com.newsproject.oneroadmap.R;
+import com.newsproject.oneroadmap.Utils.ApiClient;
 import com.newsproject.oneroadmap.Utils.DataConstants;
 import com.newsproject.oneroadmap.Utils.DatabaseHelper;
 import com.newsproject.oneroadmap.Activities.LoginActivity;
@@ -47,16 +48,20 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import okhttp3.Call;
+import okhttp3.Callback;
+import okhttp3.Response;
+
 public class ProfileFragment extends Fragment {
 
     private SharedPreferences sharedPreferences;
     private SharedPreferences.Editor editor;
-    private FirebaseFirestore db;
     private DatabaseHelper dbHelper;
+    private ApiClient apiClient;
     private String userId;
 
     private TextView profileName, currentAffairsSelection, jobsSelection, coinTextView,
-            studyMaterialSelection, profileTxtJobByStream;          // <-- NEW
+            studyMaterialSelection, profileTxtJobByStream;
     private ImageView profileNameEdit, currentAffairsEdit, jobsEdit, profileImage, studyMaterialEdit;
     private LinearLayout shareButtonContainer;
     private RadioGroup radioGroupGender;
@@ -70,8 +75,9 @@ public class ProfileFragment extends Fragment {
     private final String[] studyMaterialOptions = {
             "Government", "Police & Defence", "Banking", "Self Improvement"
     };
-    private final List<String> ageGroupOptions = Arrays.asList(
-            "Select Age Group", "18-25", "26-35", "36-45", "Above 45");
+    List<String> ageGroupOptions = new ArrayList<>(Arrays.asList(
+            "Select Age Group", "१४ ते १८ ", "१९ ते २५", "२६ ते ३१", "३२ पेक्षा जास्त "
+    ));
 
     /* --------------------------------------------------------------------- */
     @Override
@@ -80,8 +86,8 @@ public class ProfileFragment extends Fragment {
         sharedPreferences = requireActivity().getSharedPreferences("UserPrefs", Context.MODE_PRIVATE);
         editor = sharedPreferences.edit();
         userId = sharedPreferences.getString("userId", null);
-        db = FirebaseFirestore.getInstance();
         dbHelper = new DatabaseHelper(requireContext());
+        apiClient = ApiClient.getInstance();
 
         // One-time migration from old mpsc/upsc keys
         migrateOldStudyPreferences();
@@ -123,7 +129,7 @@ public class ProfileFragment extends Fragment {
         studyMaterialEdit         = view.findViewById(R.id.profile_study_material_edit);
         coinTextView              = view.findViewById(R.id.textView25);
         shareButtonContainer      = view.findViewById(R.id.linearLayout_share_earn);
-        profileTxtJobByStream     = view.findViewById(R.id.profileTxtJobByStream);   // NEW
+        profileTxtJobByStream     = view.findViewById(R.id.profileTxtJobByStream);
         TextView deleteAccountBtn = view.findViewById(R.id.textView43);
 
         // ----- SETUP ------------------------------------------------------------
@@ -218,12 +224,9 @@ public class ProfileFragment extends Fragment {
                     showConfirmationDialog("education", selected, () -> {
                         spinnerEducation.setSelection(position);
                         saveToSharedPreferences("education", selected);
-                        saveToFirestore("education", selected);
                         updateDegreeAndPostGradSpinners(selected);
                         saveToSharedPreferences("degree", "Select Degree");
-                        saveToFirestore("degree", "Select Degree");
                         saveToSharedPreferences("postGraduation", "Select Post Graduation");
-                        saveToFirestore("postGraduation", "Select Post Graduation");
                         updateSQLiteUser();
                     }, () -> {
                         isReverting = true;
@@ -341,7 +344,6 @@ public class ProfileFragment extends Fragment {
                     showConfirmationDialog(prefKey, selected, () -> {
                         spinner.setSelection(position);
                         saveToSharedPreferences(prefKey, selected);
-                        saveToFirestore(prefKey, selected);
                         updateSQLiteUser();
                     }, () -> {
                         isReverting = true;
@@ -366,7 +368,6 @@ public class ProfileFragment extends Fragment {
                     showConfirmationDialog("degree", selected, () -> {
                         spinnerDegree.setSelection(pos);
                         saveToSharedPreferences("degree", selected);
-                        saveToFirestore("degree", selected);
                         updateSQLiteUser();
                     }, () -> {
                         isReverting = true;
@@ -394,7 +395,6 @@ public class ProfileFragment extends Fragment {
                     showConfirmationDialog("postGraduation", selected, () -> {
                         spinnerPostGrad.setSelection(pos);
                         saveToSharedPreferences("postGraduation", selected);
-                        saveToFirestore("postGraduation", selected);
                         updateSQLiteUser();
                     }, () -> {
                         isReverting = true;
@@ -423,10 +423,8 @@ public class ProfileFragment extends Fragment {
                     showConfirmationDialog("district", selected, () -> {
                         spinnerDistrict.setSelection(pos);
                         saveToSharedPreferences("district", selected);
-                        saveToFirestore("district", selected);
                         updateTalukaSpinner(selected);
                         saveToSharedPreferences("taluka", "Select Taluka");
-                        saveToFirestore("taluka", "Select Taluka");
                         updateSQLiteUser();
                     }, () -> {
                         isReverting = true;
@@ -453,7 +451,6 @@ public class ProfileFragment extends Fragment {
                     showConfirmationDialog("taluka", selected, () -> {
                         spinnerTaluka.setSelection(pos);
                         saveToSharedPreferences("taluka", selected);
-                        saveToFirestore("taluka", selected);
                         updateSQLiteUser();
                     }, () -> {
                         isReverting = true;
@@ -497,7 +494,6 @@ public class ProfileFragment extends Fragment {
                 showConfirmationDialog("userName", newName, () -> {
                     profileName.setText(newName);
                     saveToSharedPreferences("userName", newName);
-                    saveToFirestore("name", newName);
                     updateSQLiteUser();
                 }, () -> {});
             }
@@ -537,23 +533,12 @@ public class ProfileFragment extends Fragment {
 
             studyMaterialSelection.setText(selected.isEmpty() ?
                     "कोणतेही नाही" : String.join(", ", selected));
-            saveToFirestore(updates);
             updateSQLiteUser();
             Toast.makeText(requireContext(),
                     "Study material updated!", Toast.LENGTH_SHORT).show();
         });
         b.setNegativeButton("Cancel", null);
         b.show();
-    }
-
-    private void saveToFirestore(Map<String, Object> updates) {
-        if (userId != null) {
-            db.collection("users").document(userId)
-                    .update(updates)
-                    .addOnSuccessListener(a -> Log.d("Profile", "Updated in Firestore"))
-                    .addOnFailureListener(e -> Toast.makeText(requireContext(),
-                            "Update failed", Toast.LENGTH_SHORT).show());
-        }
     }
 
     private String getStudyMaterialDisplayText() {
@@ -575,7 +560,6 @@ public class ProfileFragment extends Fragment {
             if (!selected.equals(current)) {
                 showConfirmationDialog("gender", selected, () -> {
                     saveToSharedPreferences("gender", selected);
-                    saveToFirestore("gender", selected);
                     updateSQLiteUser();
                 }, () -> {
                     isReverting = true;
@@ -602,7 +586,6 @@ public class ProfileFragment extends Fragment {
                             currentAffairsSelection : jobsSelection)
                             .setText(selected ? "हो" : "नाही");
                     editor.putBoolean(prefKey, selected).apply();
-                    saveToFirestore(prefKey, selected);
                     updateSQLiteUser();
                 }, () -> {});
             }
@@ -644,23 +627,6 @@ public class ProfileFragment extends Fragment {
         editor.putString(key, value).apply();
     }
 
-    private void saveToFirestore(String key, String value) {
-        if (userId == null) return;
-        String firestoreKey = key.equals("userName") ? "name" : key;
-        Map<String, Object> map = new HashMap<>(); map.put(firestoreKey, value);
-        db.collection("users").document(userId).update(map)
-                .addOnSuccessListener(a -> Toast.makeText(requireContext(),
-                        "Updated", Toast.LENGTH_SHORT).show())
-                .addOnFailureListener(e -> Toast.makeText(requireContext(),
-                        "Failed", Toast.LENGTH_SHORT).show());
-    }
-
-    private void saveToFirestore(String key, boolean value) {
-        if (userId == null) return;
-        Map<String, Object> map = new HashMap<>(); map.put(key, value);
-        db.collection("users").document(userId).update(map);
-    }
-
     /* --------------------------------------------------------------------- */
     private void updateSQLiteUser() {
         if (userId == null || userId.isEmpty()) return;
@@ -685,11 +651,34 @@ public class ProfileFragment extends Fragment {
                 sharedPreferences.getString("twelfth", "Select 12th Stream")
         );
 
-        try { dbHelper.updateUser(user); }
-        catch (Exception e) {
+        try {
+            dbHelper.updateUser(user);
+            syncToServer(user);
+        } catch (Exception e) {
             Toast.makeText(requireContext(),
                     "DB Error: " + e.getMessage(), Toast.LENGTH_LONG).show();
         }
+    }
+
+    private void syncToServer(User user) {
+        String json = new Gson().toJson(user);
+        apiClient.saveUser(json, new Callback() {
+            @Override public void onFailure(Call call, java.io.IOException e) {
+                requireActivity().runOnUiThread(() ->
+                        Toast.makeText(requireContext(), "Sync failed: " + e.getMessage(), Toast.LENGTH_SHORT).show());
+            }
+
+            @Override public void onResponse(Call call, Response response) throws java.io.IOException {
+                requireActivity().runOnUiThread(() -> {
+                    if (response.isSuccessful()) {
+                        Log.d("Profile", "User synced to server");
+                    } else {
+                        Toast.makeText(requireContext(), "Server error: " + response.message(), Toast.LENGTH_SHORT).show();
+                    }
+                    response.close();
+                });
+            }
+        });
     }
 
     /* --------------------------------------------------------------------- */
@@ -717,7 +706,6 @@ public class ProfileFragment extends Fragment {
         studyMaterialSelection.setText(getStudyMaterialDisplayText());
         coinTextView.setText(String.valueOf(dbHelper.getUserCoins(userId)));
 
-        // ---- NEW: set job text on first load ---------------------------------
         updateJobTextByTwelfth(user.getTwelfth());
     }
 
@@ -733,7 +721,6 @@ public class ProfileFragment extends Fragment {
         studyMaterialSelection.setText(getStudyMaterialDisplayText());
         coinTextView.setText(String.valueOf(dbHelper.getUserCoins(userId)));
 
-        // ---- NEW: set job text from prefs ------------------------------------
         updateJobTextByTwelfth(sharedPreferences.getString("twelfth",
                 DataConstants.TWELFTH_OPTIONS.get(0)));
     }
@@ -829,16 +816,65 @@ public class ProfileFragment extends Fragment {
     }
 
     private void deleteAccount() {
-        if (userId == null) return;
-        db.collection("users").document(userId).delete()
-                .addOnSuccessListener(a -> {
-                    dbHelper.deleteUser(userId);
-                    editor.clear().putBoolean("isLoggedIn", false).apply();
-                    startActivity(new Intent(requireContext(), LoginActivity.class)
-                            .setFlags(Intent.FLAG_ACTIVITY_NEW_TASK |
-                                    Intent.FLAG_ACTIVITY_CLEAR_TASK));
-                    requireActivity().finish();
+        if (userId == null || userId.isEmpty()) {
+            logoutAndClear();
+            return;
+        }
+
+        // Step 1: Delete from server
+        apiClient.deleteUser(userId, new Callback() {
+            @Override
+            public void onFailure(Call call, java.io.IOException e) {
+                requireActivity().runOnUiThread(() -> {
+                    Toast.makeText(requireContext(), "Network error: " + e.getMessage(), Toast.LENGTH_LONG).show();
+                    // Still proceed to local cleanup
+                    completeAccountDeletion();
                 });
+            }
+
+            @Override
+            public void onResponse(Call call, Response response) throws java.io.IOException {
+                requireActivity().runOnUiThread(() -> {
+                    if (response.isSuccessful()) {
+                        Log.d("Profile", "User deleted from server");
+                    } else {
+                        Toast.makeText(requireContext(), "Server delete failed: " + response.message(), Toast.LENGTH_SHORT).show();
+                    }
+                    response.close();
+                    // Always proceed to local deletion
+                    completeAccountDeletion();
+                });
+            }
+        });
+    }
+
+    private void logoutAndClear() {
+        editor.clear().apply();
+        SharedPreferences loginPrefs = requireContext().getSharedPreferences("UserPrefs", Context.MODE_PRIVATE);
+        loginPrefs.edit().putBoolean("isLoggedIn", false).apply();
+
+        Intent intent = new Intent(requireContext(), LoginActivity.class);
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+        startActivity(intent);
+        requireActivity().finishAffinity();
+    }
+
+    private void completeAccountDeletion() {
+        // Step 2: Delete from SQLite
+        dbHelper.deleteUser(userId);
+
+        // Step 3: Clear ALL SharedPreferences
+        editor.clear().apply();
+
+        // Step 4: Explicitly set login state
+        SharedPreferences loginPrefs = requireContext().getSharedPreferences("UserPrefs", Context.MODE_PRIVATE);
+        loginPrefs.edit().putBoolean("isLoggedIn", false).apply();
+
+        // Step 5: Go to Login + Finish all
+        Intent intent = new Intent(requireContext(), LoginActivity.class);
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+        startActivity(intent);
+        requireActivity().finishAffinity(); // Closes all activities
     }
 
     /* --------------------------------------------------------------------- */
@@ -886,7 +922,7 @@ public class ProfileFragment extends Fragment {
             int current = dbHelper.getUserCoins(userId);
             int newCoins = current + 100;
             dbHelper.updateUserCoins(userId, newCoins);
-            saveCoinsToFirestore(newCoins);
+            saveCoinsToServer(newCoins);
             showCoinAnimationDialog(current, newCoins);
         }
     }
@@ -918,12 +954,24 @@ public class ProfileFragment extends Fragment {
         });
     }
 
-    private void saveCoinsToFirestore(int coins) {
+    private void saveCoinsToServer(int coins) {
         if (userId != null) {
-            db.collection("users").document(userId)
-                    .update("coins", coins)
-                    .addOnSuccessListener(a -> Toast.makeText(requireContext(),
-                            "Coins updated", Toast.LENGTH_SHORT).show());
+            User tempUser = new User();
+            tempUser.setUserId(userId);
+            // Create minimal user with only userId and coins
+            Map<String, Object> map = new HashMap<>();
+            map.put("userId", userId);
+            map.put("coins", coins);
+            String json = new Gson().toJson(map);
+
+            apiClient.saveUser(json, new Callback() {
+                @Override public void onFailure(Call call, java.io.IOException e) {
+                    // Silent fail
+                }
+                @Override public void onResponse(Call call, Response response) throws java.io.IOException {
+                    response.close();
+                }
+            });
         }
     }
 }

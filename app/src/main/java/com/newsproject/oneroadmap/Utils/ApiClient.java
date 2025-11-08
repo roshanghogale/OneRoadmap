@@ -1,0 +1,46 @@
+// File: com/newsproject/oneroadmap/Utils/ApiClient.java
+package com.newsproject.oneroadmap.Utils;
+
+import okhttp3.*;
+import java.io.IOException;
+
+public class ApiClient {
+    private static final String BASE_URL = "https://test.gangainstitute.in"; // CHANGE THIS
+    private static ApiClient instance;
+    private final OkHttpClient client;
+
+    private ApiClient() {
+        client = new OkHttpClient.Builder()
+                .build();
+    }
+
+    public static synchronized ApiClient getInstance() {
+        if (instance == null) instance = new ApiClient();
+        return instance;
+    }
+
+    public void saveUser(String json, Callback callback) {
+        RequestBody body = RequestBody.create(json, MediaType.get("application/json; charset=utf-8"));
+        Request request = new Request.Builder()
+                .url(BASE_URL + "/api/users/save-data")
+                .post(body)
+                .build();
+        client.newCall(request).enqueue(callback);
+    }
+
+    public void getUser(String identifier, Callback callback) {
+        Request request = new Request.Builder()
+                .url(BASE_URL + "/api/users/" + identifier)
+                .get()
+                .build();
+        client.newCall(request).enqueue(callback);
+    }
+
+    public void deleteUser(String id, Callback callback) {
+        Request request = new Request.Builder()
+                .url(BASE_URL + "/api/users/" + id)
+                .delete()
+                .build();
+        client.newCall(request).enqueue(callback);
+    }
+}
