@@ -100,7 +100,7 @@
                 app:layout_constraintTop_toBottomOf="@+id/cardView5">
 
                 <EditText
-                    android:id="@+id/editTextText2"
+                    android:id="@+id/query_title"
                     android:layout_width="match_parent"
                     android:layout_height="350dp"
                     android:gravity="top"

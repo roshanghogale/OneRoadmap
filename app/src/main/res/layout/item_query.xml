@@ -21,6 +21,7 @@
             android:src="@drawable/career_images" />
 
         <LinearLayout
+            android:gravity="center_vertical"
             android:layout_width="wrap_content"
             android:layout_height="match_parent"
             android:layout_marginStart="6dp"
@@ -36,7 +37,7 @@
                 android:textSize="12sp" />
 
             <TextView
-                android:id="@+id/query_education"
+                android:id="@+id/query_type"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:fontFamily="@font/yantramanav_regular"
@@ -44,13 +45,6 @@
                 android:textColor="@color/text_secondary"
                 android:textSize="10sp" />
         </LinearLayout>
-
-        <ImageView
-            android:id="@+id/imageView9"
-            android:layout_width="18dp"
-            android:layout_height="18dp"
-            android:layout_marginStart="8dp"
-            app:srcCompat="@drawable/verify_tick" />
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -165,7 +159,7 @@
                 android:orientation="horizontal">
 
                 <TextView
-                    android:id="@+id/textView11"
+                    android:id="@+id/see_hide_reply"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginEnd="4dp"

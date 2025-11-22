@@ -46,7 +46,7 @@
                         android:id="@+id/imageView6"
                         android:layout_width="match_parent"
                         android:layout_height="200dp"
-                        android:scaleType="fitCenter"
+                        android:scaleType="centerCrop"
                         app:srcCompat="@drawable/ic_news_banner" />
                 </androidx.cardview.widget.CardView>
             </androidx.cardview.widget.CardView>

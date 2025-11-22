@@ -45,6 +45,7 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.mikhaellopez.circularprogressbar.CircularProgressBar;
 import com.newsproject.oneroadmap.Adapters.CurrentAffairsAdapter;
+import com.newsproject.oneroadmap.Adapters.NewsAdapter;
 import com.newsproject.oneroadmap.Adapters.RecentlyOpenedAdapter;
 import com.newsproject.oneroadmap.Adapters.StoriesAdapter;
 import com.newsproject.oneroadmap.Adapters.StoryAdapter;
@@ -70,6 +71,7 @@ import org.imaginativeworld.whynotimagecarousel.model.CarouselItem;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -85,10 +87,7 @@ import okhttp3.Request;
 import okhttp3.Response;
 
 public class HomeFragment extends Fragment {
-    private CircleImageView top5ImageView;
-    private LinearLayout circularProgressBar, saveButton;
-    private TextView top5TitleView;
-    private TextView top5TimeAgoView;
+    private LinearLayout saveButton;
     private RecyclerView storyRecycler;
     private RecyclerView currentAffairsRecycler;
     private static RecyclerView storiesPlayer;
@@ -100,12 +99,14 @@ public class HomeFragment extends Fragment {
     private ImageCarousel carousel;
     private StoryAdapter storyAdapter;
     private CurrentAffairsAdapter currentAffairsAdapter;
+    private NewsAdapter newsAdapter;
     private RecentlyOpenedAdapter recentlyOpenedAdapter;
     private StudentUpdateAdapter studentAdapter1, studentAdapter2, studentAdapter3, studentAdapter4, studentAdapter5;
     private StudyMaterialAdapter studyMaterialAdapter;
     private List<Story> storyList = new ArrayList<>();
     private List<CurrentAffairs> currentAffairsList = new ArrayList<>();
     private List<JobUpdate> jobUpdatesList = new ArrayList<>();
+    private List<News> newsList = new ArrayList<>();
     private List<RecentlyOpenedItem> recentlyOpenedList = new ArrayList<>();
     private List<StudentUpdateItem> studentUpdatesList = new ArrayList<>();
     private List<CarouselItem> carouselItemsList = new ArrayList<>();
@@ -126,6 +127,7 @@ public class HomeFragment extends Fragment {
     private boolean hasShownJobUpdatesErrorToast = false;
     private boolean hasShownStudentUpdatesErrorToast = false;
     private boolean hasShownRecentlyOpenedErrorToast = false;
+    private boolean hasShownNewsErrorToast = false;
     private boolean hasShownCarouselItemsErrorToast = false;
     private boolean hasShownStudyMaterialsErrorToast = false;
     private boolean hasShownTop5JobsErrorToast = false;
@@ -280,10 +282,6 @@ public class HomeFragment extends Fragment {
     private void initViews(View view) {
         Log.d(TAG, "initViews called");
         saveButton = view.findViewById(R.id.save_button);
-        circularProgressBar = view.findViewById(R.id.top5_progress_border);
-        top5ImageView = view.findViewById(R.id.top5_image_view);
-        top5TitleView = view.findViewById(R.id.top5_title);
-        top5TimeAgoView = view.findViewById(R.id.top5_upload_time);
         mainScrollView = view.findViewById(R.id.main_scroll);
         storyRecycler = view.findViewById(R.id.story_recycler);
         currentAffairsRecycler = view.findViewById(R.id.current_affairs_recycler);
@@ -354,8 +352,9 @@ public class HomeFragment extends Fragment {
 
         LinearLayoutManager recentlyOpenedLayoutManager = new LinearLayoutManager(getContext(), LinearLayoutManager.HORIZONTAL, false);
         recentlyOpenedRecycler.setLayoutManager(recentlyOpenedLayoutManager);
-        recentlyOpenedRecycler.setAdapter(recentlyOpenedAdapter);
-        Log.d(TAG, "Set up recentlyOpenedRecycler");
+        newsAdapter = new NewsAdapter(newsList, getContext());
+        recentlyOpenedRecycler.setAdapter(newsAdapter);
+        Log.d(TAG, "Set up recentlyOpenedRecycler with NewsAdapter");
 
         LinearLayoutManager studentUpdatesLayoutManager = new LinearLayoutManager(getContext(), LinearLayoutManager.HORIZONTAL, false);
         studentUpdatesRecycler.setLayoutManager(studentUpdatesLayoutManager);
@@ -396,19 +395,6 @@ public class HomeFragment extends Fragment {
             transaction.addToBackStack(null);
             transaction.commit();
             Log.d(TAG, "Navigated to AllBannersList");
-        });
-
-        assert getView() != null;
-        ConstraintLayout top5Container = getView().findViewById(R.id.top5_container);
-        top5Container.setOnClickListener(v -> {
-            if (top5PdfUrl == null || top5PdfUrl.isEmpty()) {
-                Toast.makeText(getContext(), "No PDF available", Toast.LENGTH_SHORT).show();
-                Log.d(TAG, "Top 5 container clicked, but no PDF available");
-                return;
-            }
-            Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(top5PdfUrl));
-            startActivity(intent);
-            Log.d(TAG, "Opened PDF: " + top5PdfUrl);
         });
 
         // Add click listener for student updates
@@ -496,10 +482,9 @@ public class HomeFragment extends Fragment {
                 loadStories();
                 loadCurrentAffairsData();
                 loadStudentUpdates();
-                loadRecentlyOpened();
+                loadNews();
                 loadCarouselItems();
                 loadStudyMaterials();
-                loadTop5JobUpdates(); // Added to fetch top 5 jobs
             });
             // Load jobs on the main thread and initialize observer
             if (isNetworkAvailable()) {
@@ -740,123 +725,6 @@ public class HomeFragment extends Fragment {
                         if (!hasShownCurrentAffairsErrorToast) {
                             Toast.makeText(getContext(), "Failed to parse current affairs", Toast.LENGTH_SHORT).show();
                             hasShownCurrentAffairsErrorToast = true;
-                        }
-                    });
-                }
-            }
-        });
-    }
-
-    @RequiresApi(api = Build.VERSION_CODES.O)
-    private void loadTop5JobUpdates() {
-        Log.d(TAG, "loadTop5JobUpdates started (API)");
-        if (!isNetworkAvailable()) {
-            Log.w(TAG, "No network available, skipping top 5 job updates load");
-            mainHandler.post(() -> {
-                if (!hasShownTop5JobsErrorToast) {
-                    Toast.makeText(getContext(), "No network, cannot load top 5 job updates", Toast.LENGTH_SHORT).show();
-                    hasShownTop5JobsErrorToast = true;
-                }
-            });
-            return;
-        }
-
-        String url = BuildConfig.BASE_URL + "/api/dpaper";
-        Request request = new Request.Builder().url(url).build();
-        client.newCall(request).enqueue(new Callback() {
-            @Override
-            public void onFailure(Call call, IOException e) {
-                Log.e(TAG, "Failed to fetch top 5 job updates: " + e.getMessage());
-                mainHandler.post(() -> {
-                    if (!hasShownTop5JobsErrorToast) {
-                        Toast.makeText(getContext(), "Failed to load top 5 job updates", Toast.LENGTH_SHORT).show();
-                        hasShownTop5JobsErrorToast = true;
-                    }
-                });
-            }
-
-            @Override
-            public void onResponse(Call call, Response response) throws IOException {
-                if (!response.isSuccessful()) {
-                    Log.e(TAG, "Unexpected response for top 5 job updates: " + response.code());
-                    mainHandler.post(() -> {
-                        if (!hasShownTop5JobsErrorToast) {
-                            Toast.makeText(getContext(), "Failed to load top 5 job updates: " + response.code(), Toast.LENGTH_SHORT).show();
-                            hasShownTop5JobsErrorToast = true;
-                        }
-                    });
-                    return;
-                }
-
-                String body = response.body().string();
-                Log.d(TAG, "Top 5 job updates API response length: " + body.length());
-                try {
-                    JsonObject root = new Gson().fromJson(body, JsonObject.class);
-                    if (root != null && root.has("dPaper") && !root.get("dPaper").isJsonNull()) {
-                        JsonObject dPaper = root.getAsJsonObject("dPaper");
-                        String iconUrl = dPaper.has("icon_url") && !dPaper.get("icon_url").isJsonNull() ? dPaper.get("icon_url").getAsString() : null;
-                        String pdfUrl = dPaper.has("pdf_url") && !dPaper.get("pdf_url").isJsonNull() ? dPaper.get("pdf_url").getAsString() : null;
-                        String createdAt = dPaper.has("created_at") && !dPaper.get("created_at").isJsonNull() ? dPaper.get("created_at").getAsString() : null;
-
-                        iconUrl = buildFullUrl(iconUrl);
-                        pdfUrl = buildFullUrl(pdfUrl);
-
-                        if (iconUrl == null || iconUrl.isEmpty() || pdfUrl == null || pdfUrl.isEmpty()) {
-                            Log.w(TAG, "Invalid icon_url or pdf_url in response");
-                            mainHandler.post(() -> {
-                                if (!hasShownTop5JobsErrorToast) {
-                                    Toast.makeText(getContext(), "No valid data available", Toast.LENGTH_SHORT).show();
-                                    hasShownTop5JobsErrorToast = true;
-                                }
-                            });
-                            return;
-                        }
-
-                        final String finalIconUrl = iconUrl;
-                        final String finalPdfUrl = pdfUrl;
-                        String timeAgo = "";
-                        if (createdAt != null && !createdAt.isEmpty()) {
-                            timeAgo = computeRelativeFromString(createdAt);
-                        }
-                        final String finalTimeAgo = timeAgo;
-
-                        mainHandler.post(() -> {
-                            Glide.with(getContext())
-                                    .load(finalIconUrl)
-                                    .placeholder(R.drawable.placeholder_image)
-                                    .error(R.drawable.error_image)
-                                    .into(top5ImageView);
-
-                            top5TitleView.setText("Daily Paper");
-                            top5TimeAgoView.setText(finalTimeAgo);
-                            top5PdfUrl = finalPdfUrl;  // <-- you already have this
-
-                            // ADD THIS CLICK LISTENER
-                            top5ImageView.setOnClickListener(v -> {
-                                if (finalPdfUrl != null && !finalPdfUrl.isEmpty()) {
-                                    openPdfViewer(finalPdfUrl);
-                                } else {
-                                    Toast.makeText(getContext(), "PDF not available", Toast.LENGTH_SHORT).show();
-                                }
-                            });
-
-                            Log.d(TAG, "Loaded daily paper icon and set PDF URL");
-                        });
-                    } else {
-                        Log.e(TAG, "Invalid top 5 job updates response: missing or null 'dPaper' field");
-                        mainHandler.post(() -> {
-                            if (!hasShownTop5JobsErrorToast) {
-                                Toast.makeText(getContext(), "Invalid top 5 job updates data", Toast.LENGTH_SHORT).show();
-                                hasShownTop5JobsErrorToast = true;
-                            }
-                        });
-                    }
-                } catch (Exception e) {
-                    Log.e(TAG, "Failed to parse top 5 job updates API response: " + e.getMessage());
-                    mainHandler.post(() -> {
-                        if (!hasShownTop5JobsErrorToast) {
-                            Toast.makeText(getContext(), "Failed to parse top 5 job updates", Toast.LENGTH_SHORT).show();
-                            hasShownTop5JobsErrorToast = true;
                         }
                     });
                 }
@@ -1360,45 +1228,163 @@ public class HomeFragment extends Fragment {
         selfText.setTextColor(ContextCompat.getColor(requireContext(), activeType.equals("self_improvement") ? R.color.white : R.color.black));
     }
 
-    private void loadRecentlyOpened() {
-        Log.d(TAG, "loadRecentlyOpened started (SQLite)");
-
-        List<JobUpdate> recentJobs = recentDb.getAllRecent();   // MRU order, max 5
-
-        mainHandler.post(() -> {
-            // ---- 1. Find the views that belong to the block -----------------
-            View titleContainer   = getView().findViewById(R.id.all_linear5);   // "You Recently Opened"
-            RecyclerView recycler = recentlyOpenedRecycler;                    // already a field
-
-            // ---- 2. Decide visibility ---------------------------------------
-            boolean hasItems = !recentJobs.isEmpty();
-
-            titleContainer.setVisibility(hasItems ? View.VISIBLE : View.GONE);
-            recycler.setVisibility(hasItems ? View.VISIBLE : View.GONE);
-
-            // ---- 3. Setup / update adapter only when there are items -------
-            if (hasItems) {
-                if (recycler.getAdapter() == null) {
-                    recycler.setLayoutManager(
-                            new LinearLayoutManager(getContext(), LinearLayoutManager.HORIZONTAL, false));
-
-                    RecentlyOpenedAdapter adapter = new RecentlyOpenedAdapter(recentJobs, job -> {
-                        requireActivity().getSupportFragmentManager()
-                                .beginTransaction()
-                                .replace(R.id.fragment_container, JobUpdateDetails.newInstance(job))
-                                .addToBackStack(null)
-                                .commit();
-                    });
-                    recycler.setAdapter(adapter);
-                } else {
-                    ((RecentlyOpenedAdapter) recycler.getAdapter()).updateList(recentJobs);
+    private void loadNews() {
+        Log.d(TAG, "loadNews started (API)");
+        if (!isNetworkAvailable()) {
+            Log.w(TAG, "No network available, skipping news load");
+            mainHandler.post(() -> {
+                if (!hasShownNewsErrorToast) {
+                    Toast.makeText(getContext(), "No network, cannot load news", Toast.LENGTH_SHORT).show();
+                    hasShownNewsErrorToast = true;
                 }
-            } else {
-                // No items → clear adapter to avoid empty space
-                recycler.setAdapter(null);
+                // Hide the section if no network
+                View titleContainer = getView() != null ? getView().findViewById(R.id.all_linear5) : null;
+                if (titleContainer != null) {
+                    titleContainer.setVisibility(View.GONE);
+                    recentlyOpenedRecycler.setVisibility(View.GONE);
+                }
+            });
+            return;
+        }
+
+        String url = BuildConfig.BASE_URL + "/api/news";
+        Request request = new Request.Builder().url(url).build();
+        client.newCall(request).enqueue(new Callback() {
+            @Override
+            public void onFailure(Call call, IOException e) {
+                Log.e(TAG, "Failed to fetch news: " + e.getMessage());
+                mainHandler.post(() -> {
+                    if (!hasShownNewsErrorToast) {
+                        Toast.makeText(getContext(), "Failed to load news", Toast.LENGTH_SHORT).show();
+                        hasShownNewsErrorToast = true;
+                    }
+                    // Hide the section on error
+                    View titleContainer = getView() != null ? getView().findViewById(R.id.all_linear5) : null;
+                    if (titleContainer != null) {
+                        titleContainer.setVisibility(View.GONE);
+                        recentlyOpenedRecycler.setVisibility(View.GONE);
+                    }
+                });
             }
 
-            Log.d(TAG, "Recently opened loaded from DB, count: " + recentJobs.size());
+            @Override
+            public void onResponse(Call call, Response response) throws IOException {
+                if (!response.isSuccessful()) {
+                    Log.e(TAG, "Unexpected response: " + response.code());
+                    mainHandler.post(() -> {
+                        if (!hasShownNewsErrorToast) {
+                            Toast.makeText(getContext(), "Failed to load news", Toast.LENGTH_SHORT).show();
+                            hasShownNewsErrorToast = true;
+                        }
+                        // Hide the section on error
+                        View titleContainer = getView() != null ? getView().findViewById(R.id.all_linear5) : null;
+                        if (titleContainer != null) {
+                            titleContainer.setVisibility(View.GONE);
+                            recentlyOpenedRecycler.setVisibility(View.GONE);
+                        }
+                    });
+                    return;
+                }
+
+                String body = response.body().string();
+                Log.d(TAG, "News API response length: " + body.length());
+                try {
+                    JsonObject root = new Gson().fromJson(body, JsonObject.class);
+                    List<News> fetched = new ArrayList<>();
+                    if (root != null) {
+                        // Handle different response formats
+                        JsonArray newsArray = null;
+                        if (root.has("news") && root.get("news").isJsonArray()) {
+                            newsArray = root.getAsJsonArray("news");
+                        } else if (root.has("data") && root.get("data").isJsonArray()) {
+                            newsArray = root.getAsJsonArray("data");
+                        } else if (root.isJsonArray()) {
+                            newsArray = root.getAsJsonArray();
+                        }
+                        
+                        if (newsArray != null) {
+                            for (int i = 0; i < newsArray.size(); i++) {
+                                JsonObject newsObj = newsArray.get(i).getAsJsonObject();
+                                News news = new Gson().fromJson(newsObj, News.class);
+                                // Build full URL for image (same as JobUpdate)
+                                if (news.getImageUrl() != null) {
+                                    news.setImageUrl(buildFullUrl(news.getImageUrl()));
+                                }
+                                fetched.add(news);
+                            }
+                        } else if (root.has("news") && root.get("news").isJsonObject()) {
+                            // Single news item
+                            JsonObject newsObj = root.getAsJsonObject("news");
+                            News news = new Gson().fromJson(newsObj, News.class);
+                            // Build full URL for image (same as JobUpdate)
+                            if (news.getImageUrl() != null) {
+                                news.setImageUrl(buildFullUrl(news.getImageUrl()));
+                            }
+                            fetched.add(news);
+                        }
+                    }
+
+                    // Sort news by most recent first (by createdAt date, descending)
+                    fetched.sort((news1, news2) -> {
+                        Date date1 = news1.getCreatedAt();
+                        Date date2 = news2.getCreatedAt();
+                        
+                        // If both have createdAt dates, compare them
+                        if (date1 != null && date2 != null) {
+                            return date2.compareTo(date1); // Descending order (newest first)
+                        }
+                        
+                        // If only one has createdAt, prioritize it
+                        if (date1 != null) return -1;
+                        if (date2 != null) return 1;
+                        
+                        // If neither has createdAt, try date string
+                        String dateStr1 = news1.getDate();
+                        String dateStr2 = news2.getDate();
+                        if (dateStr1 != null && dateStr2 != null) {
+                            return dateStr2.compareTo(dateStr1); // Descending order
+                        }
+                        
+                        return 0;
+                    });
+                    
+                    final List<News> finalFetched = fetched;
+                    mainHandler.post(() -> {
+                        View titleContainer = getView() != null ? getView().findViewById(R.id.all_linear5) : null;
+                        boolean hasItems = !finalFetched.isEmpty();
+                        
+                        if (titleContainer != null) {
+                            titleContainer.setVisibility(hasItems ? View.VISIBLE : View.GONE);
+                            recentlyOpenedRecycler.setVisibility(hasItems ? View.VISIBLE : View.GONE);
+                        }
+                        
+                        if (hasItems) {
+                            newsList.clear();
+                            newsList.addAll(finalFetched);
+                            if (newsAdapter != null) {
+                                newsAdapter.notifyDataSetChanged();
+                            }
+                            Log.d(TAG, "News loaded (API), count: " + newsList.size());
+                        } else {
+                            Log.d(TAG, "No news items found");
+                        }
+                    });
+                } catch (Exception e) {
+                    Log.e(TAG, "Failed to parse news API response: " + e.getMessage(), e);
+                    mainHandler.post(() -> {
+                        if (!hasShownNewsErrorToast) {
+                            Toast.makeText(getContext(), "Failed to parse news", Toast.LENGTH_SHORT).show();
+                            hasShownNewsErrorToast = true;
+                        }
+                        // Hide the section on parse error
+                        View titleContainer = getView() != null ? getView().findViewById(R.id.all_linear5) : null;
+                        if (titleContainer != null) {
+                            titleContainer.setVisibility(View.GONE);
+                            recentlyOpenedRecycler.setVisibility(View.GONE);
+                        }
+                    });
+                }
+            }
         });
     }
 

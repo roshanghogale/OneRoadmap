@@ -135,96 +135,18 @@
                     android:textSize="24sp" />
             </LinearLayout>
 
-            <HorizontalScrollView
-                android:id="@+id/story_container"
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/story_recycler"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="8dp"
-                android:layout_marginTop="24dp"
-                android:layout_marginEnd="8dp"
+                android:layout_marginTop="16dp"
+                android:layout_weight="1"
+                android:nestedScrollingEnabled="false"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@+id/linearLayout">
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal">
-
-                    <androidx.constraintlayout.widget.ConstraintLayout
-                        android:id="@+id/top5_container"
-                        android:layout_width="70dp"
-                        android:layout_height="wrap_content"
-                        android:layout_marginStart="8dp">
-
-                        <RelativeLayout
-                            android:id="@+id/story_relative"
-                            android:layout_width="70dp"
-                            android:layout_height="70dp"
-                            app:layout_constraintEnd_toEndOf="parent"
-                            app:layout_constraintStart_toStartOf="parent"
-                            app:layout_constraintTop_toTopOf="parent">
-
-                            <LinearLayout
-                                android:id="@+id/top5_progress_border"
-                                android:layout_width="70dp"
-                                android:layout_height="70dp"
-                                android:background="@drawable/gradient_progress"
-                                android:orientation="horizontal" />
-
-                            <de.hdodenhof.circleimageview.CircleImageView
-                                android:id="@+id/top5_image_view"
-                                android:layout_width="70dp"
-                                android:layout_height="70dp"
-                                android:padding="2dp"
-                                android:scaleType="centerCrop"
-                                android:src="@drawable/maharashta" />
-
-                        </RelativeLayout>
-
-                        <LinearLayout
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="8dp"
-                            android:orientation="vertical"
-                            app:layout_constraintBottom_toBottomOf="parent"
-                            app:layout_constraintEnd_toEndOf="parent"
-                            app:layout_constraintStart_toStartOf="parent"
-                            app:layout_constraintTop_toBottomOf="@id/story_relative">
-
-                            <TextView
-                                android:id="@+id/top5_title"
-                                android:layout_width="match_parent"
-                                android:layout_height="wrap_content"
-                                android:fontFamily="@font/yantramanav_medium"
-                                android:text="Top 5"
-                                android:textAlignment="center"
-                                android:textColor="#0C0F14"
-                                android:textSize="12sp" />
-
-                            <TextView
-                                android:id="@+id/top5_upload_time"
-                                android:layout_width="match_parent"
-                                android:layout_height="wrap_content"
-                                android:layout_marginTop="2dp"
-                                android:fontFamily="@font/yantramanav_regular"
-                                android:text="१५ मिनिटांपूर्वी"
-                                android:textAlignment="center"
-                                android:textColor="#7A7C7F"
-                                android:textSize="10sp" />
-                        </LinearLayout>
-                    </androidx.constraintlayout.widget.ConstraintLayout>
-
-
-                    <androidx.recyclerview.widget.RecyclerView
-                        android:id="@+id/story_recycler"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginStart="8dp"
-                        android:layout_weight="1"
-                        android:nestedScrollingEnabled="false" />
-                </LinearLayout>
-            </HorizontalScrollView>
+                app:layout_constraintTop_toBottomOf="@+id/linearLayout"/>
 
 
             <org.imaginativeworld.whynotimagecarousel.ImageCarousel
@@ -235,7 +157,7 @@
                 app:autoPlay="true"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@id/story_container"
+                app:layout_constraintTop_toBottomOf="@id/story_recycler"
                 app:showBottomShadow="false"
                 app:showCaption="false"
                 app:showNavigationButtons="false"
@@ -626,11 +548,11 @@
                 android:id="@+id/all_linear2"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
+                android:layout_marginTop="24dp"
                 android:background="#F2F0FF"
                 android:gravity="center_vertical"
                 android:orientation="horizontal"
                 android:paddingStart="16dp"
-                android:layout_marginTop="24dp"
                 android:paddingTop="16dp"
                 android:paddingEnd="16dp"
                 app:layout_constraintEnd_toEndOf="parent"
@@ -649,11 +571,13 @@
                 <TextView
                     android:id="@+id/all_updates2"
                     android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
+                    android:layout_height="match_parent"
                     android:fontFamily="@font/yantramanav_medium"
+                    android:gravity="center"
                     android:text="See All"
+                    android:textAlignment="center"
                     android:textColor="#7E18EB"
-                    android:textSize="16sp" />
+                    android:textSize="14sp" />
             </LinearLayout>
 
             <LinearLayout
@@ -692,15 +616,6 @@
                     android:text="Daily Current Affairs"
                     android:textColor="@color/text_primary"
                     android:textSize="24sp" />
-
-                <TextView
-                    android:id="@+id/all_current_affairs"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:fontFamily="@font/yantramanav_medium"
-                    android:text="See All"
-                    android:textColor="#7E18EB"
-                    android:textSize="16sp" />
             </LinearLayout>
 
             <androidx.recyclerview.widget.RecyclerView
@@ -719,8 +634,8 @@
                 android:id="@+id/all_linear5"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="16dp"
-                android:gravity="center_vertical"
+                android:layout_marginTop="8dp"
+                android:gravity="center"
                 android:orientation="horizontal"
                 android:paddingStart="16dp"
                 android:paddingEnd="16dp"
@@ -733,9 +648,20 @@
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
                     android:fontFamily="@font/yantramanav_medium"
-                    android:text="You Recently Opened"
+                    android:text="Maharashtra Update"
                     android:textColor="@color/text_primary"
                     android:textSize="24sp" />
+
+                <TextView
+                    android:id="@+id/today_date"
+                    android:layout_width="wrap_content"
+                    android:layout_height="match_parent"
+                    android:fontFamily="@font/yantramanav_medium"
+                    android:gravity="center"
+                    android:text="30 सप्टेंबर 2025"
+                    android:textAlignment="center"
+                    android:textColor="#7E18EB"
+                    android:textSize="14sp" />
             </LinearLayout>
 
             <androidx.recyclerview.widget.RecyclerView
@@ -775,11 +701,13 @@
                 <TextView
                     android:id="@+id/all_student_updates"
                     android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
+                    android:layout_height="match_parent"
                     android:fontFamily="@font/yantramanav_medium"
+                    android:gravity="center"
                     android:text="See All"
+                    android:textAlignment="center"
                     android:textColor="#7E18EB"
-                    android:textSize="16sp" />
+                    android:textSize="14sp" />
             </LinearLayout>
 
             <androidx.recyclerview.widget.RecyclerView

@@ -36,13 +36,10 @@ public class ReplyAdapter extends RecyclerView.Adapter<ReplyAdapter.ReplyViewHol
         holder.replyName.setText(reply.getName());
         holder.replyTitle.setText(reply.getTitle());
 
-//        // Format and set the upload time
-//        Timestamp timestamp = reply.getUploadTime();
-//        String formattedTime = new SimpleDateFormat("hh:mm a", Locale.getDefault()).format(timestamp.toDate());
-//        holder.replyTime.setText(formattedTime);
+
 
         // TODO: Load image (if URL provided) using Glide/Picasso.
-        holder.replyIcon.setImageResource(R.drawable.main_active);
+        holder.replyIcon.setImageResource(R.drawable.app_logo);
     }
 
     @Override

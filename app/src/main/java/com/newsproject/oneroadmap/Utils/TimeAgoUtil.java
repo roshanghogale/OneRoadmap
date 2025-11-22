@@ -14,6 +14,11 @@ public class TimeAgoUtil {
         return calculateTimeAgo(timestamp.toDate());
     }
 
+    public static String getTimeAgo(Date date) {
+        if (date == null) return "Unknown";
+        return calculateTimeAgo(date);
+    }
+
     public static String getTimeAgo(String dateString) {
         if (dateString == null || dateString.isEmpty()) return "Unknown";
 
@@ -31,7 +36,15 @@ public class TimeAgoUtil {
                 iso.setTimeZone(TimeZone.getTimeZone("UTC"));
                 Date date = iso.parse(dateString);
                 if (date != null) return calculateTimeAgo(date);
-            } catch (Exception ignored) {}
+            } catch (Exception ignored) {
+                // Try yyyy-MM-dd format (date only)
+                try {
+                    SimpleDateFormat dateOnly = new SimpleDateFormat("yyyy-MM-dd", Locale.US);
+                    dateOnly.setTimeZone(TimeZone.getTimeZone("UTC"));
+                    Date date = dateOnly.parse(dateString);
+                    if (date != null) return calculateTimeAgo(date);
+                } catch (Exception ignored2) {}
+            }
         }
         return "Unknown";
     }

@@ -46,7 +46,9 @@ public class CurrentAffairsAdapter extends RecyclerView.Adapter<CurrentAffairsAd
         // Format the date to Marathi (e.g., "२५ फेब्रुवारी २०२५")
         String formattedDate = formatDateToMarathi(item.getDate());
         holder.dateTextView.setText(formattedDate);
-        holder.bannerDateTextView.setText(formattedDate);
+        Glide.with(context)
+                .load(item.getImageUrl())
+                .into(holder.bannerView);
     }
 
     @Override
@@ -76,12 +78,13 @@ public class CurrentAffairsAdapter extends RecyclerView.Adapter<CurrentAffairsAd
     }
 
     public static class ViewHolder extends RecyclerView.ViewHolder {
-        TextView dateTextView, bannerDateTextView;
+        TextView dateTextView;
+        ImageView bannerView;
 
         public ViewHolder(@NonNull View itemView) {
             super(itemView);
             dateTextView = itemView.findViewById(R.id.current_affair_date);
-            bannerDateTextView = itemView.findViewById(R.id.current_affair_banner_date);
+            bannerView = itemView.findViewById(R.id.current_affair_banner);
         }
     }
 }

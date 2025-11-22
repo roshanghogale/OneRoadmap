@@ -69,6 +69,7 @@ dependencies {
     implementation(libs.firebase.crashlytics.buildtools)
     implementation(libs.legacy.support.v4)
     implementation(libs.recyclerview)
+    implementation("androidx.viewpager2:viewpager2:1.1.0")
     testImplementation(libs.junit)
     androidTestImplementation(libs.ext.junit)
     androidTestImplementation(libs.espresso.core)

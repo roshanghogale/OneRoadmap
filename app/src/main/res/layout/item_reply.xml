@@ -33,7 +33,7 @@
             android:id="@+id/imageView8"
             android:layout_width="40dp"
             android:layout_height="40dp"
-            android:src="@drawable/girl_profile" />
+            android:src="@drawable/app_logo" />
 
         <LinearLayout
             android:layout_width="wrap_content"

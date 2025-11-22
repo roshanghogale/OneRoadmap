@@ -14,6 +14,9 @@ public class News {
     @SerializedName("type")
     private String type;
 
+    @SerializedName("date")
+    private String date;
+
     @SerializedName("web_url")
     private String webUrl;
 
@@ -71,6 +74,10 @@ public class News {
         return type;
     }
 
+    public String getDate() {
+        return date;
+    }
+
     public String getWebUrl() {
         return webUrl;
     }
@@ -81,6 +88,10 @@ public class News {
 
     public String getImageUrl() {
         return imageUrl;
+    }
+
+    public void setImageUrl(String imageUrl) {
+        this.imageUrl = imageUrl;
     }
 
     public Date getCreatedAt() {

@@ -14,6 +14,7 @@ import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
+import android.widget.Toast;
 
 import androidx.activity.OnBackPressedCallback;
 import androidx.annotation.NonNull;
@@ -32,11 +33,22 @@ import com.newsproject.oneroadmap.Adapters.ChatAdapter;
 import com.newsproject.oneroadmap.Models.Query;
 import com.newsproject.oneroadmap.Models.Reply;
 import com.newsproject.oneroadmap.R;
+import com.newsproject.oneroadmap.Utils.ApiClient;
+import com.newsproject.oneroadmap.Utils.TimeAgoUtil;
 
 import org.imaginativeworld.whynotimagecarousel.ImageCarousel;
 import org.imaginativeworld.whynotimagecarousel.model.CarouselItem;
 
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import okhttp3.Call;
+import okhttp3.Callback;
+import okhttp3.Response;
+
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -158,61 +170,124 @@ public class ChatFragment extends Fragment {
     }
 
     private void fetchChatData() {
-        FirebaseFirestore db = FirebaseFirestore.getInstance();
+        ApiClient.getInstance().getQueries(new Callback() {
+            @Override
+            public void onFailure(Call call, java.io.IOException e) {
+                Log.w("QueriesAPI", "Failed to load queries", e);
+            }
 
-        db.collection("chats").get()
-                .addOnCompleteListener(task -> {
-                    if (task.isSuccessful()) {
-                        Chats.clear();
-                        for (QueryDocumentSnapshot document : task.getResult()) {
-                            String userId = document.getString("userId");
-                            String username = document.getString("name");
-                            String qualification = document.getString("education");
-                            String category = document.getString("type");
-                            String question = document.getString("title");
-                            Timestamp timestamp = document.getTimestamp("uploadTime");
-                            boolean isReplied = document.getBoolean("likeBoolean");
-                            String documentId = document.getId();
-
-                            String questionTime = getRelativeTime(timestamp);
-
-                            String replyText = document.getString("replyText");
-                            Timestamp replyTimestamp = document.getTimestamp("replyTimestamp");
-                            String replyTime = getRelativeTime(replyTimestamp);
-
-                            Reply reply = new Reply(
-                                    "One Roadmap",
-                                    replyText != null ? replyText : "",
-                                    replyTimestamp != null ? replyTimestamp : Timestamp.now()
-                            );
-
-                            List<String> likedByUsers = document.get("likedByUsers") != null
-                                    ? (List<String>) document.get("likedByUsers")
-                                    : new ArrayList<>();
-
-                            int likeCount = likedByUsers.size();
-
-                            Chats.add(new Query(
-                                    userId,
-                                    username,
-                                    qualification,
-                                    category,
-                                    question + " (" + questionTime + ")",
-                                    timestamp != null ? timestamp : Timestamp.now(),
-                                    "R.drawable.question_icon",
-                                    reply,
-                                    isReplied,
-                                    likeCount,
-                                    documentId,
-                                    likedByUsers
-                            ));
-                        }
-                        chatAdapter.notifyDataSetChanged();
+            @Override
+            public void onResponse(Call call, Response response) throws java.io.IOException {
+                if (!response.isSuccessful()) {
+                    Log.w("QueriesAPI", "Unsuccessful response: " + response.code());
+                    response.close();
+                    return;
+                }
+                String body = response.body().string();
+                response.close();
+                try {
+                    JSONArray array;
+                    // Handle either raw array or wrapped object: {"queries":[...]}
+                    if (body.trim().startsWith("[")) {
+                        array = new JSONArray(body);
                     } else {
-                        Log.w("FirestoreError", "Error getting chat data: ", task.getException());
+                        JSONObject wrapper = new JSONObject(body);
+                        array = wrapper.optJSONArray("queries");
+                        if (array == null) array = new JSONArray(); // fallback to empty
                     }
-                });
+                    ArrayList<Query> parsed = new ArrayList<>();
+                    for (int i = 0; i < array.length(); i++) {
+                        JSONObject obj = array.getJSONObject(i);
+                        Log.d("chatdatafromserver", obj.toString());
+                        parsed.add(parseQueryFromJson(obj));
+                    }
+                    // Check if fragment is still attached before accessing activity
+                    android.app.Activity activity = getActivity();
+                    if (activity != null && isAdded()) {
+                        activity.runOnUiThread(() -> {
+                            // Double-check fragment is still attached before updating UI
+                            if (isAdded() && getActivity() != null) {
+                                Chats.clear();
+                                Chats.addAll(parsed);
+                                chatAdapter.notifyDataSetChanged();
+                            }
+                        });
+                    }
+                } catch (JSONException ex) {
+                    Log.e("QueriesAPI", "JSON parse error", ex);
+                }
+            }
+        });
     }
+
+    private Query parseQueryFromJson(JSONObject obj) throws JSONException {
+        String id = obj.optString("id", "");
+        String userId = obj.optString("user_id", "");  // snake_case
+        String name = obj.optString("name", "");
+        String education = obj.optString("education", "");
+        String type = obj.optString("type", "");
+        String title = obj.optString("title", "");
+        String uploadTimeStr = obj.optString("upload_time", null);
+        Timestamp uploadTs = parseIsoToTimestamp(uploadTimeStr);
+
+        // --- REPLY ---
+        String replyText = obj.optString("reply_text", "").trim();
+        String replyTsStr = obj.optString("reply_timestamp", null);
+        Timestamp replyTs = parseIsoToTimestamp(replyTsStr);
+
+        Reply reply = null;
+        if (!replyText.isEmpty()) {
+            String replyUserRs = obj.optString("reply_user_rs", "default_reply_icon");
+            String replyUserName = "One Roadmap"; // or fetch from user_rs mapping if needed
+            reply = new Reply(replyUserName, replyText,replyUserRs, replyTs != null ? replyTs : Timestamp.now());
+        }
+
+        // --- LIKES ---
+        ArrayList<String> liked = new ArrayList<>();
+        JSONArray likedArr = obj.optJSONArray("liked_by_users");
+        if (likedArr != null) {
+            for (int j = 0; j < likedArr.length(); j++) {
+                liked.add(likedArr.optString(j));
+            }
+        }
+        int likeCount = liked.size();
+
+        // --- AVATAR ---
+        String userRs = obj.optString("user_rs", "girl_profile");
+
+        return new Query(
+                userId,
+                name,
+                education,
+                type,
+                title,
+                uploadTs != null ? uploadTs : Timestamp.now(),
+                userRs,
+                reply,
+                false,
+                likeCount,
+                id,
+                liked
+        );
+    }
+
+    private Timestamp parseIsoToTimestamp(String iso) {
+        if (iso == null || iso.isEmpty()) return null;
+        try {
+            java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", java.util.Locale.US);
+            sdf.setTimeZone(java.util.TimeZone.getTimeZone("UTC"));
+            java.util.Date date = sdf.parse(iso);
+            if (date != null) return new Timestamp(date);
+        } catch (Exception ignored) {}
+        try {
+            java.text.SimpleDateFormat sdfMs = new java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", java.util.Locale.US);
+            sdfMs.setTimeZone(java.util.TimeZone.getTimeZone("UTC"));
+            java.util.Date date = sdfMs.parse(iso);
+            if (date != null) return new Timestamp(date);
+        } catch (Exception ignored2) {}
+        return null;
+    }
+    // No need to convert server time strings into Timestamp for display; we use TimeAgoUtil instead.
 
     private String getRelativeTime(Timestamp timestamp) {
         if (timestamp == null) {
