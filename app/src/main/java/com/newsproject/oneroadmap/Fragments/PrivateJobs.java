@@ -300,18 +300,22 @@ public class PrivateJobs extends Fragment {
                     @Override
                     public void onFailure(Call call, IOException e) {
                         Log.e(TAG, "Failed to fetch private carousel items: " + e.getMessage());
-                        mainHandler.post(() ->
-                                Toast.makeText(requireContext(), "Failed to load private sliders", Toast.LENGTH_SHORT).show()
-                        );
+                        mainHandler.post(() -> {
+                            if (isAdded() && getContext() != null) {
+                                Toast.makeText(requireContext(), "Failed to load private sliders", Toast.LENGTH_SHORT).show();
+                            }
+                        });
                     }
 
                     @Override
                     public void onResponse(Call call, Response response) throws IOException {
                         if (!response.isSuccessful()) {
                             Log.e(TAG, "Unexpected response: " + response.code());
-                            mainHandler.post(() ->
-                                    Toast.makeText(requireContext(), "Failed to load private sliders", Toast.LENGTH_SHORT).show()
-                            );
+                            mainHandler.post(() -> {
+                                if (isAdded() && getContext() != null) {
+                                    Toast.makeText(requireContext(), "Failed to load private sliders", Toast.LENGTH_SHORT).show();
+                                }
+                            });
                             return;
                         }
 
@@ -366,15 +370,17 @@ public class PrivateJobs extends Fragment {
 
                                     if (isUniversal || educationMatch || locationMatch) {
                                         sliders.add(slider);
-                                        if ("post".equalsIgnoreCase(slider.getType())) {
-                                            String id = slider.getPostDocumentId();
-                                            if (id != null && !id.trim().isEmpty()) {
-                                                JobViewModel.fetchJobUpdate(id, jobUpdateCache, requireContext(), null);
-                                            }
-                                        } else if ("news".equalsIgnoreCase(slider.getType())) {
-                                            String id = slider.getPostDocumentId();
-                                            if (id != null && !id.trim().isEmpty()) {
-                                                NewsUtils.fetchNews(id, newsCache, requireContext(), null);
+                                        if (isAdded() && getContext() != null) {
+                                            if ("post".equalsIgnoreCase(slider.getType())) {
+                                                String id = slider.getPostDocumentId();
+                                                if (id != null && !id.trim().isEmpty()) {
+                                                    JobViewModel.fetchJobUpdate(id, jobUpdateCache, requireContext(), null);
+                                                }
+                                            } else if ("news".equalsIgnoreCase(slider.getType())) {
+                                                String id = slider.getPostDocumentId();
+                                                if (id != null && !id.trim().isEmpty()) {
+                                                    NewsUtils.fetchNews(id, newsCache, requireContext(), null);
+                                                }
                                             }
                                         }
                                         Log.d(TAG, "Added private slider: " + slider.getTitle());
@@ -391,6 +397,8 @@ public class PrivateJobs extends Fragment {
                             }
 
                             mainHandler.post(() -> {
+                                if (!isAdded() || getContext() == null) return;
+                                
                                 carouselItemsList.clear();
                                 carouselItemsList.addAll(carouselItems);
                                 carousel.addData(carouselItemsList);
@@ -420,6 +428,7 @@ public class PrivateJobs extends Fragment {
 
                                     @Override
                                     public void onClick(int position, CarouselItem carouselItem) {
+                                        if (!isAdded() || getContext() == null) return;
                                         if (position < 0 || position >= sliders.size()) return;
                                         Slider selectedSlider = sliders.get(position);
                                         String id = selectedSlider.getPostDocumentId();
@@ -455,17 +464,21 @@ public class PrivateJobs extends Fragment {
                             });
                         } catch (Exception e) {
                             Log.e(TAG, "Failed to parse private carousel response: " + e.getMessage(), e);
-                            mainHandler.post(() ->
-                                    Toast.makeText(requireContext(), "Failed to parse private sliders", Toast.LENGTH_SHORT).show()
-                            );
+                            mainHandler.post(() -> {
+                                if (isAdded() && getContext() != null) {
+                                    Toast.makeText(requireContext(), "Failed to parse private sliders", Toast.LENGTH_SHORT).show();
+                                }
+                            });
                         }
                     }
                 });
             } catch (Exception e) {
                 Log.e(TAG, "Unexpected error in initSlider: " + e.getMessage(), e);
-                mainHandler.post(() ->
-                        Toast.makeText(requireContext(), "Error loading private sliders", Toast.LENGTH_SHORT).show()
-                );
+                mainHandler.post(() -> {
+                    if (isAdded() && getContext() != null) {
+                        Toast.makeText(requireContext(), "Error loading private sliders", Toast.LENGTH_SHORT).show();
+                    }
+                });
             } finally {
                 localExecutor.shutdown();
             }

@@ -29,6 +29,16 @@ import com.github.barteksc.pdfviewer.PDFView;
 import com.github.barteksc.pdfviewer.listener.OnLoadCompleteListener;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.newsproject.oneroadmap.R;
+import com.newsproject.oneroadmap.Utils.CoinManager;
+import com.newsproject.oneroadmap.Utils.DatabaseHelper;
+import com.newsproject.oneroadmap.Utils.ShareHelper;
+import android.app.AlertDialog;
+import android.graphics.Color;
+import android.graphics.drawable.ColorDrawable;
+import android.os.Handler;
+import android.widget.Button;
+import android.view.LayoutInflater;
+import android.content.SharedPreferences;
 
 import java.io.BufferedInputStream;
 import java.io.File;
@@ -48,10 +58,15 @@ public class PDFViewerFragment extends Fragment {
     private TextView tvError;
     private FloatingActionButton fabSave;
     private File tempPdfFile;
+    private CoinManager coinManager;
+    private String userId;
+    private Handler handler = new Handler();
+    private int displayedCoins = 0;
 
     // Modern permission launchers
     private ActivityResultLauncher<String[]> legacyStorageLauncher;
     private ActivityResultLauncher<Intent> manageStorageLauncher;
+    private ActivityResultLauncher<Intent> shareLauncher;
 
     public static PDFViewerFragment newInstance(String pdfUrl) {
         PDFViewerFragment f = new PDFViewerFragment();
@@ -65,6 +80,14 @@ public class PDFViewerFragment extends Fragment {
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         if (getArguments() != null) pdfUrl = getArguments().getString(ARG_PDF_URL);
+        
+        // Get userId from SharedPreferences
+        SharedPreferences prefs = requireContext().getSharedPreferences("user_prefs", Context.MODE_PRIVATE);
+        userId = prefs.getString("userId", "");
+        if (userId != null && !userId.isEmpty()) {
+            coinManager = new CoinManager(requireContext(), userId);
+        }
+        
         initPermissionLaunchers();
     }
 
@@ -86,6 +109,20 @@ public class PDFViewerFragment extends Fragment {
                         downloadAndLoadPdf();
                     } else {
                         showError("All-files access required");
+                    }
+                });
+        
+        // 3. Share launcher for WhatsApp sharing
+        shareLauncher = registerForActivityResult(
+                new ActivityResultContracts.StartActivityForResult(),
+                result -> {
+                    // When user returns from sharing, add coins and show dialog
+                    // If callback is triggered, it means WhatsApp was opened, so add coins
+                    if (coinManager != null && userId != null && !userId.isEmpty()) {
+                        int current = coinManager.getCoins();
+                        coinManager.addCoinsForShare(newCoins -> {
+                            showCoinEarnedDialog(current, newCoins);
+                        });
                     }
                 });
     }
@@ -144,19 +181,28 @@ public class PDFViewerFragment extends Fragment {
         new Thread(() -> {
             try {
                 tempPdfFile = downloadToCache(pdfUrl);
-                requireActivity().runOnUiThread(() -> {
-                    progressBar.setVisibility(View.GONE);
-                    if (tempPdfFile != null && tempPdfFile.exists()) {
-                        displayPdf(tempPdfFile);
-                        fabSave.setVisibility(View.VISIBLE);
-                    } else {
-                        showError("Download failed – tap to retry");
-                    }
-                });
+                if (isAdded() && getActivity() != null) {
+                    requireActivity().runOnUiThread(() -> {
+                        if (isAdded()) {
+                            progressBar.setVisibility(View.GONE);
+                            if (tempPdfFile != null && tempPdfFile.exists()) {
+                                displayPdf(tempPdfFile);
+                                fabSave.setVisibility(View.VISIBLE);
+                            } else {
+                                showError("Download failed – tap to retry");
+                            }
+                        }
+                    });
+                }
             } catch (Exception e) {
                 Log.e(TAG, "download error", e);
-                requireActivity().runOnUiThread(() ->
-                        showError("Download error: " + e.getMessage()));
+                if (isAdded() && getActivity() != null) {
+                    requireActivity().runOnUiThread(() -> {
+                        if (isAdded()) {
+                            showError("Download error: " + e.getMessage());
+                        }
+                    });
+                }
             }
         }).start();
     }
@@ -205,21 +251,136 @@ public class PDFViewerFragment extends Fragment {
 
     /** --------------------------------------------------------------
      *  FAB → Save to public Downloads (uses DownloadManager – no extra perm)
+     *  Check coins first, deduct if enough, show dialog if not
      *  -------------------------------------------------------------- */
     private void saveToDownloads() {
         if (tempPdfFile == null) return;
+        
+        // Check if user has enough coins
+        if (coinManager == null || !coinManager.hasEnoughCoins(CoinManager.getCoinsPerDownload())) {
+            showNotEnoughCoinsDialog();
+            return;
+        }
+        
+        // Get current coins before deduction
+        int currentCoins = coinManager.getCoins();
+        
+        // Deduct coins and proceed with download
+        coinManager.deductCoinsForDownload(newCoins -> {
+            // Show coin deduction dialog
+            showCoinDeductionDialog(currentCoins, newCoins);
+            
+            // Coins deducted, proceed with download
+            DownloadManager.Request req = new DownloadManager.Request(Uri.parse(pdfUrl));
+            req.setTitle("PDF Document");
+            req.setDescription("Saving to Downloads");
+            req.setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED);
+            req.setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS,
+                    "PDF_" + System.currentTimeMillis() + ".pdf");
 
-        DownloadManager.Request req = new DownloadManager.Request(Uri.parse(pdfUrl));
-        req.setTitle("PDF Document");
-        req.setDescription("Saving to Downloads");
-        req.setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED);
-        req.setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS,
-                "PDF_" + System.currentTimeMillis() + ".pdf");
+            DownloadManager dm = (DownloadManager) requireActivity().getSystemService(Context.DOWNLOAD_SERVICE);
+            dm.enqueue(req);
 
-        DownloadManager dm = (DownloadManager) requireActivity().getSystemService(Context.DOWNLOAD_SERVICE);
-        dm.enqueue(req);
+            Toast.makeText(requireContext(), "PDF saved to Downloads", Toast.LENGTH_LONG).show();
+        });
+    }
+    
+    private void showNotEnoughCoinsDialog() {
+        View view = LayoutInflater.from(requireContext())
+                .inflate(R.layout.not_enough_coins_dialog, null);
+        
+        Button shareButton = view.findViewById(R.id.btn_share);
+        Button cancelButton = view.findViewById(R.id.btn_cancel);
+        TextView messageText = view.findViewById(R.id.message_text);
+        
+        // Update message with current coins
+        if (coinManager != null) {
+            int current = coinManager.getCoins();
+            int required = CoinManager.getCoinsPerDownload();
+            String message = "You need " + required + " coins to download this PDF.\n\n" +
+                           "You have: " + current + " coins\n\n" +
+                           "Share this post to earn 100 coins!";
+            if (messageText != null) {
+                messageText.setText(message);
+            }
+        }
+        
+        AlertDialog dialog = new AlertDialog.Builder(requireContext())
+                .setView(view)
+                .setCancelable(true)
+                .create();
+        
+        if (dialog.getWindow() != null) {
+            dialog.getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
+        }
+        
+        shareButton.setOnClickListener(v -> {
+            dialog.dismiss();
+            shareToWhatsApp();
+        });
+        
+        cancelButton.setOnClickListener(v -> dialog.dismiss());
+        
+        dialog.show();
+    }
+    
+    private void shareToWhatsApp() {
+        ShareHelper shareHelper = new ShareHelper(requireContext());
+        shareHelper.setShareLauncher(shareLauncher);
+        shareHelper.sharePost("Check out this PDF from One Roadmap!", pdfUrl);
+    }
+    
+    private void showCoinEarnedDialog(int start, int end) {
+        View view = LayoutInflater.from(requireContext())
+                .inflate(R.layout.coin_dialog_layout, null);
+        TextView count = view.findViewById(R.id.coin_count);
+        Button ok = view.findViewById(R.id.ok_button);
+        count.setText("Coins: " + start);
+        AlertDialog dialog = new AlertDialog.Builder(requireContext())
+                .setView(view).create();
+        if (dialog.getWindow() != null)
+            dialog.getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
+        ok.setOnClickListener(v -> dialog.dismiss());
+        dialog.show();
 
-        Toast.makeText(requireContext(), "Saving to Downloads…", Toast.LENGTH_LONG).show();
+        displayedCoins = start;
+        handler.post(new Runnable() {
+            @Override public void run() {
+                if (!isAdded() || getActivity() == null) return;
+                if (displayedCoins < end) {
+                    displayedCoins++;
+                    count.setText("Coins: " + displayedCoins);
+                    handler.postDelayed(this, 20);
+                }
+            }
+        });
+    }
+    
+    private void showCoinDeductionDialog(int startCoins, int endCoins) {
+        View view = LayoutInflater.from(requireContext())
+                .inflate(R.layout.coin_dialog_layout, null);
+        TextView count = view.findViewById(R.id.coin_count);
+        Button ok = view.findViewById(R.id.ok_button);
+        count.setText("Coins: " + startCoins);
+        AlertDialog dialog = new AlertDialog.Builder(requireContext())
+                .setView(view).create();
+        if (dialog.getWindow() != null)
+            dialog.getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
+        ok.setOnClickListener(v -> dialog.dismiss());
+        dialog.show();
+
+        final int[] displayedCoins = {startCoins};
+        Handler handler = new Handler(android.os.Looper.getMainLooper());
+        handler.post(new Runnable() {
+            @Override public void run() {
+                if (!isAdded() || getContext() == null) return;
+                if (displayedCoins[0] > endCoins) {
+                    displayedCoins[0]--;
+                    count.setText("Coins: " + displayedCoins[0]);
+                    handler.postDelayed(this, 20);
+                }
+            }
+        });
     }
 
     @Override

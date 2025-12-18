@@ -288,11 +288,18 @@ public class LoginPage3 extends Fragment {
 
         // Step 1: Save to SQLite + SharedPreferences
         try {
-            databaseHelper.insertUser(user);
+            // Check if user already exists, if so update, otherwise insert
+            User existingUser = databaseHelper.getUser(userId);
+            if (existingUser != null) {
+                databaseHelper.updateUser(user);
+            } else {
+                databaseHelper.insertUser(user);
+            }
             saveAllToSharedPreferences(user);
             editor.putBoolean("isLoggedIn", true).apply(); // Mark as logged in locally
         } catch (Exception e) {
             Toast.makeText(requireContext(), "Local save failed: " + e.getMessage(), Toast.LENGTH_LONG).show();
+            Log.e("LoginPage3", "Error saving user: " + e.getMessage(), e);
             return;
         }
 
@@ -301,26 +308,39 @@ public class LoginPage3 extends Fragment {
         apiClient.saveUser(json, new Callback() {
             @Override
             public void onFailure(Call call, IOException e) {
-                requireActivity().runOnUiThread(() ->
-                        Toast.makeText(requireContext(), "Network error: " + e.getMessage(), Toast.LENGTH_LONG).show());
+                android.app.Activity activity = getActivity();
+                if (activity != null && isAdded()) {
+                    activity.runOnUiThread(() -> {
+                        if (isAdded() && getActivity() != null) {
+                            Toast.makeText(requireContext(), "Network error: " + e.getMessage(), Toast.LENGTH_LONG).show();
+                        }
+                    });
+                }
             }
 
             @Override
             public void onResponse(Call call, Response response) throws IOException {
-                requireActivity().runOnUiThread(() -> {
-                    if (response.isSuccessful()) {
-                        Toast.makeText(requireContext(), "सर्व माहिती यशस्वी साठवली!", Toast.LENGTH_SHORT).show();
-                        startActivity(new Intent(requireContext(), MainActivity.class)
-                                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK));
-                        requireActivity().finish();
-                    } else {
-                        // Server failed — keep user in login flow
-                        Toast.makeText(requireContext(), "Server error: " + response.message(), Toast.LENGTH_LONG).show();
-                        // Optional: Revert login state
-                        // editor.putBoolean("isLoggedIn", false).apply();
-                    }
+                android.app.Activity activity = getActivity();
+                if (activity != null && isAdded()) {
+                    activity.runOnUiThread(() -> {
+                        if (isAdded() && getActivity() != null) {
+                            if (response.isSuccessful()) {
+                                Toast.makeText(requireContext(), "सर्व माहिती यशस्वी साठवली!", Toast.LENGTH_SHORT).show();
+                                startActivity(new Intent(requireContext(), MainActivity.class)
+                                        .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK));
+                                requireActivity().finish();
+                            } else {
+                                // Server failed — keep user in login flow
+                                Toast.makeText(requireContext(), "Server error: " + response.message(), Toast.LENGTH_LONG).show();
+                                // Optional: Revert login state
+                                // editor.putBoolean("isLoggedIn", false).apply();
+                            }
+                        }
+                        response.close();
+                    });
+                } else {
                     response.close();
-                });
+                }
             }
         });
     }

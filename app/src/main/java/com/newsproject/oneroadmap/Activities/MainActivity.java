@@ -35,16 +35,16 @@ import java.util.Map;
 
 public class MainActivity extends AppCompatActivity {
 
+    private static final String TAG = "MainActivity";
     private static final int NOTIFICATION_PERMISSION_REQUEST_CODE = 1001;
 
     public BottomNavigationView bottomNavigationView;
-    private final Map<Class<? extends Fragment>, Integer> fragmentToNavItemMap = new HashMap<>();
-    private final Map<Integer, Fragment> navItemToFragmentMap = new HashMap<>();
+    private final Map<Integer, Class<? extends Fragment>> navItemToFragmentClassMap = new HashMap<>();
     private boolean isProgrammaticNavigation = false;
     private final Handler uiHandler = new Handler(Looper.getMainLooper());
 
     private DatabaseHelper databaseHelper;
-    private boolean hasSubscribedToTopics = false; // Prevent duplicate subscriptions
+    private boolean hasSubscribedToTopics = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -67,40 +67,45 @@ public class MainActivity extends AppCompatActivity {
         Intent intent = getIntent();
         Uri data = intent.getData();
         if (data != null && "myapp".equals(data.getScheme()) && "profile".equals(data.getHost())) {
-            showFragment(new ProfileFragment(), true);
+            replaceFragment(new ProfileFragment(), false);
         }
 
         bottomNavigationView = findViewById(R.id.bottom_navigation);
 
-        // Map fragments to navigation items
-        fragmentToNavItemMap.put(HomeFragment.class, R.id.nav_home);
-        fragmentToNavItemMap.put(ChatFragment.class, R.id.nav_chat);
-        fragmentToNavItemMap.put(MainFragment.class, R.id.nav_main);
-        fragmentToNavItemMap.put(ProfileFragment.class, R.id.nav_profile);
-        fragmentToNavItemMap.put(AllCategory.class, R.id.nav_all_jobs);
-
-        navItemToFragmentMap.put(R.id.nav_home, new HomeFragment());
-        navItemToFragmentMap.put(R.id.nav_chat, new ChatFragment());
-        navItemToFragmentMap.put(R.id.nav_main, new MainFragment());
-        navItemToFragmentMap.put(R.id.nav_profile, new ProfileFragment());
-        navItemToFragmentMap.put(R.id.nav_all_jobs, new AllCategory());
+        // Map navigation items to fragment classes
+        navItemToFragmentClassMap.put(R.id.nav_home, HomeFragment.class);
+        navItemToFragmentClassMap.put(R.id.nav_chat, ChatFragment.class);
+        navItemToFragmentClassMap.put(R.id.nav_main, MainFragment.class);
+        navItemToFragmentClassMap.put(R.id.nav_profile, ProfileFragment.class);
+        navItemToFragmentClassMap.put(R.id.nav_all_jobs, AllCategory.class);
 
         bottomNavigationView.setOnItemSelectedListener(item -> {
-            if (isProgrammaticNavigation) return true;
+            if (isProgrammaticNavigation) {
+                return true;
+            }
 
-            Fragment selectedFragment = navItemToFragmentMap.get(item.getItemId());
-            if (selectedFragment != null) {
-                Fragment topFragment = getSupportFragmentManager().findFragmentById(R.id.fragment_container);
+            Class<? extends Fragment> fragmentClass = navItemToFragmentClassMap.get(item.getItemId());
+            if (fragmentClass != null) {
+                Fragment currentFragment = getCurrentFragment();
+                
+                // Check if we're already showing this fragment
+                if (currentFragment != null && currentFragment.getClass() == fragmentClass) {
+                    return true;
+                }
 
-                if (item.getItemId() == R.id.nav_home) {
-                    clearBackStack();
-                    if (topFragment == null || topFragment.getClass() != selectedFragment.getClass()) {
-                        showFragment(selectedFragment, false);
+                try {
+                    Fragment fragment = fragmentClass.newInstance();
+                    
+                    if (item.getItemId() == R.id.nav_home) {
+                        // Home fragment - clear back stack and replace
+                        clearBackStack();
+                        replaceFragment(fragment, false);
+                    } else {
+                        // Other fragments - add to back stack
+                        replaceFragment(fragment, true);
                     }
-                } else {
-                    if (topFragment == null || topFragment.getClass() != selectedFragment.getClass()) {
-                        showFragment(selectedFragment, true);
-                    }
+                } catch (Exception e) {
+                    Log.e(TAG, "Error creating fragment: " + fragmentClass.getSimpleName(), e);
                 }
                 return true;
             }
@@ -108,18 +113,18 @@ public class MainActivity extends AppCompatActivity {
         });
 
         getSupportFragmentManager().addOnBackStackChangedListener(() -> {
-            Fragment topFragment = getSupportFragmentManager().findFragmentById(R.id.fragment_container);
-            updateBottomNavigationView(topFragment);
-            handleBottomNavigationVisibility(topFragment);
+            Fragment currentFragment = getCurrentFragment();
+            updateBottomNavigationView(currentFragment);
+            handleBottomNavigationVisibility(currentFragment);
         });
 
         getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
             @Override
             public void handleOnBackPressed() {
+                Fragment currentFragment = getCurrentFragment();
                 FragmentManager fm = getSupportFragmentManager();
-                Fragment topFragment = fm.findFragmentById(R.id.fragment_container);
 
-                if (topFragment instanceof HomeFragment) {
+                if (currentFragment instanceof HomeFragment) {
                     if (HomeFragment.isStoriesPlayerVisible()) {
                         HomeFragment.stopStory(MainActivity.this);
                     } else {
@@ -134,17 +139,121 @@ public class MainActivity extends AppCompatActivity {
         });
 
         if (savedInstanceState == null) {
-            showFragment(navItemToFragmentMap.get(R.id.nav_home), false);
+            replaceFragment(new HomeFragment(), false);
         }
 
         // Subscribe to user-specific topics after login
         subscribeToUserSpecificTopics();
     }
 
+    private Fragment getCurrentFragment() {
+        return getSupportFragmentManager().findFragmentById(R.id.fragment_container);
+    }
+
+    private void replaceFragment(Fragment fragment, boolean addToBackStack) {
+        if (fragment == null) {
+            return;
+        }
+
+        FragmentManager fm = getSupportFragmentManager();
+        FragmentTransaction ft = fm.beginTransaction();
+
+        ft.replace(R.id.fragment_container, fragment, fragment.getClass().getSimpleName());
+
+        if (addToBackStack) {
+            ft.addToBackStack(fragment.getClass().getSimpleName());
+        }
+
+        ft.commitAllowingStateLoss();
+
+        updateBottomNavigationView(fragment);
+        handleBottomNavigationVisibility(fragment);
+    }
+
+    private void clearBackStack() {
+        FragmentManager fm = getSupportFragmentManager();
+        int backStackCount = fm.getBackStackEntryCount();
+        for (int i = 0; i < backStackCount; i++) {
+            fm.popBackStack();
+        }
+    }
+
+    private void updateBottomNavigationView(Fragment fragment) {
+        if (fragment == null) {
+            return;
+        }
+
+        Integer navItemId = null;
+        for (Map.Entry<Integer, Class<? extends Fragment>> entry : navItemToFragmentClassMap.entrySet()) {
+            if (entry.getValue() == fragment.getClass()) {
+                navItemId = entry.getKey();
+                break;
+            }
+        }
+
+        if (navItemId != null) {
+            final Integer finalNavItemId = navItemId;
+            uiHandler.post(() -> {
+                isProgrammaticNavigation = true;
+                bottomNavigationView.setSelectedItemId(finalNavItemId);
+                isProgrammaticNavigation = false;
+            });
+        }
+    }
+
+    private void handleBottomNavigationVisibility(Fragment fragment) {
+        boolean hide = fragment instanceof AllCategory
+                || fragment instanceof BankingJobs
+                || fragment instanceof PrivateJobs
+                || fragment instanceof GovernmentJobs
+                || fragment instanceof Result_HallTitcket
+                || fragment instanceof JobUpdateDetails
+                || fragment instanceof AllBannersList
+                || fragment instanceof VideoFragment
+                || fragment instanceof PDFViewerFragment
+                || fragment instanceof NewsFragment;
+
+        if (hide) {
+            hideBottomNavigation();
+        } else {
+            showBottomNavigation();
+        }
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions,
+                                           @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        if (requestCode == NOTIFICATION_PERMISSION_REQUEST_CODE) {
+            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                Log.d("Permission", "POST_NOTIFICATIONS granted");
+            } else {
+                Log.w("Permission", "POST_NOTIFICATIONS denied");
+            }
+        }
+    }
+
+    public void hideBottomNavigation() {
+        if (bottomNavigationView != null) {
+            bottomNavigationView.animate()
+                    .translationY(bottomNavigationView.getHeight())
+                    .setDuration(500)
+                    .start();
+        }
+    }
+
+    public void showBottomNavigation() {
+        if (bottomNavigationView != null) {
+            bottomNavigationView.animate()
+                    .translationY(0)
+                    .setDuration(500)
+                    .start();
+        }
+    }
+
     private void subscribeToUserSpecificTopics() {
         if (hasSubscribedToTopics) return;
 
-        // Get userId from SharedPreferences
         SharedPreferences sp = getSharedPreferences("UserPrefs", MODE_PRIVATE);
         String userId = sp.getString("userId", null);
 
@@ -199,7 +308,7 @@ public class MainActivity extends AppCompatActivity {
             topics.add("jobsteam");
         }
 
-        // 5. NEW: Current Affairs
+        // 5. Current Affairs
         if (user.isCurrentAffairs()) {
             topics.add("currentaffairs");
         }
@@ -207,7 +316,6 @@ public class MainActivity extends AppCompatActivity {
         topics.add("all");
         topics.add("d_paper");
         topics.add("news");
-
 
         // Subscribe to all
         for (String topic : topics) {
@@ -222,95 +330,5 @@ public class MainActivity extends AppCompatActivity {
 
         hasSubscribedToTopics = true;
         Log.d("FCM", "User-specific topics subscribed: " + topics);
-    }
-
-    private void showFragment(Fragment fragment, boolean addToBackStack) {
-        FragmentManager fm = getSupportFragmentManager();
-        FragmentTransaction ft = fm.beginTransaction();
-
-        for (Fragment frag : fm.getFragments()) {
-            if (frag != null && frag.isVisible()) ft.hide(frag);
-        }
-
-        if (fragment.isAdded()) {
-            ft.show(fragment);
-        } else {
-            ft.add(R.id.fragment_container, fragment, fragment.getClass().getSimpleName());
-        }
-
-        if (addToBackStack) {
-            ft.addToBackStack(fragment.getClass().getSimpleName());
-        }
-        ft.commit();
-
-        updateBottomNavigationView(fragment);
-        handleBottomNavigationVisibility(fragment);
-    }
-
-    private void clearBackStack() {
-        FragmentManager fm = getSupportFragmentManager();
-        for (int i = 0; i < fm.getBackStackEntryCount(); i++) {
-            fm.popBackStack();
-        }
-    }
-
-    private void updateBottomNavigationView(Fragment fragment) {
-        if (fragment == null) return;
-
-        Integer navItemId = fragmentToNavItemMap.get(fragment.getClass());
-        if (navItemId != null) {
-            uiHandler.post(() -> {
-                isProgrammaticNavigation = true;
-                bottomNavigationView.setSelectedItemId(navItemId);
-                isProgrammaticNavigation = false;
-            });
-        }
-    }
-
-    private void handleBottomNavigationVisibility(Fragment fragment) {
-        boolean hide = fragment instanceof AllCategory
-                || fragment instanceof BankingJobs
-                || fragment instanceof PrivateJobs
-                || fragment instanceof GovernmentJobs
-                || fragment instanceof Result_HallTitcket
-                || fragment instanceof JobUpdateDetails
-                || fragment instanceof AllBannersList
-                || fragment instanceof VideoFragment
-                || fragment instanceof PDFViewerFragment
-                || fragment instanceof NewsFragment;
-
-        if (hide) hideBottomNavigation();
-        else showBottomNavigation();
-    }
-
-    @Override
-    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions,
-                                           @NonNull int[] grantResults) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-        if (requestCode == NOTIFICATION_PERMISSION_REQUEST_CODE) {
-            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                Log.d("Permission", "POST_NOTIFICATIONS granted");
-            } else {
-                Log.w("Permission", "POST_NOTIFICATIONS denied");
-            }
-        }
-    }
-
-    public void hideBottomNavigation() {
-        if (bottomNavigationView != null) {
-            bottomNavigationView.animate()
-                    .translationY(bottomNavigationView.getHeight())
-                    .setDuration(500)
-                    .start();
-        }
-    }
-
-    public void showBottomNavigation() {
-        if (bottomNavigationView != null) {
-            bottomNavigationView.animate()
-                    .translationY(0)
-                    .setDuration(500)
-                    .start();
-        }
     }
 }

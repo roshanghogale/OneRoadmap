@@ -1,8 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
-<ScrollView
+<FrameLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+<ScrollView
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
@@ -286,6 +290,7 @@
                                 </LinearLayout>
 
                                 <LinearLayout
+                                    android:id="@+id/note_container"
                                     android:layout_width="match_parent"
                                     android:layout_height="match_parent"
                                     android:layout_marginTop="6dp"
@@ -312,6 +317,7 @@
                                         android:layout_weight="1"
                                         android:fontFamily="@font/yantramanav_regular"
                                         android:text="कंपनीचा इंटरव्यू जे आहे ते मालक हरिओम भाऊ घेतील इंटरव्यूवर तुला टाईम वर हजर राहणे आवश्यक आहे"
+                                        android:textColor="#5645C0"
                                         android:textSize="16sp" />
                                 </LinearLayout>
 
@@ -546,3 +552,17 @@
 
     </androidx.constraintlayout.widget.ConstraintLayout>
     </ScrollView>
+
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/fab_share"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom|end"
+        android:layout_marginEnd="16dp"
+        android:layout_marginBottom="80dp"
+        android:src="@drawable/whatsapp"
+        app:backgroundTint="#4CAF50"
+        app:tint="@android:color/white"
+        app:elevation="8dp" />
+
+</FrameLayout>

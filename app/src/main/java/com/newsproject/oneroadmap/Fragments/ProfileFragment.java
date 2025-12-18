@@ -140,9 +140,23 @@ public class ProfileFragment extends Fragment {
         deleteAccountBtn.setOnClickListener(v -> showDeleteAccountDialog());
 
         // ----- LOAD DATA --------------------------------------------------------
-        loadProfileData();
+        // Post to ensure spinners are fully initialized before loading data
+        view.post(() -> loadProfileData());
 
         return view;
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        // Refresh coin balance when returning to profile
+        if (userId != null && !userId.isEmpty()) {
+            coinTextView.setText(String.valueOf(dbHelper.getUserCoins(userId)));
+        }
+        // Refresh profile data when fragment becomes visible to ensure latest values are shown
+        if (userId != null && !userId.isEmpty() && getView() != null) {
+            getView().post(() -> loadProfileData());
+        }
     }
 
     /* --------------------------------------------------------------------- */
@@ -157,21 +171,26 @@ public class ProfileFragment extends Fragment {
         spinnerTwelfth.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
             public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
-                boolean enableAdvanced = (position == 3); // “नाही या पुढील शिक्षण आहे”
+                if (isReverting) return; // Don't process programmatic selections
+                
+                boolean enableAdvanced = (position == 3); // "नाही या पुढील शिक्षण आहे"
                 setAdvancedEducationEnabled(enableAdvanced);
 
                 // ---- UPDATE JOB TEXT (same logic as LoginPage3) -----------------
                 updateJobTextByTwelfth(DataConstants.TWELFTH_OPTIONS.get(position));
 
                 if (!enableAdvanced) {
+                    isReverting = true;
                     spinnerEducation.setSelection(0);
                     spinnerDegree.setSelection(0);
                     spinnerPostGrad.setSelection(0);
+                    isReverting = false;
                 }
             }
 
             @Override
             public void onNothingSelected(AdapterView<?> parent) {
+                if (isReverting) return;
                 setAdvancedEducationEnabled(false);
                 updateJobTextByTwelfth(DataConstants.TWELFTH_OPTIONS.get(0));
             }
@@ -631,32 +650,52 @@ public class ProfileFragment extends Fragment {
     private void updateSQLiteUser() {
         if (userId == null || userId.isEmpty()) return;
 
+        // Get values from SharedPreferences with proper defaults
+        String userName = sharedPreferences.getString("userName", "User");
+        String gender = sharedPreferences.getString("gender", "");
+        String avatar = sharedPreferences.getString("avatar", "girl_profile");
+        String degree = sharedPreferences.getString("degree", "Select Degree");
+        String postGraduation = sharedPreferences.getString("postGraduation", "Select Post Graduation");
+        String district = sharedPreferences.getString("district", "Select District");
+        String taluka = sharedPreferences.getString("taluka", "Select Taluka");
+        String ageGroup = sharedPreferences.getString("ageGroup", "Select Age Group");
+        String education = sharedPreferences.getString("education", "Select Education Category");
+        String twelfth = sharedPreferences.getString("twelfth", DataConstants.TWELFTH_OPTIONS.get(0));
+
         User user = new User(
                 userId,
-                sharedPreferences.getString("userName", "User"),
-                sharedPreferences.getString("gender", ""),
-                sharedPreferences.getString("avatar", "girl_profile"),
+                userName,
+                gender,
+                avatar,
                 sharedPreferences.getBoolean("study_Government", false),
                 sharedPreferences.getBoolean("study_Police___Defence", false),
                 sharedPreferences.getBoolean("study_Banking", false),
                 sharedPreferences.getBoolean("study_Self_Improvement", false),
-                sharedPreferences.getString("degree", "Select Degree"),
-                sharedPreferences.getString("postGraduation", "Select Post Graduation"),
-                sharedPreferences.getString("district", "Select District"),
-                sharedPreferences.getString("taluka", "Select Taluka"),
+                degree,
+                postGraduation,
+                district,
+                taluka,
                 sharedPreferences.getBoolean("currentAffairs", false),
                 sharedPreferences.getBoolean("jobs", false),
-                sharedPreferences.getString("ageGroup", "Select Age Group"),
-                sharedPreferences.getString("education", "Select Education Category"),
-                sharedPreferences.getString("twelfth", "Select 12th Stream")
+                ageGroup,
+                education,
+                twelfth
         );
 
         try {
-            dbHelper.updateUser(user);
+            // Check if user exists, if not insert, otherwise update
+            User existingUser = dbHelper.getUser(userId);
+            if (existingUser != null) {
+                dbHelper.updateUser(user);
+            } else {
+                // User doesn't exist in DB, insert it
+                dbHelper.insertUser(user);
+            }
             syncToServer(user);
         } catch (Exception e) {
             Toast.makeText(requireContext(),
                     "DB Error: " + e.getMessage(), Toast.LENGTH_LONG).show();
+            Log.e("ProfileFragment", "Error updating user: " + e.getMessage(), e);
         }
     }
 
@@ -664,19 +703,32 @@ public class ProfileFragment extends Fragment {
         String json = new Gson().toJson(user);
         apiClient.saveUser(json, new Callback() {
             @Override public void onFailure(Call call, java.io.IOException e) {
-                requireActivity().runOnUiThread(() ->
-                        Toast.makeText(requireContext(), "Sync failed: " + e.getMessage(), Toast.LENGTH_SHORT).show());
+                android.app.Activity activity = getActivity();
+                if (activity != null && isAdded()) {
+                    activity.runOnUiThread(() -> {
+                        if (isAdded() && getActivity() != null) {
+                            Toast.makeText(requireContext(), "Sync failed: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                        }
+                    });
+                }
             }
 
             @Override public void onResponse(Call call, Response response) throws java.io.IOException {
-                requireActivity().runOnUiThread(() -> {
-                    if (response.isSuccessful()) {
-                        Log.d("Profile", "User synced to server");
-                    } else {
-                        Toast.makeText(requireContext(), "Server error: " + response.message(), Toast.LENGTH_SHORT).show();
-                    }
+                android.app.Activity activity = getActivity();
+                if (activity != null && isAdded()) {
+                    activity.runOnUiThread(() -> {
+                        if (isAdded() && getActivity() != null) {
+                            if (response.isSuccessful()) {
+                                Log.d("Profile", "User synced to server");
+                            } else {
+                                Toast.makeText(requireContext(), "Server error: " + response.message(), Toast.LENGTH_SHORT).show();
+                            }
+                        }
+                        response.close();
+                    });
+                } else {
                     response.close();
-                });
+                }
             }
         });
     }
@@ -697,6 +749,9 @@ public class ProfileFragment extends Fragment {
     }
 
     private void loadUserData(User user) {
+        // First, sync SharedPreferences with database values to ensure consistency
+        syncSharedPreferencesFromUser(user);
+        
         profileName.setText(user.getName() != null ? user.getName() : "User");
         loadAvatar(user.getAvatar());
         setGender(user.getGender());
@@ -707,6 +762,27 @@ public class ProfileFragment extends Fragment {
         coinTextView.setText(String.valueOf(dbHelper.getUserCoins(userId)));
 
         updateJobTextByTwelfth(user.getTwelfth());
+    }
+    
+    private void syncSharedPreferencesFromUser(User user) {
+        // Sync all user data to SharedPreferences to ensure consistency
+        editor.putString("userName", user.getName() != null ? user.getName() : "User");
+        editor.putString("gender", user.getGender() != null ? user.getGender() : "");
+        editor.putString("avatar", user.getAvatar() != null ? user.getAvatar() : "girl_profile");
+        editor.putBoolean("study_Government", user.isStudyGovernment());
+        editor.putBoolean("study_Police___Defence", user.isStudyPoliceDefence());
+        editor.putBoolean("study_Banking", user.isStudyBanking());
+        editor.putBoolean("study_Self_Improvement", user.isStudySelfImprovement());
+        editor.putString("degree", user.getDegree() != null ? user.getDegree() : "Select Degree");
+        editor.putString("postGraduation", user.getPostGraduation() != null ? user.getPostGraduation() : "Select Post Graduation");
+        editor.putString("district", user.getDistrict() != null ? user.getDistrict() : "Select District");
+        editor.putString("taluka", user.getTaluka() != null ? user.getTaluka() : "Select Taluka");
+        editor.putBoolean("currentAffairs", user.isCurrentAffairs());
+        editor.putBoolean("jobs", user.isJobs());
+        editor.putString("ageGroup", user.getAgeGroup() != null ? user.getAgeGroup() : "Select Age Group");
+        editor.putString("education", user.getEducation() != null ? user.getEducation() : "Select Education Category");
+        editor.putString("twelfth", user.getTwelfth() != null ? user.getTwelfth() : DataConstants.TWELFTH_OPTIONS.get(0));
+        editor.apply();
     }
 
     private void loadFromSharedPrefs() {
@@ -743,27 +819,41 @@ public class ProfileFragment extends Fragment {
     }
 
     private void setSpinnersFromUser(User user) {
+        // First, update SharedPreferences with user data to ensure consistency
+        if (user.getAgeGroup() != null) editor.putString("ageGroup", user.getAgeGroup());
+        if (user.getTwelfth() != null) editor.putString("twelfth", user.getTwelfth());
+        if (user.getEducation() != null) editor.putString("education", user.getEducation());
+        if (user.getDegree() != null) editor.putString("degree", user.getDegree());
+        if (user.getPostGraduation() != null) editor.putString("postGraduation", user.getPostGraduation());
+        if (user.getDistrict() != null) editor.putString("district", user.getDistrict());
+        if (user.getTaluka() != null) editor.putString("taluka", user.getTaluka());
+        editor.apply();
+        
         setSpinnerSelection(spinnerAgeGroup, ageGroupOptions, user.getAgeGroup());
-        setSpinnerSelection(spinnerTwelfth, DataConstants.TWELFTH_OPTIONS, user.getTwelfth());
+        
+        // Set twelfth first, which controls advanced education
+        String twelfth = user.getTwelfth() != null ? user.getTwelfth() : DataConstants.TWELFTH_OPTIONS.get(0);
+        isReverting = true;
+        setSpinnerSelection(spinnerTwelfth, DataConstants.TWELFTH_OPTIONS, twelfth);
+        // Update advanced education enabled state based on twelfth selection
+        int twelfthPos = DataConstants.TWELFTH_OPTIONS.indexOf(twelfth);
+        boolean enableAdvanced = twelfthPos != 3; // "नाही या पुढील शिक्षण आहे" is at position 3
+        setAdvancedEducationEnabled(enableAdvanced);
+        // Update job text
+        updateJobTextByTwelfth(twelfth);
+        isReverting = false;
 
-        setSpinnerSelection(spinnerEducation, DataConstants.EDUCATION_OPTIONS,
-                user.getEducation());
-        updateDegreeAndPostGradSpinners(user.getEducation());
-        setSpinnerSelection(spinnerDegree,
-                new ArrayList<>(DataConstants.DEGREE_MAP.getOrDefault(
-                        user.getEducation(), Arrays.asList("Select Degree"))),
-                user.getDegree());
-        setSpinnerSelection(spinnerPostGrad,
-                new ArrayList<>(DataConstants.POST_GRAD_MAP.getOrDefault(
-                        user.getEducation(), Arrays.asList("Select Post Graduation"))),
-                user.getPostGraduation());
+        // Set education and update dependent spinners
+        String education = user.getEducation() != null ? user.getEducation() : "Select Education Category";
+        setSpinnerSelection(spinnerEducation, DataConstants.EDUCATION_OPTIONS, education);
+        // updateDegreeAndPostGradSpinners will set the selections based on saved preferences
+        updateDegreeAndPostGradSpinners(education);
 
-        setSpinnerSelection(spinnerDistrict, DataConstants.DISTRICTS, user.getDistrict());
-        updateTalukaSpinner(user.getDistrict());
-        setSpinnerSelection(spinnerTaluka,
-                new ArrayList<>(DataConstants.TALUKA_MAP.getOrDefault(
-                        user.getDistrict(), Arrays.asList("Select Taluka"))),
-                user.getTaluka());
+        // Set district and update taluka spinner
+        String district = user.getDistrict() != null ? user.getDistrict() : "Select District";
+        setSpinnerSelection(spinnerDistrict, DataConstants.DISTRICTS, district);
+        // updateTalukaSpinner will set the selection based on saved preferences
+        updateTalukaSpinner(district);
     }
 
     private void setSpinnersFromPrefs() {
@@ -772,8 +862,18 @@ public class ProfileFragment extends Fragment {
 
         setSpinnerSelection(spinnerAgeGroup, ageGroupOptions,
                 sharedPreferences.getString("ageGroup", "Select Age Group"));
-        setSpinnerSelection(spinnerTwelfth, DataConstants.TWELFTH_OPTIONS,
-                sharedPreferences.getString("twelfth", "Select 12th Stream"));
+        
+        // Set twelfth with proper state updates
+        String twelfth = sharedPreferences.getString("twelfth", DataConstants.TWELFTH_OPTIONS.get(0));
+        isReverting = true;
+        setSpinnerSelection(spinnerTwelfth, DataConstants.TWELFTH_OPTIONS, twelfth);
+        // Update advanced education enabled state based on twelfth selection
+        int twelfthPos = DataConstants.TWELFTH_OPTIONS.indexOf(twelfth);
+        boolean enableAdvanced = twelfthPos != 3; // "नाही या पुढील शिक्षण आहे" is at position 3
+        setAdvancedEducationEnabled(enableAdvanced);
+        // Update job text
+        updateJobTextByTwelfth(twelfth);
+        isReverting = false;
 
         setSpinnerSelection(spinnerEducation, DataConstants.EDUCATION_OPTIONS,
                 education);
@@ -825,25 +925,40 @@ public class ProfileFragment extends Fragment {
         apiClient.deleteUser(userId, new Callback() {
             @Override
             public void onFailure(Call call, java.io.IOException e) {
-                requireActivity().runOnUiThread(() -> {
-                    Toast.makeText(requireContext(), "Network error: " + e.getMessage(), Toast.LENGTH_LONG).show();
-                    // Still proceed to local cleanup
+                android.app.Activity activity = getActivity();
+                if (activity != null && isAdded()) {
+                    activity.runOnUiThread(() -> {
+                        if (isAdded() && getActivity() != null) {
+                            Toast.makeText(requireContext(), "Network error: " + e.getMessage(), Toast.LENGTH_LONG).show();
+                        }
+                        // Still proceed to local cleanup
+                        completeAccountDeletion();
+                    });
+                } else {
                     completeAccountDeletion();
-                });
+                }
             }
 
             @Override
             public void onResponse(Call call, Response response) throws java.io.IOException {
-                requireActivity().runOnUiThread(() -> {
-                    if (response.isSuccessful()) {
-                        Log.d("Profile", "User deleted from server");
-                    } else {
-                        Toast.makeText(requireContext(), "Server delete failed: " + response.message(), Toast.LENGTH_SHORT).show();
-                    }
+                android.app.Activity activity = getActivity();
+                if (activity != null && isAdded()) {
+                    activity.runOnUiThread(() -> {
+                        if (isAdded() && getActivity() != null) {
+                            if (response.isSuccessful()) {
+                                Log.d("Profile", "User deleted from server");
+                            } else {
+                                Toast.makeText(requireContext(), "Server delete failed: " + response.message(), Toast.LENGTH_SHORT).show();
+                            }
+                        }
+                        response.close();
+                        // Always proceed to local deletion
+                        completeAccountDeletion();
+                    });
+                } else {
                     response.close();
-                    // Always proceed to local deletion
                     completeAccountDeletion();
-                });
+                }
             }
         });
     }
@@ -881,6 +996,16 @@ public class ProfileFragment extends Fragment {
     private void setupShareButton() {
         shareButtonContainer.setOnClickListener(v -> {
             try {
+                // First check if WhatsApp package is installed
+                android.content.pm.PackageManager pm = requireContext().getPackageManager();
+                try {
+                    pm.getPackageInfo("com.whatsapp", android.content.pm.PackageManager.GET_ACTIVITIES);
+                } catch (android.content.pm.PackageManager.NameNotFoundException e) {
+                    Toast.makeText(requireContext(),
+                            "WhatsApp is not installed. Please install WhatsApp to share and earn coins.", Toast.LENGTH_LONG).show();
+                    return;
+                }
+                
                 Uri uri = generateBannerWithText();
                 Intent intent = new Intent(Intent.ACTION_SEND)
                         .setType("image/*")
@@ -888,11 +1013,13 @@ public class ProfileFragment extends Fragment {
                                 "Join our app: https://bit.ly/yourapp-profile")
                         .putExtra(Intent.EXTRA_STREAM, uri)
                         .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                        .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                         .setPackage("com.whatsapp");
+                
                 startActivityForResult(intent, 100);
             } catch (Exception e) {
                 Toast.makeText(requireContext(),
-                        "Share error: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                        "Error sharing: " + e.getMessage(), Toast.LENGTH_SHORT).show();
             }
         });
     }

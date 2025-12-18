@@ -193,30 +193,21 @@ public class AllBannersList extends Fragment {
         dialog.getWindow().setStatusBarColor(android.graphics.Color.TRANSPARENT);
 
         // Initialize views
-        ImageView bannerImage = dialog.findViewById(R.id.imageView31);
+        TextView titleText = dialog.findViewById(R.id.title_text);
         TextView educationValue = dialog.findViewById(R.id.education_requirement_value);
         TextView ageValue = dialog.findViewById(R.id.age_requirement_value);
-        TextView applicationMethodValue = dialog.findViewById(R.id.application_fees_value);
         TextView descriptionText = dialog.findViewById(R.id.textView6);
-        TextView applicationLinkText = dialog.findViewById(R.id.textView45);
-        TextView notificationPdfText = dialog.findViewById(R.id.textView34);
-        TextView selectionPdfText = dialog.findViewById(R.id.textView48);
-
-        // Load image safely with placeholder
-        Glide.with(context)
-                .load(item.getImageUrl())
-                .placeholder(R.drawable.student_update_banner)
-                .error(R.drawable.student_update_banner)
-                .into(bannerImage);
+        androidx.cardview.widget.CardView openLinkButton = dialog.findViewById(R.id.open_link_button);
+        androidx.cardview.widget.CardView selectionPdfButton = dialog.findViewById(R.id.selection_pdf_button);
 
         // Set text data
+        titleText.setText(item.getTitle() != null ? item.getTitle() : "N/A");
         educationValue.setText(item.getEducation() != null ? item.getEducation() : "N/A");
         ageValue.setText(item.getAgeRestriction() != null ? item.getAgeRestriction() : "N/A");
-        applicationMethodValue.setText(item.getApplicationMethod() != null ? item.getApplicationMethod() : "N/A");
         descriptionText.setText(item.getDescription() != null ? item.getDescription() : "N/A");
 
-        // 🔗 Application Link Click
-        applicationLinkText.setOnClickListener(v -> {
+        // 🔗 Open Link Button Click
+        openLinkButton.setOnClickListener(v -> {
             String link = item.getApplicationLink();
             if (link != null && !link.isEmpty()) {
                 Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(link));
@@ -226,19 +217,8 @@ public class AllBannersList extends Fragment {
             }
         });
 
-        // 📄 Notification PDF
-        notificationPdfText.setOnClickListener(v -> {
-            String pdfUrl = item.getNotificationPdfUrl();
-            if (pdfUrl != null && !pdfUrl.isEmpty()) {
-                Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(pdfUrl));
-                context.startActivity(intent);
-            } else {
-                Toast.makeText(context, "नोटिफिकेशन PDF उपलब्ध नाही", Toast.LENGTH_SHORT).show();
-            }
-        });
-
-        // 📄 Selection PDF
-        selectionPdfText.setOnClickListener(v -> {
+        // 📄 Selection PDF Button Click
+        selectionPdfButton.setOnClickListener(v -> {
             String pdfUrl = item.getSelectionPdfUrl();
             if (pdfUrl != null && !pdfUrl.isEmpty()) {
                 Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(pdfUrl));

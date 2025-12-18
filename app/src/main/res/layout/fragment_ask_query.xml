@@ -14,49 +14,20 @@
 
         <androidx.constraintlayout.widget.ConstraintLayout
             android:layout_width="match_parent"
-            android:layout_height="70dp"
-            android:background="@drawable/bg_dialog_rounded">
+            android:layout_height="match_parent"
+            android:orientation="vertical">
 
             <ImageView
                 android:id="@+id/back_button7"
                 android:layout_width="36dp"
                 android:layout_height="36dp"
-                android:layout_marginStart="16dp"
                 android:layout_marginTop="16dp"
+                android:layout_marginEnd="16dp"
                 android:background="@drawable/circle_with_stroke"
                 android:padding="8dp"
-                android:src="@drawable/arrow_back"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toTopOf="parent" />
-
-            <Button
-                android:id="@+id/other_queries"
-                style="@style/Widget.Material3.Button.OutlinedButton"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="12dp"
-                android:layout_marginEnd="16dp"
-                android:fontFamily="@font/yantramanav_regular"
-                android:paddingStart="8dp"
-                android:paddingEnd="8dp"
-                android:text="Other Queries"
-                android:textColor="@color/white"
-                android:textSize="14sp"
-                android:textStyle="bold"
-                app:icon="@drawable/add"
-                app:iconSize="14dp"
-                app:iconTint="@color/white"
+                android:src="@drawable/close"
                 app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintTop_toTopOf="parent"
-                app:strokeColor="@color/white"
-                app:strokeWidth="1dp" />
-
-        </androidx.constraintlayout.widget.ConstraintLayout>
-
-        <androidx.constraintlayout.widget.ConstraintLayout
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:orientation="vertical">
+                app:layout_constraintTop_toTopOf="parent" />
 
             <TextView
                 android:id="@+id/textView26"
@@ -103,12 +74,17 @@
                     android:id="@+id/query_title"
                     android:layout_width="match_parent"
                     android:layout_height="350dp"
-                    android:gravity="top"
+                    android:gravity="top|start"
                     android:hint="तुमचा प्रश्न येथे टाईप करा ..."
-                    android:inputType="text"
+                    android:inputType="textMultiLine"
+                    android:singleLine="false"
+                    android:minLines="5"
+                    android:maxLines="10"
+                    android:scrollbars="vertical"
                     android:textColor="#000000"
                     android:textColorHint="@color/text_secondary"
                     android:textSize="14sp" />
+
             </androidx.cardview.widget.CardView>
 
             <!--  Select Query Type (clickable)  -->

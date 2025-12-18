@@ -23,12 +23,18 @@ import java.util.Locale;
 public class CurrentAffairsAdapter extends RecyclerView.Adapter<CurrentAffairsAdapter.ViewHolder> {
     private final List<CurrentAffairs> currentAffairsList;
     private final Context context;
+    private final OnPdfClickListener onPdfClickListener;
     private static final SimpleDateFormat INPUT_DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd", Locale.US);
     private static final SimpleDateFormat OUTPUT_DATE_FORMAT = new SimpleDateFormat("dd MMMM yyyy", new Locale("mr", "IN"));
+    
+    public interface OnPdfClickListener {
+        void onPdfClick(String pdfUrl);
+    }
 
-    public CurrentAffairsAdapter(List<CurrentAffairs> currentAffairsList, Context context) {
+    public CurrentAffairsAdapter(List<CurrentAffairs> currentAffairsList, Context context, OnPdfClickListener listener) {
         this.currentAffairsList = currentAffairsList;
         this.context = context;
+        this.onPdfClickListener = listener;
     }
 
     @NonNull
@@ -49,6 +55,14 @@ public class CurrentAffairsAdapter extends RecyclerView.Adapter<CurrentAffairsAd
         Glide.with(context)
                 .load(item.getImageUrl())
                 .into(holder.bannerView);
+        
+        // Set click listener to open PDF in PDFViewerFragment
+        holder.itemView.setOnClickListener(v -> {
+            String pdfUrl = item.getPdfUrl();
+            if (pdfUrl != null && !pdfUrl.isEmpty() && onPdfClickListener != null) {
+                onPdfClickListener.onPdfClick(pdfUrl);
+            }
+        });
     }
 
     @Override

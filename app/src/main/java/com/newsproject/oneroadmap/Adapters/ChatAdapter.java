@@ -38,11 +38,20 @@ public class ChatAdapter extends RecyclerView.Adapter<ChatAdapter.ChatViewHolder
     private final Context context;
     private final ArrayList<Query> chatList;
     private final String userId; // User ID to check for likes
+    private OnLikeToggleListener onLikeToggleListener; // Callback for like toggles
+
+    public interface OnLikeToggleListener {
+        void onLikeToggled(Query query);
+    }
 
     public ChatAdapter(ArrayList<Query> chatList, Context context, String userId) {
         this.chatList = chatList;
         this.context = context;
         this.userId = userId; // Current user's ID
+    }
+    
+    public void setOnLikeToggleListener(OnLikeToggleListener listener) {
+        this.onLikeToggleListener = listener;
     }
 
     @NonNull
@@ -178,6 +187,11 @@ public class ChatAdapter extends RecyclerView.Adapter<ChatAdapter.ChatViewHolder
                 .placeholder(R.drawable.like_inactive)
                 .into(holder.likeButton);
         holder.likeCount.setText(String.valueOf(current.size()));
+        
+        // Notify listener to update allChats and re-apply filters
+        if (onLikeToggleListener != null) {
+            onLikeToggleListener.onLikeToggled(query);
+        }
 
         // Send to server using save/update by userId
         try {

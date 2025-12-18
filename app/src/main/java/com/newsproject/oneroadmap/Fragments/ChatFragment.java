@@ -6,21 +6,17 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
-import android.text.format.DateUtils;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.Button;
 import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
-import android.widget.Toast;
 
 import androidx.activity.OnBackPressedCallback;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
-import androidx.fragment.app.FragmentManager;
 import androidx.fragment.app.FragmentTransaction;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -34,7 +30,6 @@ import com.newsproject.oneroadmap.Models.Query;
 import com.newsproject.oneroadmap.Models.Reply;
 import com.newsproject.oneroadmap.R;
 import com.newsproject.oneroadmap.Utils.ApiClient;
-import com.newsproject.oneroadmap.Utils.TimeAgoUtil;
 
 import org.imaginativeworld.whynotimagecarousel.ImageCarousel;
 import org.imaginativeworld.whynotimagecarousel.model.CarouselItem;
@@ -48,61 +43,123 @@ import okhttp3.Callback;
 import okhttp3.Response;
 
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 public class ChatFragment extends Fragment {
 
+    private static final String TAG = "ChatFragment";
     private final ArrayList<Query> Chats = new ArrayList<>();
+    private final ArrayList<Query> allChats = new ArrayList<>(); // Store all chats for filtering
     private RecyclerView chatRecycler;
     private ChatAdapter chatAdapter;
     private ImageCarousel carousel;
     private final ExecutorService executorService = Executors.newSingleThreadExecutor();
     private final Handler mainHandler = new Handler(Looper.getMainLooper());
-    private LinearLayout linearleft, linearright;
+    private LinearLayout linearleft;
+    private boolean isFabOpen = false;
+    
+    // Filter and sort state
+    private String selectedFilter = "all"; // "all", "career", "maharashtra", "banking"
+    private String sortOption = "recent"; // "recent" or "popular"
+    
+    // Filter and sort buttons
+    private android.widget.TextView filterAll, filterCareer, filterMaharashtra, filterBanking;
+    private android.widget.TextView sortPopular, sortRecent;
 
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_chat, container, false);
+        
+        // Initialize views
         chatRecycler = view.findViewById(R.id.chat_recycler);
         carousel = view.findViewById(R.id.carousel);
         linearleft = view.findViewById(R.id.linearleft);
+        
+        // Initialize filter and sort buttons
+        filterAll = view.findViewById(R.id.filter_all);
+        filterCareer = view.findViewById(R.id.filter_career);
+        filterMaharashtra = view.findViewById(R.id.filter_maharashtra);
+        filterBanking = view.findViewById(R.id.filter_banking);
+        sortPopular = view.findViewById(R.id.sort_popular);
+        sortRecent = view.findViewById(R.id.sort_recent);
+        
+        // Setup filter button click listeners
+        filterAll.setOnClickListener(v -> {
+            selectedFilter = "all";
+            updateFilterButtonStates();
+            applyFilterAndSort();
+        });
+        
+        filterCareer.setOnClickListener(v -> {
+            selectedFilter = "career";
+            updateFilterButtonStates();
+            applyFilterAndSort();
+        });
+        
+        filterMaharashtra.setOnClickListener(v -> {
+            selectedFilter = "maharashtra";
+            updateFilterButtonStates();
+            applyFilterAndSort();
+        });
+        
+        filterBanking.setOnClickListener(v -> {
+            selectedFilter = "banking";
+            updateFilterButtonStates();
+            applyFilterAndSort();
+        });
+        
+        // Setup sort button click listeners
+        sortPopular.setOnClickListener(v -> {
+            sortOption = "popular";
+            updateSortButtonStates();
+            applyFilterAndSort();
+        });
+        
+        sortRecent.setOnClickListener(v -> {
+            sortOption = "recent";
+            updateSortButtonStates();
+            applyFilterAndSort();
+        });
+        
+        // Set initial button states
+        updateFilterButtonStates();
+        updateSortButtonStates();
 
         FloatingActionButton fabMain = view.findViewById(R.id.fab_main);
         FloatingActionButton fabAskQuery = view.findViewById(R.id.fab_ask_query);
         FloatingActionButton fabMyQueries = view.findViewById(R.id.fab_my_queries);
         RelativeLayout fabContainer = view.findViewById(R.id.fab_container);
-
         LinearLayout fabAskQueryLayout = view.findViewById(R.id.fab_ask_query_layout);
         LinearLayout fabMyQueriesLayout = view.findViewById(R.id.fab_my_queries_layout);
 
-        final boolean[] isFabOpen = {false};
+        isFabOpen = false;
 
+        // Setup FAB click listeners
         fabMain.setOnClickListener(v -> {
-            if (!isFabOpen[0]) {
+            if (!isFabOpen) {
                 fabContainer.setClickable(true);
                 fabMyQueriesLayout.setVisibility(View.VISIBLE);
                 fabAskQueryLayout.setVisibility(View.VISIBLE);
                 fabMyQueriesLayout.animate().alpha(1f).translationY(0).setDuration(300).start();
                 fabAskQueryLayout.animate().alpha(1f).translationY(0).setDuration(300).start();
-                isFabOpen[0] = true;
-                fabMain.setImageResource(R.drawable.close); // switch to X
+                isFabOpen = true;
+                fabMain.setImageResource(R.drawable.close);
             } else {
                 fabContainer.setClickable(false);
                 fabMyQueriesLayout.animate().alpha(0f).translationY(50).setDuration(200).withEndAction(() -> fabMyQueriesLayout.setVisibility(View.GONE)).start();
                 fabAskQueryLayout.animate().alpha(0f).translationY(50).setDuration(200).withEndAction(() -> fabAskQueryLayout.setVisibility(View.GONE)).start();
-                isFabOpen[0] = false;
-                fabMain.setImageResource(R.drawable.add); // back to +
+                isFabOpen = false;
+                fabMain.setImageResource(R.drawable.add);
             }
         });
 
         fabAskQuery.setOnClickListener(v -> {
             AskQuery bottomSheet = new AskQuery();
             bottomSheet.show(getParentFragmentManager(), bottomSheet.getTag());
-            collapseFab(fabMyQueriesLayout, fabAskQueryLayout, fabMain, isFabOpen);
+            collapseFab(fabMyQueriesLayout, fabAskQueryLayout, fabMain);
         });
 
         fabMyQueries.setOnClickListener(v -> {
@@ -112,74 +169,117 @@ public class ChatFragment extends Fragment {
                     .replace(R.id.fragment_container, fragment)
                     .addToBackStack(null)
                     .commit();
-            collapseFab(fabMyQueriesLayout, fabAskQueryLayout, fabMain, isFabOpen);
+            collapseFab(fabMyQueriesLayout, fabAskQueryLayout, fabMain);
         });
 
         fabContainer.setOnClickListener(v -> {
             fabContainer.setClickable(false);
             fabMyQueriesLayout.animate().alpha(0f).translationY(50).setDuration(200).withEndAction(() -> fabMyQueriesLayout.setVisibility(View.GONE)).start();
             fabAskQueryLayout.animate().alpha(0f).translationY(50).setDuration(200).withEndAction(() -> fabAskQueryLayout.setVisibility(View.GONE)).start();
-            isFabOpen[0] = false;
-            fabMain.setImageResource(R.drawable.add); // back to +
+            isFabOpen = false;
+            fabMain.setImageResource(R.drawable.add);
         });
 
+        // Initialize adapter
+        SharedPreferences sharedPreferences = getActivity().getSharedPreferences("UserPrefs", Context.MODE_PRIVATE);
+        String userId = sharedPreferences.getString("userId", "");
+        chatAdapter = new ChatAdapter(Chats, getContext(), userId);
+        chatAdapter.setOnLikeToggleListener(query -> {
+            // Update the query in allChats list
+            for (int i = 0; i < allChats.size(); i++) {
+                Query q = allChats.get(i);
+                if (q.getDocumentId() != null && q.getDocumentId().equals(query.getDocumentId())) {
+                    allChats.set(i, query);
+                    break;
+                }
+            }
+            // Re-apply filter and sort
+            applyFilterAndSort();
+        });
+        chatRecycler.setLayoutManager(new LinearLayoutManager(getContext()));
+        chatRecycler.setAdapter(chatAdapter);
 
+        // Apply margins for Android 15 (API 35) only
+        if (Build.VERSION.SDK_INT >= 35 && linearleft != null) {
+            ViewGroup.LayoutParams paramsleft = linearleft.getLayoutParams();
+            ViewGroup.MarginLayoutParams marginLayoutParamsLeft = (ViewGroup.MarginLayoutParams) paramsleft;
+            marginLayoutParamsLeft.setMargins(0, 98, 0, 0);
+            linearleft.setLayoutParams(paramsleft);
+        }
+
+        return view;
+    }
+
+    @Override
+    public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
+        super.onViewCreated(view, savedInstanceState);
+        
+        // Register back press callback
         requireActivity().getOnBackPressedDispatcher().addCallback(
                 getViewLifecycleOwner(),
                 new OnBackPressedCallback(true) {
                     @Override
                     public void handleOnBackPressed() {
-                        if (isFabOpen[0]) {
-                            collapseFab(fabMyQueriesLayout, fabAskQueryLayout, fabMain, isFabOpen);
+                        View view = getView();
+                        if (view != null && isFabOpen) {
+                            View fabMain = view.findViewById(R.id.fab_main);
+                            View fabMyQueriesLayout = view.findViewById(R.id.fab_my_queries_layout);
+                            View fabAskQueryLayout = view.findViewById(R.id.fab_ask_query_layout);
+                            
+                            if (fabMain != null && fabMyQueriesLayout != null && fabAskQueryLayout != null) {
+                                collapseFab(fabMyQueriesLayout, fabAskQueryLayout, (FloatingActionButton) fabMain);
+                            } else {
+                                setEnabled(false);
+                                requireActivity().onBackPressed();
+                            }
                         } else {
-                            // Default back behavior
                             setEnabled(false);
                             requireActivity().onBackPressed();
                         }
                     }
                 }
         );
-
-        SharedPreferences sharedPreferences = getActivity().getSharedPreferences("UserPrefs", Context.MODE_PRIVATE);
-        String userId = sharedPreferences.getString("userId", "");
-
-        chatAdapter = new ChatAdapter(Chats, getContext(), userId);
-        chatRecycler.setLayoutManager(new LinearLayoutManager(getContext()));
-        chatRecycler.setAdapter(chatAdapter);
-
-        ViewGroup.LayoutParams paramsleft = linearleft.getLayoutParams();
-
-        // Apply margins for Android 15 (API 35) only
-        if (Build.VERSION.SDK_INT >= 35) {
-            ViewGroup.MarginLayoutParams marginLayoutParamsLeft = (ViewGroup.MarginLayoutParams) paramsleft;
-            marginLayoutParamsLeft.setMargins(0, 98,0,0);
-            linearleft.setLayoutParams(paramsleft);
-        }
-
+        
+        // Set bottom margins based on Android version
+        setBottomMarginsBasedOnAndroidVersion();
+        
+        // Load data
         fetchChatData();
         initSlider();
-
-        return view;
     }
 
-    private void collapseFab(View fabMyQueriesLayout, View fabAskQueryLayout, FloatingActionButton fabMain, boolean[] isFabOpen) {
+    @Override
+    public void onResume() {
+        super.onResume();
+        // Ensure RecyclerView is visible and refresh data if needed
+        if (chatRecycler != null) {
+            chatRecycler.setVisibility(View.VISIBLE);
+        }
+        if (chatAdapter != null && Chats.isEmpty()) {
+            fetchChatData();
+        } else if (chatAdapter != null) {
+            chatAdapter.notifyDataSetChanged();
+        }
+    }
+
+    private void collapseFab(View fabMyQueriesLayout, View fabAskQueryLayout, FloatingActionButton fabMain) {
         fabMyQueriesLayout.animate().alpha(0f).translationY(50).setDuration(200).withEndAction(() -> fabMyQueriesLayout.setVisibility(View.GONE)).start();
         fabAskQueryLayout.animate().alpha(0f).translationY(50).setDuration(200).withEndAction(() -> fabAskQueryLayout.setVisibility(View.GONE)).start();
-        isFabOpen[0] = false;
-        fabMain.setImageResource(R.drawable.add); // back to +
+        isFabOpen = false;
+        fabMain.setImageResource(R.drawable.add);
     }
 
     private void fetchChatData() {
         ApiClient.getInstance().getQueries(new Callback() {
             @Override
             public void onFailure(Call call, java.io.IOException e) {
-                Log.w("QueriesAPI", "Failed to load queries", e);
+                Log.w(TAG, "Failed to load queries", e);
             }
 
             @Override
             public void onResponse(Call call, Response response) throws java.io.IOException {
                 if (!response.isSuccessful()) {
-                    Log.w("QueriesAPI", "Unsuccessful response: " + response.code());
+                    Log.w(TAG, "Unsuccessful response: " + response.code());
                     response.close();
                     return;
                 }
@@ -187,34 +287,39 @@ public class ChatFragment extends Fragment {
                 response.close();
                 try {
                     JSONArray array;
-                    // Handle either raw array or wrapped object: {"queries":[...]}
                     if (body.trim().startsWith("[")) {
                         array = new JSONArray(body);
                     } else {
                         JSONObject wrapper = new JSONObject(body);
                         array = wrapper.optJSONArray("queries");
-                        if (array == null) array = new JSONArray(); // fallback to empty
+                        if (array == null) array = new JSONArray();
                     }
                     ArrayList<Query> parsed = new ArrayList<>();
                     for (int i = 0; i < array.length(); i++) {
                         JSONObject obj = array.getJSONObject(i);
-                        Log.d("chatdatafromserver", obj.toString());
                         parsed.add(parseQueryFromJson(obj));
                     }
-                    // Check if fragment is still attached before accessing activity
+                    
                     android.app.Activity activity = getActivity();
                     if (activity != null && isAdded()) {
                         activity.runOnUiThread(() -> {
-                            // Double-check fragment is still attached before updating UI
-                            if (isAdded() && getActivity() != null) {
-                                Chats.clear();
-                                Chats.addAll(parsed);
-                                chatAdapter.notifyDataSetChanged();
+                            if (isAdded() && getActivity() != null && getView() != null && chatAdapter != null) {
+                                // Store all chats for filtering
+                                allChats.clear();
+                                allChats.addAll(parsed);
+                                
+                                // Apply filter and sort
+                                applyFilterAndSort();
+                                
+                                if (chatRecycler != null) {
+                                    chatRecycler.setVisibility(View.VISIBLE);
+                                }
+                                Log.d(TAG, "Data loaded: " + parsed.size() + " items");
                             }
                         });
                     }
                 } catch (JSONException ex) {
-                    Log.e("QueriesAPI", "JSON parse error", ex);
+                    Log.e(TAG, "JSON parse error", ex);
                 }
             }
         });
@@ -222,7 +327,7 @@ public class ChatFragment extends Fragment {
 
     private Query parseQueryFromJson(JSONObject obj) throws JSONException {
         String id = obj.optString("id", "");
-        String userId = obj.optString("user_id", "");  // snake_case
+        String userId = obj.optString("user_id", "");
         String name = obj.optString("name", "");
         String education = obj.optString("education", "");
         String type = obj.optString("type", "");
@@ -230,7 +335,6 @@ public class ChatFragment extends Fragment {
         String uploadTimeStr = obj.optString("upload_time", null);
         Timestamp uploadTs = parseIsoToTimestamp(uploadTimeStr);
 
-        // --- REPLY ---
         String replyText = obj.optString("reply_text", "").trim();
         String replyTsStr = obj.optString("reply_timestamp", null);
         Timestamp replyTs = parseIsoToTimestamp(replyTsStr);
@@ -238,11 +342,10 @@ public class ChatFragment extends Fragment {
         Reply reply = null;
         if (!replyText.isEmpty()) {
             String replyUserRs = obj.optString("reply_user_rs", "default_reply_icon");
-            String replyUserName = "One Roadmap"; // or fetch from user_rs mapping if needed
-            reply = new Reply(replyUserName, replyText,replyUserRs, replyTs != null ? replyTs : Timestamp.now());
+            String replyUserName = "One Roadmap";
+            reply = new Reply(replyUserName, replyText, replyUserRs, replyTs != null ? replyTs : Timestamp.now());
         }
 
-        // --- LIKES ---
         ArrayList<String> liked = new ArrayList<>();
         JSONArray likedArr = obj.optJSONArray("liked_by_users");
         if (likedArr != null) {
@@ -252,7 +355,6 @@ public class ChatFragment extends Fragment {
         }
         int likeCount = liked.size();
 
-        // --- AVATAR ---
         String userRs = obj.optString("user_rs", "girl_profile");
 
         return new Query(
@@ -287,25 +389,10 @@ public class ChatFragment extends Fragment {
         } catch (Exception ignored2) {}
         return null;
     }
-    // No need to convert server time strings into Timestamp for display; we use TimeAgoUtil instead.
-
-    private String getRelativeTime(Timestamp timestamp) {
-        if (timestamp == null) {
-            return "N/A";
-        }
-        long timeInMillis = timestamp.toDate().getTime();
-        return DateUtils.getRelativeTimeSpanString(
-                timeInMillis,
-                System.currentTimeMillis(),
-                DateUtils.MINUTE_IN_MILLIS,
-                DateUtils.FORMAT_ABBREV_RELATIVE
-        ).toString();
-    }
 
     private void initSlider() {
         executorService.execute(() -> {
             FirebaseFirestore db = FirebaseFirestore.getInstance();
-
             db.collection("slider").get()
                     .addOnCompleteListener(task -> {
                         if (task.isSuccessful()) {
@@ -315,52 +402,167 @@ public class ChatFragment extends Fragment {
                                 String caption = document.getString("title");
                                 carouselItems.add(new CarouselItem(imageUrl, caption));
                             }
-
                             mainHandler.post(() -> {
-                                carousel.addData(carouselItems);
+                                if (carousel != null && isAdded() && getView() != null) {
+                                    carousel.addData(carouselItems);
+                                }
                             });
                         } else {
-                            Log.w("FirestoreError", "Error getting slider data: ", task.getException());
+                            Log.w(TAG, "Error getting slider data: ", task.getException());
                         }
                     });
         });
     }
-    
-    @Override
-    public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
-        super.onViewCreated(view, savedInstanceState);
-        
-        // Set bottom margins based on Android version
-        setBottomMarginsBasedOnAndroidVersion();
-    }
-    
 
     private void setBottomMarginsBasedOnAndroidVersion() {
-        if (android.os.Build.VERSION.SDK_INT >= 34) { // Android 15 is API 34
-            // Set larger margins for Android 15+
+        if (Build.VERSION.SDK_INT >= 34) {
             if (chatRecycler != null) {
                 ViewGroup.MarginLayoutParams params = (ViewGroup.MarginLayoutParams) chatRecycler.getLayoutParams();
                 params.bottomMargin = dpToPx(128);
                 chatRecycler.setLayoutParams(params);
-                Log.d("ChatFragment", "Set chatRecycler bottom margin to 128dp for Android 15+");
             }
             
-            // Find and update FAB margin
-            View fabMain = getView().findViewById(R.id.fab_main);
-            if (fabMain != null) {
-                ViewGroup.MarginLayoutParams params = (ViewGroup.MarginLayoutParams) fabMain.getLayoutParams();
-                params.bottomMargin = dpToPx(144);
-                fabMain.setLayoutParams(params);
-                Log.d("ChatFragment", "Set fabMain bottom margin to 144dp for Android 15+");
+            View view = getView();
+            if (view != null) {
+                View fabMain = view.findViewById(R.id.fab_main);
+                if (fabMain != null) {
+                    ViewGroup.MarginLayoutParams params = (ViewGroup.MarginLayoutParams) fabMain.getLayoutParams();
+                    params.bottomMargin = dpToPx(144);
+                    fabMain.setLayoutParams(params);
+                }
             }
+        }
+    }
+
+    private int dpToPx(int dp) {
+        float density = getResources().getDisplayMetrics().density;
+        return Math.round(dp * density);
+    }
+    
+    /**
+     * Apply filter and sort to chats (matching iOS implementation)
+     */
+    private void applyFilterAndSort() {
+        ArrayList<Query> filteredChats = new ArrayList<>(allChats);
+        
+        // Apply filter by type
+        if (!selectedFilter.equals("all")) {
+            String filterType = null;
+            switch (selectedFilter) {
+                case "career":
+                    filterType = "Career";
+                    break;
+                case "maharashtra":
+                    filterType = "Maharashtra Government";
+                    break;
+                case "banking":
+                    filterType = "Banking";
+                    break;
+            }
+            
+            if (filterType != null) {
+                ArrayList<Query> temp = new ArrayList<>();
+                for (Query query : filteredChats) {
+                    if (filterType.equals(query.getType())) {
+                        temp.add(query);
+                    }
+                }
+                filteredChats = temp;
+            }
+        }
+        
+        // Apply sorting
+        if (sortOption.equals("popular")) {
+            // Sort by most liked (likedByUsers count descending)
+            filteredChats.sort((q1, q2) -> {
+                int likes1 = q1.getLikedByUsers() != null ? q1.getLikedByUsers().size() : 0;
+                int likes2 = q2.getLikedByUsers() != null ? q2.getLikedByUsers().size() : 0;
+                return Integer.compare(likes2, likes1); // Descending order
+            });
+        } else {
+            // Sort by most recent (uploadTime descending)
+            filteredChats.sort((q1, q2) -> {
+                com.google.firebase.Timestamp ts1 = q1.getUploadTime();
+                com.google.firebase.Timestamp ts2 = q2.getUploadTime();
+                if (ts1 == null && ts2 == null) return 0;
+                if (ts1 == null) return 1;
+                if (ts2 == null) return -1;
+                return ts2.compareTo(ts1); // Descending order (newest first)
+            });
+        }
+        
+        // Update displayed chats
+        Chats.clear();
+        Chats.addAll(filteredChats);
+        if (chatAdapter != null) {
+            chatAdapter.notifyDataSetChanged();
         }
     }
     
     /**
-     * Converts dp to pixels
+     * Update filter button background states
      */
-    private int dpToPx(int dp) {
-        float density = getResources().getDisplayMetrics().density;
-        return Math.round(dp * density);
+    private void updateFilterButtonStates() {
+        if (filterAll == null || filterCareer == null || filterMaharashtra == null || filterBanking == null) {
+            return;
+        }
+        
+        // Reset all filter buttons
+        filterAll.setBackgroundResource(R.drawable.rectangle_with_stroke);
+        filterAll.setTextColor(getResources().getColor(R.color.text_primary, null));
+        
+        filterCareer.setBackgroundResource(R.drawable.rectangle_with_stroke);
+        filterCareer.setTextColor(getResources().getColor(R.color.text_primary, null));
+        
+        filterMaharashtra.setBackgroundResource(R.drawable.rectangle_with_stroke);
+        filterMaharashtra.setTextColor(getResources().getColor(R.color.text_primary, null));
+        
+        filterBanking.setBackgroundResource(R.drawable.rectangle_with_stroke);
+        filterBanking.setTextColor(getResources().getColor(R.color.text_primary, null));
+        
+        // Set selected filter button
+        switch (selectedFilter) {
+            case "all":
+                filterAll.setBackgroundResource(R.drawable.rectangle_purple);
+                filterAll.setTextColor(getResources().getColor(android.R.color.white, null));
+                break;
+            case "career":
+                filterCareer.setBackgroundResource(R.drawable.rectangle_purple);
+                filterCareer.setTextColor(getResources().getColor(android.R.color.white, null));
+                break;
+            case "maharashtra":
+                filterMaharashtra.setBackgroundResource(R.drawable.rectangle_purple);
+                filterMaharashtra.setTextColor(getResources().getColor(android.R.color.white, null));
+                break;
+            case "banking":
+                filterBanking.setBackgroundResource(R.drawable.rectangle_purple);
+                filterBanking.setTextColor(getResources().getColor(android.R.color.white, null));
+                break;
+        }
+    }
+    
+    /**
+     * Update sort button background states
+     */
+    private void updateSortButtonStates() {
+        if (sortPopular == null || sortRecent == null) {
+            return;
+        }
+        
+        // Reset all sort buttons
+        sortPopular.setBackgroundResource(R.drawable.rectangle_with_stroke);
+        sortPopular.setTextColor(getResources().getColor(R.color.text_primary, null));
+        
+        sortRecent.setBackgroundResource(R.drawable.rectangle_with_stroke);
+        sortRecent.setTextColor(getResources().getColor(R.color.text_primary, null));
+        
+        // Set selected sort button
+        if (sortOption.equals("popular")) {
+            sortPopular.setBackgroundResource(R.drawable.rectangle_purple);
+            sortPopular.setTextColor(getResources().getColor(android.R.color.white, null));
+        } else {
+            sortRecent.setBackgroundResource(R.drawable.rectangle_purple);
+            sortRecent.setTextColor(getResources().getColor(android.R.color.white, null));
+        }
     }
 }

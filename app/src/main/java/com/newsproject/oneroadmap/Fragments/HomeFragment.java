@@ -346,7 +346,9 @@ public class HomeFragment extends Fragment {
 
         LinearLayoutManager currentAffairsLayoutManager = new LinearLayoutManager(getContext(), LinearLayoutManager.HORIZONTAL, false);
         currentAffairsRecycler.setLayoutManager(currentAffairsLayoutManager);
-        currentAffairsAdapter = new CurrentAffairsAdapter(currentAffairsList, getContext());
+        currentAffairsAdapter = new CurrentAffairsAdapter(currentAffairsList, getContext(), pdfUrl -> {
+            openPdfViewer(pdfUrl);
+        });
         currentAffairsRecycler.setAdapter(currentAffairsAdapter);
         Log.d(TAG, "Set up currentAffairsRecycler");
 
@@ -363,7 +365,9 @@ public class HomeFragment extends Fragment {
         Log.d(TAG, "Set up studentUpdatesRecycler");
 
         recyclerStudyMaterial.setLayoutManager(new LinearLayoutManager(getContext(), LinearLayoutManager.HORIZONTAL, false));
-        studyMaterialAdapter = new StudyMaterialAdapter(currentStudyMaterials, getContext());
+        studyMaterialAdapter = new StudyMaterialAdapter(currentStudyMaterials, getContext(), pdfUrl -> {
+            openPdfViewer(pdfUrl);
+        });
         recyclerStudyMaterial.setAdapter(studyMaterialAdapter);
         Log.d(TAG, "Set up recyclerStudyMaterial");
 
@@ -883,6 +887,12 @@ public class HomeFragment extends Fragment {
         Log.d(TAG, "updateRecentRecycler called");
         final List<JobUpdate> finalJobUpdatesList = new ArrayList<>(jobUpdatesList);
         mainHandler.post(() -> {
+            // Check if fragment is still attached and views are available
+            if (!isAdded() || getContext() == null || recentRecycler == null) {
+                Log.w(TAG, "updateRecentRecycler: Fragment not attached or views null, skipping update");
+                return;
+            }
+            
             recentRecycler.removeAllViews();
             LayoutInflater inflater = LayoutInflater.from(getContext());
             for (JobUpdate item : finalJobUpdatesList) {
@@ -898,6 +908,9 @@ public class HomeFragment extends Fragment {
                 Glide.with(getContext()).load(item.getIconUrl()).into(logo);
 
                 itemView.setOnClickListener(v -> {
+                    if (!isAdded() || getContext() == null) {
+                        return;
+                    }
                     JobUpdateDetails fragment = JobUpdateDetails.newInstance(item); // Pass full JobUpdate object
                     FragmentTransaction transaction = getParentFragmentManager().beginTransaction();
                     transaction.replace(R.id.fragment_container, fragment);
@@ -1036,30 +1049,21 @@ public class HomeFragment extends Fragment {
         dialog.getWindow().setStatusBarColor(android.graphics.Color.TRANSPARENT);
 
         // Initialize views
-        ImageView bannerImage = dialog.findViewById(R.id.imageView31);
+        TextView titleText = dialog.findViewById(R.id.title_text);
         TextView educationValue = dialog.findViewById(R.id.education_requirement_value);
         TextView ageValue = dialog.findViewById(R.id.age_requirement_value);
-        TextView applicationMethodValue = dialog.findViewById(R.id.application_fees_value);
         TextView descriptionText = dialog.findViewById(R.id.textView6);
-        TextView applicationLinkText = dialog.findViewById(R.id.textView45);
-        TextView notificationPdfText = dialog.findViewById(R.id.textView34);
-        TextView selectionPdfText = dialog.findViewById(R.id.textView48);
-
-        // Load image safely with placeholder
-        Glide.with(context)
-                .load(item.getImageUrl())
-                .placeholder(R.drawable.student_update_banner)
-                .error(R.drawable.student_update_banner)
-                .into(bannerImage);
+        androidx.cardview.widget.CardView openLinkButton = dialog.findViewById(R.id.open_link_button);
+        androidx.cardview.widget.CardView selectionPdfButton = dialog.findViewById(R.id.selection_pdf_button);
 
         // Set text data
+        titleText.setText(item.getTitle() != null ? item.getTitle() : "N/A");
         educationValue.setText(item.getEducation() != null ? item.getEducation() : "N/A");
         ageValue.setText(item.getAgeRestriction() != null ? item.getAgeRestriction() : "N/A");
-        applicationMethodValue.setText(item.getApplicationMethod() != null ? item.getApplicationMethod() : "N/A");
         descriptionText.setText(item.getDescription() != null ? item.getDescription() : "N/A");
 
-        // 🔗 Application Link Click
-        applicationLinkText.setOnClickListener(v -> {
+        // 🔗 Open Link Button Click
+        openLinkButton.setOnClickListener(v -> {
             String link = item.getApplicationLink();
             if (link != null && !link.isEmpty()) {
                 Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(link));
@@ -1069,19 +1073,8 @@ public class HomeFragment extends Fragment {
             }
         });
 
-        // 📄 Notification PDF
-        notificationPdfText.setOnClickListener(v -> {
-            String pdfUrl = item.getNotificationPdfUrl();
-            if (pdfUrl != null && !pdfUrl.isEmpty()) {
-                Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(pdfUrl));
-                context.startActivity(intent);
-            } else {
-                Toast.makeText(context, "नोटिफिकेशन PDF उपलब्ध नाही", Toast.LENGTH_SHORT).show();
-            }
-        });
-
-        // 📄 Selection PDF
-        selectionPdfText.setOnClickListener(v -> {
+        // 📄 Selection PDF Button Click
+        selectionPdfButton.setOnClickListener(v -> {
             String pdfUrl = item.getSelectionPdfUrl();
             if (pdfUrl != null && !pdfUrl.isEmpty()) {
                 Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(pdfUrl));
@@ -1161,6 +1154,10 @@ public class HomeFragment extends Fragment {
 
                     final List<StudyMaterial> finalFetched = fetched;
                     mainHandler.post(() -> {
+                        if (!isAdded() || getContext() == null) {
+                            Log.w(TAG, "Fragment not attached, skipping filterAndDisplay");
+                            return;
+                        }
                         studyMaterialsAll.clear();
                         studyMaterialsAll.addAll(finalFetched);
                         filterAndDisplay("government"); // Default to government
@@ -1196,36 +1193,61 @@ public class HomeFragment extends Fragment {
                 currentStudyMaterials.add(material);
             }
         }
-        studyMaterialAdapter.notifyDataSetChanged();
+        if (studyMaterialAdapter != null) {
+            studyMaterialAdapter.notifyDataSetChanged();
+        }
         Log.d(TAG, "Data fetch status for " + type + ": " + (currentStudyMaterials.isEmpty() ? "No data fetched" : "Fetched " + currentStudyMaterials.size() + " items"));
         if (currentStudyMaterials.isEmpty()) {
             mainHandler.post(() -> {
-                Toast.makeText(getContext(), "No study materials available for " + type, Toast.LENGTH_SHORT).show();
+                if (isAdded() && getContext() != null) {
+                    Toast.makeText(getContext(), "No study materials available for " + type, Toast.LENGTH_SHORT).show();
+                }
             });
         }
         updateCategoryBackgrounds(type);
     }
 
     private void updateCategoryBackgrounds(String activeType) {
+        // Check if fragment is attached and views are available
+        if (!isAdded() || getContext() == null) {
+            Log.w(TAG, "updateCategoryBackgrounds: Fragment not attached or context null, skipping update");
+            return;
+        }
+        
+        if (govLinear == null || policeLinear == null || bankLinear == null || selfLinear == null) {
+            Log.w(TAG, "updateCategoryBackgrounds: Views are null, skipping update");
+            return;
+        }
+        
+        Context context = getContext();
+        
         // Update government category
         govLinear.setBackgroundResource(activeType.equals("government") ? R.drawable.study_material_active : R.drawable.study_material_inactive);
-        TextView govText = (TextView) govLinear.getChildAt(1);
-        govText.setTextColor(ContextCompat.getColor(requireContext(), activeType.equals("government") ? R.color.white : R.color.black));
+        if (govLinear.getChildCount() > 1) {
+            TextView govText = (TextView) govLinear.getChildAt(1);
+            govText.setTextColor(ContextCompat.getColor(context, activeType.equals("government") ? R.color.white : R.color.black));
+        }
 
         // Update police_defence category
         policeLinear.setBackgroundResource(activeType.equals("police_defence") ? R.drawable.study_material_active : R.drawable.study_material_inactive);
-        TextView policeText = (TextView) policeLinear.getChildAt(1);
-        policeText.setTextColor(ContextCompat.getColor(requireContext(), activeType.equals("police_defence") ? R.color.white : R.color.black));
+        if (policeLinear.getChildCount() > 1) {
+            TextView policeText = (TextView) policeLinear.getChildAt(1);
+            policeText.setTextColor(ContextCompat.getColor(context, activeType.equals("police_defence") ? R.color.white : R.color.black));
+        }
 
         // Update banking category
         bankLinear.setBackgroundResource(activeType.equals("banking") ? R.drawable.study_material_active : R.drawable.study_material_inactive);
-        TextView bankText = (TextView) bankLinear.getChildAt(1);
-        bankText.setTextColor(ContextCompat.getColor(requireContext(), activeType.equals("banking") ? R.color.white : R.color.black));
+        if (bankLinear.getChildCount() > 1) {
+            TextView bankText = (TextView) bankLinear.getChildAt(1);
+            bankText.setTextColor(ContextCompat.getColor(context, activeType.equals("banking") ? R.color.white : R.color.black));
+        }
 
         // Update self_improvement category
         selfLinear.setBackgroundResource(activeType.equals("self_improvement") ? R.drawable.study_material_active : R.drawable.study_material_inactive);
-        TextView selfText = (TextView) selfLinear.getChildAt(1);
-        selfText.setTextColor(ContextCompat.getColor(requireContext(), activeType.equals("self_improvement") ? R.color.white : R.color.black));
+        if (selfLinear.getChildCount() > 1) {
+            TextView selfText = (TextView) selfLinear.getChildAt(1);
+            selfText.setTextColor(ContextCompat.getColor(context, activeType.equals("self_improvement") ? R.color.white : R.color.black));
+        }
     }
 
     private void loadNews() {

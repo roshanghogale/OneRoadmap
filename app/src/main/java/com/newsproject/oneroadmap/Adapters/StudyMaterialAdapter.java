@@ -23,10 +23,16 @@ public class StudyMaterialAdapter extends RecyclerView.Adapter<StudyMaterialAdap
 
     private List<StudyMaterial> studyMaterials;
     private Context context;
+    private OnPdfClickListener onPdfClickListener;
+    
+    public interface OnPdfClickListener {
+        void onPdfClick(String pdfUrl);
+    }
 
-    public StudyMaterialAdapter(List<StudyMaterial> studyMaterials, Context context) {
+    public StudyMaterialAdapter(List<StudyMaterial> studyMaterials, Context context, OnPdfClickListener listener) {
         this.studyMaterials = studyMaterials;
         this.context = context;
+        this.onPdfClickListener = listener;
     }
 
     @NonNull
@@ -50,13 +56,10 @@ public class StudyMaterialAdapter extends RecyclerView.Adapter<StudyMaterialAdap
         holder.itemView.setOnClickListener(v -> {
             String pdfUrl = material.getPdfUrl();
             if (pdfUrl != null && !pdfUrl.isEmpty()) {
-                Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(pdfUrl));
-                intent.setDataAndType(Uri.parse(pdfUrl), "application/pdf");
-                intent.setFlags(Intent.FLAG_ACTIVITY_NO_HISTORY);
-                try {
-                    context.startActivity(intent);
-                } catch (Exception e) {
-                    Toast.makeText(context, "No PDF viewer installed", Toast.LENGTH_SHORT).show();
+                if (onPdfClickListener != null) {
+                    onPdfClickListener.onPdfClick(pdfUrl);
+                } else {
+                    Toast.makeText(context, "PDF not available", Toast.LENGTH_SHORT).show();
                 }
             } else {
                 Toast.makeText(context, "PDF not available", Toast.LENGTH_SHORT).show();

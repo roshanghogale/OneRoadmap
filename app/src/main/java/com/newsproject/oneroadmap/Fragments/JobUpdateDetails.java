@@ -1,5 +1,6 @@
 package com.newsproject.oneroadmap.Fragments;
 
+import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
@@ -10,6 +11,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -19,12 +21,23 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.bumptech.glide.Glide;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.newsproject.oneroadmap.Adapters.RecentlyOpenedAdapter;
 import com.newsproject.oneroadmap.Models.JobUpdate;
 import com.newsproject.oneroadmap.R;
 import com.newsproject.oneroadmap.Utils.TimeAgoUtil;
+import com.newsproject.oneroadmap.Utils.ShareHelper;
+import com.newsproject.oneroadmap.Utils.DatabaseHelper;
+import com.newsproject.oneroadmap.Utils.CoinManager;
 import com.newsproject.oneroadmap.database.RecentlyOpenedDatabaseHelper;
 import com.newsproject.oneroadmap.database.SavedJobsDatabaseHelper;
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
+import android.content.SharedPreferences;
+import android.app.AlertDialog;
+import android.graphics.Color;
+import android.graphics.drawable.ColorDrawable;
+import android.widget.Button;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -36,6 +49,12 @@ public class JobUpdateDetails extends Fragment {
     private SavedJobsDatabaseHelper dbHelper;
     private RecentlyOpenedDatabaseHelper recentDb;
     private ImageView saveButton;
+    private FloatingActionButton fabShare;
+    private ShareHelper shareHelper;
+    private ActivityResultLauncher<Intent> shareLauncher;
+    private DatabaseHelper coinDbHelper;
+    private String userId;
+    private int displayedCoins = 0;
 
     public JobUpdateDetails() {
         // Required empty public constructor
@@ -77,6 +96,38 @@ public class JobUpdateDetails extends Fragment {
         if (jobUpdate == null) {
             Log.w(TAG, "No JobUpdate object provided, fragment may fail to load");
         }
+        
+        // Get userId for coin management
+        SharedPreferences prefs = requireContext().getSharedPreferences("user_prefs", Context.MODE_PRIVATE);
+        userId = prefs.getString("userId", "");
+        coinDbHelper = new DatabaseHelper(requireContext());
+        
+        // Initialize ShareHelper
+        shareHelper = new ShareHelper(requireContext());
+        
+        // Initialize share launcher
+        shareLauncher = registerForActivityResult(
+                new ActivityResultContracts.StartActivityForResult(),
+                result -> {
+                    // When user returns from sharing, add coins and show dialog
+                    // If callback is triggered, it means WhatsApp was opened, so add coins
+                    android.util.Log.d(TAG, "Share result received, resultCode: " + result.getResultCode());
+                    if (userId != null && !userId.isEmpty()) {
+                        int current = coinDbHelper.getUserCoins(userId);
+                        android.util.Log.d(TAG, "Current coins before share: " + current);
+                        // Use CoinManager to add coins (handles both local DB and server)
+                        CoinManager coinManager = new CoinManager(requireContext(), userId);
+                        coinManager.addCoinsForShare(newCoins -> {
+                            android.util.Log.d(TAG, "Coins added! New coins: " + newCoins);
+                            // Coins added and saved to server, show dialog
+                            showCoinAnimationDialog(current, newCoins);
+                        });
+                    } else {
+                        android.util.Log.w(TAG, "userId is null or empty, cannot add coins");
+                    }
+                });
+        
+        shareHelper.setShareLauncher(shareLauncher);
     }
 
     @Override
@@ -87,6 +138,7 @@ public class JobUpdateDetails extends Fragment {
         dbHelper = new SavedJobsDatabaseHelper(requireContext());
         recentDb = new RecentlyOpenedDatabaseHelper(requireContext());
         saveButton = view.findViewById(R.id.imageView3); // Save icon
+        fabShare = view.findViewById(R.id.fab_share); // Share FAB
 
         // Set initial icon
         updateSaveButtonIcon();
@@ -103,6 +155,16 @@ public class JobUpdateDetails extends Fragment {
                 Toast.makeText(requireContext(), "Saved!", Toast.LENGTH_SHORT).show();
             }
             updateSaveButtonIcon();
+        });
+        
+        // Share button click
+        fabShare.setOnClickListener(v -> {
+            if (jobUpdate != null) {
+                String title = jobUpdate.getPostName() != null ? jobUpdate.getPostName() : "Government Job Alert";
+                String url = jobUpdate.getApplicationLink();
+                String imageUrl = jobUpdate.getImageUrl(); // Banner image
+                shareHelper.shareJobWithImage(title, url, imageUrl);
+            }
         });
 
         if (jobUpdate != null) {
@@ -154,7 +216,18 @@ public class JobUpdateDetails extends Fragment {
         jobPlaceValue.setText(jobUpdate.getJobPlace());
         applicationFeesValue.setText(jobUpdate.getFormattedApplicationFees());
         lastDateValue.setText(jobUpdate.getFormattedLastDateMarathi());
-        noteValue.setText(jobUpdate.getNote() != null && !jobUpdate.getNote().isEmpty() ? jobUpdate.getNote() : "No note available");
+        
+        // Handle Note visibility and text
+        LinearLayout noteContainer = view.findViewById(R.id.note_container);
+        String note = jobUpdate.getNote();
+        if (note != null && !note.isEmpty()) {
+            noteContainer.setVisibility(View.VISIBLE);
+            noteValue.setText(note);
+            // Ensure purple color for note text
+            noteValue.setTextColor(Color.parseColor("#5645C0"));
+        } else {
+            noteContainer.setVisibility(View.GONE);
+        }
 
         // === LINK VISIBILITY & CLICK HANDLING ===
         setupLink(view, R.id.application_link_container, R.id.textView45, jobUpdate.getApplicationLink(), "अर्जाची लिंक");
@@ -264,4 +337,30 @@ public class JobUpdateDetails extends Fragment {
             recyclerView.setAdapter(null);   // clear any previous adapter
         }
     }
+    
+    private void showCoinAnimationDialog(int start, int end) {
+        View view = LayoutInflater.from(requireContext())
+                .inflate(R.layout.coin_dialog_layout, null);
+        TextView count = view.findViewById(R.id.coin_count);
+        Button ok = view.findViewById(R.id.ok_button);
+        count.setText("Coins: " + start);
+        AlertDialog dialog = new AlertDialog.Builder(requireContext())
+                .setView(view).create();
+        if (dialog.getWindow() != null)
+            dialog.getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
+        ok.setOnClickListener(v -> dialog.dismiss());
+        dialog.show();
+
+        displayedCoins = start;
+        handler.post(new Runnable() {
+            @Override public void run() {
+                if (displayedCoins < end) {
+                    displayedCoins++;
+                    count.setText("Coins: " + displayedCoins);
+                    handler.postDelayed(this, 20);
+                }
+            }
+        });
+    }
+    
 }

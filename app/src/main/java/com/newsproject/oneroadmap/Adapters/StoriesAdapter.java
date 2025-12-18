@@ -26,6 +26,7 @@ import com.newsproject.oneroadmap.Models.JobUpdate;
 import com.newsproject.oneroadmap.Models.JobViewModel;
 import com.newsproject.oneroadmap.Models.Story;
 import com.newsproject.oneroadmap.R;
+import com.newsproject.oneroadmap.Utils.ShareHelper;
 
 import java.util.HashMap;
 import java.util.List;
@@ -224,10 +225,8 @@ public class StoriesAdapter extends RecyclerView.Adapter<StoriesAdapter.StoryVie
             // Share
             shareButton.setOnClickListener(v -> {
                 Story story = adapter.stories.get(getAdapterPosition());
-                Intent shareIntent = new Intent(Intent.ACTION_SEND);
-                shareIntent.setType("text/plain");
-                shareIntent.putExtra(Intent.EXTRA_TEXT, "Check out this story: " + story.getTitle());
-                adapter.context.startActivity(Intent.createChooser(shareIntent, "Share via"));
+                ShareHelper shareHelper = new ShareHelper(adapter.context);
+                shareHelper.sharePost("Check out this story: " + story.getTitle(), null);
             });
 
             // Close

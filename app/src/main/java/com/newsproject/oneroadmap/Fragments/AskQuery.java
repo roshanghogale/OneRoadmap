@@ -52,11 +52,12 @@ public class AskQuery extends DialogFragment {
 
     private static final String DEFAULT_TEXT = "Select Query Type";
     private final String[] queryTypes = {
-            "Maharashtra Government",
-            "Central Government",
-            "Government Banking",
-            "Private Banking",
-            "Private"
+            "करिअर प्रश्न",
+            "महाराष्ट्र जॉब",
+            "केंद्र सरकार जॉब",
+            "बँकिंग जॉब",
+            "प्राव्हेट जॉब",
+            "इतर प्रश्न"
     };
 
     @NonNull

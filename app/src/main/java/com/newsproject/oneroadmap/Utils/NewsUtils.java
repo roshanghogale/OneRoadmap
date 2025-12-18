@@ -1,5 +1,7 @@
 package com.newsproject.oneroadmap.Utils;
 
+import com.newsproject.oneroadmap.Utils.ShareHelper;
+
 import android.content.Context;
 import android.content.Intent;
 import android.util.Log;
@@ -147,10 +149,8 @@ public class NewsUtils {
         dialog.findViewById(R.id.cardView7).setOnClickListener(v -> dialog.dismiss());
         dialog.findViewById(R.id.imageView17).setOnClickListener(v -> dialog.dismiss());
         dialog.findViewById(R.id.cardView).setOnClickListener(v -> {
-            Intent shareIntent = new Intent(Intent.ACTION_SEND);
-            shareIntent.setType("text/plain");
-            shareIntent.putExtra(Intent.EXTRA_TEXT, news.getTitle() + "\n" + news.getWebUrl());
-            context.startActivity(Intent.createChooser(shareIntent, "Share news via"));
+            ShareHelper shareHelper = new ShareHelper(context);
+            shareHelper.sharePost(news.getTitle(), news.getWebUrl());
         });
 
         mainHandler.post(() -> {
