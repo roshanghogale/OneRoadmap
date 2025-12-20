@@ -19,11 +19,21 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent">
 
+        <de.hdodenhof.circleimageview.CircleImageView
+            android:id="@+id/circleImageView2"
+            android:layout_width="46dp"
+            android:layout_height="46dp"
+            android:layout_marginTop="10dp"
+            android:src="@drawable/app_logo"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
         <!-- Title TextView -->
         <TextView
             android:id="@+id/title_text"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
+            android:layout_marginStart="4dp"
             android:layout_marginTop="8dp"
             android:fontFamily="@font/yantramanav_bold"
             android:text="टाटा कंपनीकडून विद्यार्थ्यांना 70 हजार रुपयाची स्कॉलरशिप मिळणार आहेत"
@@ -31,7 +41,7 @@
             android:textSize="18sp"
             android:textStyle="bold"
             app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintStart_toEndOf="@+id/circleImageView2"
             app:layout_constraintTop_toTopOf="parent" />
 
         <!-- First Information Card - Education and Age -->
