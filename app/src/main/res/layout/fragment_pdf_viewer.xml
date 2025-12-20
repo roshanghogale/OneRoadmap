@@ -2,14 +2,54 @@
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    android:background="@android:color/black">
 
-    <ProgressBar
-        android:id="@+id/progress_bar"
+    <!-- Close Button -->
+    <ImageButton
+        android:id="@+id/btn_close"
+        android:layout_width="38dp"
+        android:layout_height="38dp"
+        android:layout_alignParentTop="true"
+        android:layout_alignParentEnd="true"
+        android:layout_marginEnd="16dp"
+        android:background="@drawable/circle_dark_gray"
+        android:contentDescription="Close"
+        android:elevation="4dp"
+        android:padding="8dp"
+        android:scaleType="fitCenter"
+        android:src="@drawable/close"
+        app:tint="@android:color/white" />
+
+    <!-- Progress Container -->
+    <LinearLayout
+        android:id="@+id/progress_container"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_centerInParent="true"
-        android:visibility="visible" />
+        android:orientation="vertical"
+        android:gravity="center"
+        android:visibility="visible">
+
+        <ProgressBar
+            android:id="@+id/progress_bar"
+            android:layout_width="300dp"
+            android:layout_height="wrap_content"
+            android:indeterminate="false"
+            android:progressTint="@color/headerPurple"
+            android:max="100"
+            style="?android:attr/progressBarStyleHorizontal" />
+
+        <TextView
+            android:id="@+id/progress_text"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="0%"
+            android:textColor="@android:color/white"
+            android:textSize="18sp"
+            android:textStyle="bold" />
+    </LinearLayout>
 
     <TextView
         android:id="@+id/tv_error"
@@ -24,8 +64,26 @@
         android:id="@+id/pdf_view"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_margin="12dp"
-        android:visibility="gone" />
+        android:visibility="gone"
+        android:background="@android:color/black" />
+
+    <!-- Page Count Text -->
+    <TextView
+        android:id="@+id/tv_page_count"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:layout_centerHorizontal="true"
+        android:layout_marginBottom="46dp"
+        android:text="page 1 / 1"
+        android:textColor="@android:color/white"
+        android:textSize="14sp"
+        android:visibility="gone"
+        android:background="@drawable/recktangle_dark_gray"
+        android:paddingStart="16dp"
+        android:paddingEnd="16dp"
+        android:paddingTop="8dp"
+        android:paddingBottom="8dp" />
 
     <com.google.android.material.floatingactionbutton.FloatingActionButton
         android:id="@+id/fab_save"
@@ -34,7 +92,7 @@
         android:layout_alignParentEnd="true"
         android:layout_alignParentBottom="true"
         android:layout_marginEnd="28dp"
-        android:layout_marginBottom="82dp"
+        android:layout_marginBottom="72dp"
         android:src="@drawable/download"
         android:visibility="gone"
         app:backgroundTint="@color/purple"

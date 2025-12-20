@@ -17,16 +17,23 @@ import android.view.ViewGroup;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
+import android.widget.ImageButton;
+import android.widget.LinearLayout;
 
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.core.content.ContextCompat;
+import androidx.core.view.ViewCompat;
+import androidx.core.view.WindowInsetsCompat;
+import androidx.core.graphics.Insets;
 import androidx.fragment.app.Fragment;
 
 import com.github.barteksc.pdfviewer.PDFView;
 import com.github.barteksc.pdfviewer.listener.OnLoadCompleteListener;
+import com.github.barteksc.pdfviewer.listener.OnPageChangeListener;
+import com.github.barteksc.pdfviewer.util.FitPolicy;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.newsproject.oneroadmap.R;
 import com.newsproject.oneroadmap.Utils.CoinManager;
@@ -37,7 +44,6 @@ import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
 import android.os.Handler;
 import android.widget.Button;
-import android.view.LayoutInflater;
 import android.content.SharedPreferences;
 
 import java.io.BufferedInputStream;
@@ -55,13 +61,19 @@ public class PDFViewerFragment extends Fragment {
     private String pdfUrl;
     private PDFView pdfView;
     private ProgressBar progressBar;
+    private TextView progressText;
+    private LinearLayout progressContainer;
     private TextView tvError;
+    private TextView tvPageCount;
     private FloatingActionButton fabSave;
+    private ImageButton btnClose;
     private File tempPdfFile;
     private CoinManager coinManager;
     private String userId;
     private Handler handler = new Handler();
     private int displayedCoins = 0;
+    private int totalPages = 0;
+    private int currentPage = 0;
 
     // Modern permission launchers
     private ActivityResultLauncher<String[]> legacyStorageLauncher;
@@ -135,14 +147,100 @@ public class PDFViewerFragment extends Fragment {
 
         pdfView = v.findViewById(R.id.pdf_view);
         progressBar = v.findViewById(R.id.progress_bar);
+        progressText = v.findViewById(R.id.progress_text);
+        progressContainer = v.findViewById(R.id.progress_container);
         tvError = v.findViewById(R.id.tv_error);
+        tvPageCount = v.findViewById(R.id.tv_page_count);
         fabSave = v.findViewById(R.id.fab_save);
+        btnClose = v.findViewById(R.id.btn_close);
 
         fabSave.setOnClickListener(view -> saveToDownloads());
+        btnClose.setOnClickListener(view -> closeFragment());
         tvError.setOnClickListener(view -> requestStoragePermission()); // retry
+
+        // Setup edge-to-edge for Android 15+ (API 35+)
+        setupEdgeToEdge(v);
 
         requestStoragePermission();   // start permission flow
         return v;
+    }
+    
+    private void setupEdgeToEdge(View view) {
+        // For Android 15+ (API 35+), only ignore bottom safe edge
+        // Keep top safe edge for status bar - ensure it's respected
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            ViewCompat.setOnApplyWindowInsetsListener(view, (v, insets) -> {
+                WindowInsetsCompat windowInsets = insets;
+                
+                // For Android 15+ (API 35+), only ignore bottom safe edge
+                if (Build.VERSION.SDK_INT >= 35) {
+                    // Get insets
+                    int topInset = windowInsets.getInsets(WindowInsetsCompat.Type.statusBars()).top;
+                    
+                    // Apply top padding to root view to respect status bar (top safe edge)
+                    v.setPadding(
+                        v.getPaddingLeft(),
+                        topInset,
+                        v.getPaddingRight(),
+                        v.getPaddingBottom()
+                    );
+                    
+                    // Apply small fixed margin to close button (relative to the padded content area)
+                    // Since root view already has top padding for status bar, just add a small margin
+                    if (btnClose != null) {
+                        ViewGroup.MarginLayoutParams params = (ViewGroup.MarginLayoutParams) btnClose.getLayoutParams();
+                        // Convert 16dp to pixels for the margin
+                        float density = getResources().getDisplayMetrics().density;
+                        int margin16dp = (int) (16 * density);
+                        params.topMargin = margin16dp;
+                        btnClose.setLayoutParams(params);
+                    }
+                    
+                    // For page count text, position it 24dp from actual bottom (ignoring safe area)
+                    // The layout already has marginBottom="24dp", so it will be positioned correctly
+                    // We just need to make sure the root view doesn't apply bottom padding
+                    
+                    // Return insets but consume navigation bar insets so bottom content extends to edge
+                    // Keep status bar insets to respect top safe edge
+                    Insets statusBarInsets = windowInsets.getInsets(WindowInsetsCompat.Type.statusBars());
+                    return new WindowInsetsCompat.Builder()
+                            .setInsets(WindowInsetsCompat.Type.statusBars(), statusBarInsets)
+                            .setInsets(WindowInsetsCompat.Type.navigationBars(), Insets.NONE)
+                            .build();
+                } else {
+                    // For Android 11-14, respect both top and bottom safe edges
+                    int topInset = windowInsets.getInsets(WindowInsetsCompat.Type.statusBars()).top;
+                    
+                    // Apply top padding to root view to respect status bar
+                    v.setPadding(
+                        v.getPaddingLeft(),
+                        topInset,
+                        v.getPaddingRight(),
+                        v.getPaddingBottom()
+                    );
+                    
+                    // Apply small fixed margin to close button
+                    if (btnClose != null) {
+                        ViewGroup.MarginLayoutParams params = (ViewGroup.MarginLayoutParams) btnClose.getLayoutParams();
+                        float density = getResources().getDisplayMetrics().density;
+                        int margin16dp = (int) (16 * density);
+                        params.topMargin = margin16dp;
+                        btnClose.setLayoutParams(params);
+                    }
+                    
+                    return windowInsets;
+                }
+            });
+        } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            // Android 5.0+ (API 21+) - fallback for older devices
+            if (getActivity() != null && getActivity().getWindow() != null) {
+                getActivity().getWindow().getDecorView().setSystemUiVisibility(
+                        View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+                                | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+                                | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
+                );
+            }
+        }
     }
 
     /** --------------------------------------------------------------
@@ -173,7 +271,9 @@ public class PDFViewerFragment extends Fragment {
      *  Download → temp cache → show PDF
      *  -------------------------------------------------------------- */
     private void downloadAndLoadPdf() {
-        progressBar.setVisibility(View.VISIBLE);
+        progressContainer.setVisibility(View.VISIBLE);
+        progressBar.setProgress(0);
+        progressText.setText("0%");
         tvError.setVisibility(View.GONE);
         pdfView.setVisibility(View.GONE);
         fabSave.setVisibility(View.GONE);
@@ -184,7 +284,7 @@ public class PDFViewerFragment extends Fragment {
                 if (isAdded() && getActivity() != null) {
                     requireActivity().runOnUiThread(() -> {
                         if (isAdded()) {
-                            progressBar.setVisibility(View.GONE);
+                            progressContainer.setVisibility(View.GONE);
                             if (tempPdfFile != null && tempPdfFile.exists()) {
                                 displayPdf(tempPdfFile);
                                 fabSave.setVisibility(View.VISIBLE);
@@ -218,6 +318,7 @@ public class PDFViewerFragment extends Fragment {
             throw new Exception("HTTP " + conn.getResponseCode());
         }
 
+        int contentLength = conn.getContentLength();
         InputStream in = new BufferedInputStream(conn.getInputStream());
         File outFile = new File(requireContext().getCacheDir(),
                 "pdf_tmp_" + System.currentTimeMillis() + ".pdf");
@@ -225,7 +326,27 @@ public class PDFViewerFragment extends Fragment {
 
         byte[] buf = new byte[8192];
         int len;
-        while ((len = in.read(buf)) > 0) fos.write(buf, 0, len);
+        long total = 0;
+        int lastProgress = -1;
+        
+        while ((len = in.read(buf)) > 0) {
+            fos.write(buf, 0, len);
+            total += len;
+            
+            if (contentLength > 0 && isAdded() && getActivity() != null) {
+                int progress = (int) ((total * 100) / contentLength);
+                if (progress != lastProgress) {
+                    lastProgress = progress;
+                    final int finalProgress = progress;
+                    requireActivity().runOnUiThread(() -> {
+                        if (isAdded()) {
+                            progressBar.setProgress(finalProgress);
+                            progressText.setText(finalProgress + "%");
+                        }
+                    });
+                }
+            }
+        }
 
         fos.close(); in.close(); conn.disconnect();
         return outFile;
@@ -233,20 +354,57 @@ public class PDFViewerFragment extends Fragment {
 
     private void displayPdf(File file) {
         pdfView.setVisibility(View.VISIBLE);
+        
+        // Set minimum zoom to allow zooming out below full width
+        // This must be called before loading the PDF
+        pdfView.setMinZoom(0.5f); // Allow zooming out to 50% of original size
+        pdfView.setMidZoom(1.0f); // Default zoom level
+        pdfView.setMaxZoom(3.0f); // Allow zooming in up to 300%
+        
         pdfView.fromFile(file)
                 .defaultPage(0)
                 .enableSwipe(true)
                 .swipeHorizontal(false)
-                .onLoad(nbPages -> Log.d(TAG, "PDF loaded, pages: " + nbPages))
+                .enableDoubletap(true) // Enable double tap to zoom
+                .onLoad(nbPages -> {
+                    totalPages = nbPages;
+                    currentPage = 1; // PDFView uses 0-based indexing, but we display 1-based
+                    updatePageCount();
+                    tvPageCount.setVisibility(View.VISIBLE);
+                    
+                    // Set initial zoom level to create space on left and right
+                    // Users can zoom in to use full width or zoom out to see more space
+                    pdfView.zoomTo(0.85f); // Adjust this value to control initial spacing
+                    pdfView.moveTo(0, 0); // Reset position to top-left corner
+                    
+                    Log.d(TAG, "PDF loaded, pages: " + nbPages);
+                })
+                .onPageChange((page, pageCount) -> {
+                    currentPage = page + 1; // Convert to 1-based for display
+                    updatePageCount();
+                })
                 .load();
+    }
+    
+    private void updatePageCount() {
+        if (tvPageCount != null && totalPages > 0) {
+            tvPageCount.setText("page " + currentPage + " / " + totalPages);
+        }
     }
 
     private void showError(String msg) {
-        progressBar.setVisibility(View.GONE);
+        progressContainer.setVisibility(View.GONE);
         pdfView.setVisibility(View.GONE);
         fabSave.setVisibility(View.GONE);
+        tvPageCount.setVisibility(View.GONE);
         tvError.setText(msg);
         tvError.setVisibility(View.VISIBLE);
+    }
+    
+    private void closeFragment() {
+        if (getActivity() != null) {
+            getActivity().onBackPressed();
+        }
     }
 
     /** --------------------------------------------------------------
