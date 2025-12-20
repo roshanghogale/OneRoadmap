@@ -1091,8 +1091,7 @@ public class HomeFragment extends Fragment {
         selectionPdfButton.setOnClickListener(v -> {
             String pdfUrl = item.getSelectionPdfUrl();
             if (pdfUrl != null && !pdfUrl.isEmpty()) {
-                Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(pdfUrl));
-                context.startActivity(intent);
+                com.newsproject.oneroadmap.Utils.PdfViewerHelper.openPdfInApp(this, pdfUrl);
             } else {
                 Toast.makeText(context, "सिलेक्शन PDF उपलब्ध नाही", Toast.LENGTH_SHORT).show();
             }

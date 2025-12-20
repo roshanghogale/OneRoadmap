@@ -159,8 +159,13 @@ public class CardPagerAdapter extends RecyclerView.Adapter<CardPagerAdapter.View
         TextView textView = view.findViewById(textViewId);
         if (url != null && !url.isEmpty()) {
             textView.setOnClickListener(v -> {
-                Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
-                view.getContext().startActivity(intent);
+                // Check if it's a PDF URL and open in app viewer, otherwise open externally
+                if (com.newsproject.oneroadmap.Utils.PdfViewerHelper.isPdfUrl(url)) {
+                    com.newsproject.oneroadmap.Utils.PdfViewerHelper.openPdfInApp(view.getContext(), url);
+                } else {
+                    Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
+                    view.getContext().startActivity(intent);
+                }
             });
         } else {
             textView.setOnClickListener(null);

@@ -133,7 +133,7 @@ public class Top5JobsFragment extends Fragment {
             holder.selectionPdfButton.setOnClickListener(v -> {
                 String pdfUrl = job.getSelectionPdfLink();
                 if (pdfUrl != null && !pdfUrl.isEmpty()) {
-                    startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(pdfUrl)));
+                    com.newsproject.oneroadmap.Utils.PdfViewerHelper.openPdfInApp(Top5JobsFragment.this, pdfUrl);
                 } else {
                     Toast.makeText(getContext(), "सिलेक्शन PDF उपलब्ध नाही", Toast.LENGTH_SHORT).show();
                 }
@@ -151,7 +151,7 @@ public class Top5JobsFragment extends Fragment {
             holder.notificationPdfButtonCard.setOnClickListener(v -> {
                 String pdfUrl = job.getNotificationPdfLink();
                 if (pdfUrl != null && !pdfUrl.isEmpty()) {
-                    startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(pdfUrl)));
+                    com.newsproject.oneroadmap.Utils.PdfViewerHelper.openPdfInApp(Top5JobsFragment.this, pdfUrl);
                 } else {
                     Toast.makeText(getContext(), "नोटिफिकेशन PDF उपलब्ध नाही", Toast.LENGTH_SHORT).show();
                 }

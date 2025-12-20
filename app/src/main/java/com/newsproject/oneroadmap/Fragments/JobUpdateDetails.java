@@ -250,8 +250,13 @@ public class JobUpdateDetails extends Fragment {
             container.setVisibility(View.VISIBLE);
             textView.setText(defaultText);
             textView.setOnClickListener(v -> {
-                Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
-                startActivity(intent);
+                // Check if it's a PDF URL and open in app viewer, otherwise open externally
+                if (com.newsproject.oneroadmap.Utils.PdfViewerHelper.isPdfUrl(url)) {
+                    com.newsproject.oneroadmap.Utils.PdfViewerHelper.openPdfInApp(this, url);
+                } else {
+                    Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
+                    startActivity(intent);
+                }
             });
         } else {
             container.setVisibility(View.GONE);

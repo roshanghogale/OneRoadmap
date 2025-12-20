@@ -68,8 +68,7 @@ public class CareerRoadmapsAdapter extends RecyclerView.Adapter<CareerRoadmapsAd
                     pdfUrl = pdfUrl.replace("http://", "https://");
                 }
                 Log.d(TAG, "Opening PDF: " + pdfUrl);
-                Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(pdfUrl));
-                context.startActivity(intent);
+                com.newsproject.oneroadmap.Utils.PdfViewerHelper.openPdfInApp(context, pdfUrl);
             } else {
                 Log.w(TAG, "PDF URL is null or empty for item: " + item.getTitle());
             }
