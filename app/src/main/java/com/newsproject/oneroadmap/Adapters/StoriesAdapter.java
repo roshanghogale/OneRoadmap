@@ -217,8 +217,7 @@ public class StoriesAdapter extends RecyclerView.Adapter<StoriesAdapter.StoryVie
                     }
                 } else if (story.getWebUrl() != null && !story.getWebUrl().isEmpty()) {
                     HomeFragment.stopStory(adapter.context);
-                    Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(story.getWebUrl()));
-                    adapter.context.startActivity(intent);
+                    com.newsproject.oneroadmap.Utils.WebViewHelper.openUrlInApp(adapter.context, story.getWebUrl());
                 }
             });
 

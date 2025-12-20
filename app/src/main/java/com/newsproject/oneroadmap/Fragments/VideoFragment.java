@@ -128,8 +128,7 @@ public class VideoFragment extends Fragment {
 
         openPostButton.setOnClickListener(v -> {
             if (reel.getDocumentIdWebUrl() != null) {
-                Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(reel.getDocumentIdWebUrl()));
-                startActivity(intent);
+                com.newsproject.oneroadmap.Utils.WebViewHelper.openUrlInApp(this, reel.getDocumentIdWebUrl());
             }
         });
     }

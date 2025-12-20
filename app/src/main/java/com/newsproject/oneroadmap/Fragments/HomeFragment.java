@@ -1080,8 +1080,7 @@ public class HomeFragment extends Fragment {
         openLinkButton.setOnClickListener(v -> {
             String link = item.getApplicationLink();
             if (link != null && !link.isEmpty()) {
-                Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(link));
-                context.startActivity(intent);
+                com.newsproject.oneroadmap.Utils.WebViewHelper.openUrlInApp(this, link);
             } else {
                 Toast.makeText(context, "अर्जाची लिंक उपलब्ध नाही", Toast.LENGTH_SHORT).show();
             }

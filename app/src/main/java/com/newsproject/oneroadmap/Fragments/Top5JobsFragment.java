@@ -142,7 +142,7 @@ public class Top5JobsFragment extends Fragment {
             holder.applicationLinkButtonCard.setOnClickListener(v -> {
                 String link = job.getApplicationLink();
                 if (link != null && !link.isEmpty()) {
-                    startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(link)));
+                    com.newsproject.oneroadmap.Utils.WebViewHelper.openUrlInApp(Top5JobsFragment.this, link);
                 } else {
                     Toast.makeText(getContext(), "अर्जाची लिंक उपलब्ध नाही", Toast.LENGTH_SHORT).show();
                 }

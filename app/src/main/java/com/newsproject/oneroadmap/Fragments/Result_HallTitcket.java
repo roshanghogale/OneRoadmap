@@ -600,8 +600,7 @@ public class Result_HallTitcket extends Fragment implements ResultAdapter.OnItem
             return;
         }
         try {
-            Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
-            startActivity(intent);
+            com.newsproject.oneroadmap.Utils.WebViewHelper.openUrlInApp(this, url);
         } catch (Exception e) {
             Log.e("OpenUrl", "Error opening URL: " + url, e);
             Toast.makeText(getContext(), "Cannot open link. Please check your browser.", Toast.LENGTH_SHORT).show();

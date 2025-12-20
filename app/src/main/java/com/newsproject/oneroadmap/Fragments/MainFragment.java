@@ -326,8 +326,7 @@ public class MainFragment extends Fragment {
                                 final String finalWebUrl = webUrl;
                                 careerSliderImage.setOnClickListener(v -> {
                                     if (isAdded()) {
-                                        Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(finalWebUrl));
-                                        startActivity(intent);
+                                        com.newsproject.oneroadmap.Utils.WebViewHelper.openUrlInApp(this, finalWebUrl);
                                     }
                                 });
                             }
