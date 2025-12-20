@@ -129,20 +129,26 @@ public class NewsUtils {
                 .into(imageView);
         titleView.setText(news.getTitle());
         StringBuilder descriptionText = new StringBuilder();
-        if (news.getDescription().getParagraph1() != null) {
-            descriptionText.append(news.getDescription().getParagraph1());
-        }
-        if (news.getDescription().getParagraph2() != null) {
-            if (descriptionText.length() > 0) descriptionText.append("\n\n");
-            descriptionText.append(news.getDescription().getParagraph2());
-        }
-        if (news.getDescription().getParagraph3() != null) {
-            if (descriptionText.length() > 0) descriptionText.append("\n\n");
-            descriptionText.append(news.getDescription().getParagraph3());
-        }
-        if (news.getDescription().getParagraph4() != null) {
-            if (descriptionText.length() > 0) descriptionText.append("\n\n");
-            descriptionText.append(news.getDescription().getParagraph4());
+        News.Description description = news.getDescription();
+        if (description != null) {
+            // Add titleDescription if available, otherwise paragraph1
+            String text = description.getTitleDescription();
+            if (text == null || text.isEmpty()) {
+                text = description.getParagraph1();
+            }
+            if (text != null && !text.isEmpty()) {
+                descriptionText.append(text);
+            }
+            
+            // Add subTitle if available, otherwise paragraph2
+            text = description.getSubTitle();
+            if (text == null || text.isEmpty()) {
+                text = description.getParagraph2();
+            }
+            if (text != null && !text.isEmpty()) {
+                if (descriptionText.length() > 0) descriptionText.append("\n\n");
+                descriptionText.append(text);
+            }
         }
         descriptionView.setText(descriptionText.toString().trim());
 

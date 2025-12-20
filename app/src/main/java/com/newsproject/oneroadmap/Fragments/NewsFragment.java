@@ -139,30 +139,36 @@ public class NewsFragment extends Fragment {
         class NewsViewHolder extends androidx.recyclerview.widget.RecyclerView.ViewHolder {
             private ImageView bannerImageView;
             private TextView titleTextView;
+            private TextView titleDescriptionTextView;
+            private TextView subTitleTextView;
             private TextView typeTextView;
             private TextView timeAgoTextView;
             private TextView paragraph1TextView;
             private TextView paragraph2TextView;
-            private TextView paragraph3TextView;
-            private TextView paragraph4TextView;
             private TextView dateTextView;
 
             public NewsViewHolder(@NonNull View itemView) {
                 super(itemView);
                 bannerImageView = itemView.findViewById(R.id.news_banner);
                 titleTextView = itemView.findViewById(R.id.news_title);
+                titleDescriptionTextView = itemView.findViewById(R.id.news_title_description);
+                subTitleTextView = itemView.findViewById(R.id.news_sub_title);
                 typeTextView = itemView.findViewById(R.id.news_type);
                 timeAgoTextView = itemView.findViewById(R.id.news_time_ago);
                 paragraph1TextView = itemView.findViewById(R.id.news_description_paragraph1);
                 paragraph2TextView = itemView.findViewById(R.id.news_description_paragraph2);
-                paragraph3TextView = itemView.findViewById(R.id.news_description_paragraph3);
-                paragraph4TextView = itemView.findViewById(R.id.news_description_paragraph4);
                 dateTextView = itemView.findViewById(R.id.news_date);
             }
 
             public void bind(News news) {
                 // Set title
-                titleTextView.setText(news.getTitle());
+                setTextIfNotNull(titleTextView, news.getTitle());
+
+                // Set title_description (from root level)
+                setTextIfNotNull(titleDescriptionTextView, news.getTitleDescription());
+
+                // Set sub_title (from root level)
+                setTextIfNotNull(subTitleTextView, news.getSubTitle());
 
                 // Set type
                 if (news.getType() != null && !news.getType().isEmpty()) {
@@ -174,7 +180,12 @@ public class NewsFragment extends Fragment {
 
                 // Set time ago
                 String timeAgo = getTimeAgo(news);
-                timeAgoTextView.setText(timeAgo);
+                if (timeAgo != null && !timeAgo.isEmpty() && !timeAgo.equals("Unknown")) {
+                    timeAgoTextView.setText(timeAgo);
+                    timeAgoTextView.setVisibility(View.VISIBLE);
+                } else {
+                    timeAgoTextView.setVisibility(View.GONE);
+                }
 
                 // Set date in Marathi format
                 String formattedDate = formatDateToMarathi(news);
@@ -185,18 +196,29 @@ public class NewsFragment extends Fragment {
                     dateTextView.setVisibility(View.GONE);
                 }
 
-                // Set description paragraphs
+                // Set description fields from description object
                 News.Description description = news.getDescription();
                 if (description != null) {
-                    setTextIfNotNull(paragraph1TextView, description.getParagraph1());
-                    setTextIfNotNull(paragraph2TextView, description.getParagraph2());
-                    setTextIfNotNull(paragraph3TextView, description.getParagraph3());
-                    setTextIfNotNull(paragraph4TextView, description.getParagraph4());
+                    // Set paragraph1: prefer titleDescription, fallback to paragraph1
+                    String paragraph1Text = null;
+                    if (description.getTitleDescription() != null && !description.getTitleDescription().isEmpty()) {
+                        paragraph1Text = description.getTitleDescription();
+                    } else if (description.getParagraph1() != null && !description.getParagraph1().isEmpty()) {
+                        paragraph1Text = description.getParagraph1();
+                    }
+                    setTextIfNotNull(paragraph1TextView, paragraph1Text);
+                    
+                    // Set paragraph2: prefer subTitle, fallback to paragraph2
+                    String paragraph2Text = null;
+                    if (description.getSubTitle() != null && !description.getSubTitle().isEmpty()) {
+                        paragraph2Text = description.getSubTitle();
+                    } else if (description.getParagraph2() != null && !description.getParagraph2().isEmpty()) {
+                        paragraph2Text = description.getParagraph2();
+                    }
+                    setTextIfNotNull(paragraph2TextView, paragraph2Text);
                 } else {
                     paragraph1TextView.setVisibility(View.GONE);
                     paragraph2TextView.setVisibility(View.GONE);
-                    paragraph3TextView.setVisibility(View.GONE);
-                    paragraph4TextView.setVisibility(View.GONE);
                 }
 
                 // Load image

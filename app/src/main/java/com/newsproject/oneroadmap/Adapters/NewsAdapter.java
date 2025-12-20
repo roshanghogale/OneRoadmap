@@ -45,8 +45,13 @@ public class NewsAdapter extends RecyclerView.Adapter<NewsAdapter.ViewHolder> {
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
         News news = newsList.get(position);
 
-        // Set title
-        holder.titleTextView.setText(news.getTitle());
+        // Set title - hide if empty
+        if (news.getTitle() != null && !news.getTitle().isEmpty()) {
+            holder.titleTextView.setText(news.getTitle());
+            holder.titleTextView.setVisibility(View.VISIBLE);
+        } else {
+            holder.titleTextView.setVisibility(View.GONE);
+        }
 
         // Set type badge
         if (news.getType() != null && !news.getType().isEmpty()) {
@@ -58,7 +63,12 @@ public class NewsAdapter extends RecyclerView.Adapter<NewsAdapter.ViewHolder> {
 
         // Set time ago using TimeAgoUtil (same as JobUpdate)
         String timeAgo = getTimeAgo(news);
-        holder.timeAgoTextView.setText(timeAgo);
+        if (timeAgo != null && !timeAgo.isEmpty() && !timeAgo.equals("Unknown")) {
+            holder.timeAgoTextView.setText(timeAgo);
+            holder.timeAgoTextView.setVisibility(View.VISIBLE);
+        } else {
+            holder.timeAgoTextView.setVisibility(View.GONE);
+        }
 
         // Load image - clear previous image first to avoid showing stale images
         Glide.with(context).clear(holder.bannerImageView);

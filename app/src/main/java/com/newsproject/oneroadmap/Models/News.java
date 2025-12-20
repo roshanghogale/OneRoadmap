@@ -11,6 +11,12 @@ public class News {
     @SerializedName("title")
     private String title;
 
+    @SerializedName("title_description")
+    private String titleDescription;
+
+    @SerializedName("sub_title")
+    private String subTitle;
+
     @SerializedName("type")
     private String type;
 
@@ -33,17 +39,25 @@ public class News {
     private Date updatedAt;
 
     public static class Description {
+        @SerializedName("titleDescription")
+        private String titleDescription;
+
+        @SerializedName("subTitle")
+        private String subTitle;
+
         @SerializedName("paragraph1")
         private String paragraph1;
 
         @SerializedName("paragraph2")
         private String paragraph2;
 
-        @SerializedName("paragraph3")
-        private String paragraph3;
+        public String getTitleDescription() {
+            return titleDescription;
+        }
 
-        @SerializedName("paragraph4")
-        private String paragraph4;
+        public String getSubTitle() {
+            return subTitle;
+        }
 
         public String getParagraph1() {
             return paragraph1;
@@ -51,14 +65,6 @@ public class News {
 
         public String getParagraph2() {
             return paragraph2;
-        }
-
-        public String getParagraph3() {
-            return paragraph3;
-        }
-
-        public String getParagraph4() {
-            return paragraph4;
         }
     }
 
@@ -68,6 +74,14 @@ public class News {
 
     public String getTitle() {
         return title;
+    }
+
+    public String getTitleDescription() {
+        return titleDescription;
+    }
+
+    public String getSubTitle() {
+        return subTitle;
     }
 
     public String getType() {

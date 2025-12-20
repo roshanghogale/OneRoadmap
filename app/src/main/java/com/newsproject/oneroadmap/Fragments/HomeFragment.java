@@ -983,11 +983,13 @@ public class HomeFragment extends Fragment {
                             String applicationLink = o.has("application_link") && !o.get("application_link").isJsonNull() ? o.get("application_link").getAsString() : "";
                             String lastDate = o.has("last_date") && !o.get("last_date").isJsonNull() ? o.get("last_date").getAsString() : "";
                             String imageUrl = o.has("image_url") && !o.get("image_url").isJsonNull() ? o.get("image_url").getAsString() : "";
+                            String iconUrl = o.has("icon_url") && !o.get("icon_url").isJsonNull() ? o.get("icon_url").getAsString() : "";
                             String notificationPdfUrl = o.has("notification_pdf_url") && !o.get("notification_pdf_url").isJsonNull() ? o.get("notification_pdf_url").getAsString() : "";
                             String selectionPdfUrl = o.has("selection_pdf_url") && !o.get("selection_pdf_url").isJsonNull() ? o.get("selection_pdf_url").getAsString() : "";
                             String createdAt = o.has("created_at") && !o.get("created_at").isJsonNull() ? o.get("created_at").getAsString() : "";
 
                             imageUrl = buildFullUrl(imageUrl);
+                            iconUrl = buildFullUrl(iconUrl);
                             notificationPdfUrl = buildFullUrl(notificationPdfUrl);
                             selectionPdfUrl = buildFullUrl(selectionPdfUrl);
                             applicationLink = buildFullUrl(applicationLink);
@@ -995,7 +997,7 @@ public class HomeFragment extends Fragment {
                             if (imageUrl == null || imageUrl.isEmpty()) continue;
 
                             fetched.add(new StudentUpdateItem(id, title, education, ageRestriction, applicationMethod,
-                                    description, applicationLink, lastDate, imageUrl, notificationPdfUrl, selectionPdfUrl, createdAt));
+                                    description, applicationLink, lastDate, imageUrl, iconUrl, notificationPdfUrl, selectionPdfUrl, createdAt));
                             Log.d(TAG, "student update image url " + imageUrl);
                         }
                     }
@@ -1049,12 +1051,24 @@ public class HomeFragment extends Fragment {
         dialog.getWindow().setStatusBarColor(android.graphics.Color.TRANSPARENT);
 
         // Initialize views
+        ImageView iconImageView = dialog.findViewById(R.id.circleImageView2);
         TextView titleText = dialog.findViewById(R.id.title_text);
         TextView educationValue = dialog.findViewById(R.id.education_requirement_value);
         TextView ageValue = dialog.findViewById(R.id.age_requirement_value);
         TextView descriptionText = dialog.findViewById(R.id.textView6);
         androidx.cardview.widget.CardView openLinkButton = dialog.findViewById(R.id.open_link_button);
         androidx.cardview.widget.CardView selectionPdfButton = dialog.findViewById(R.id.selection_pdf_button);
+
+        // Load icon image
+        if (item.getIconUrl() != null && !item.getIconUrl().isEmpty()) {
+            Glide.with(context)
+                    .load(item.getIconUrl())
+                    .placeholder(R.drawable.app_logo)
+                    .error(R.drawable.app_logo)
+                    .into(iconImageView);
+        } else {
+            iconImageView.setImageResource(R.drawable.app_logo);
+        }
 
         // Set text data
         titleText.setText(item.getTitle() != null ? item.getTitle() : "N/A");

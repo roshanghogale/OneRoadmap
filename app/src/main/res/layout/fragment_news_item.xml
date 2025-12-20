@@ -116,39 +116,40 @@
             android:padding="16dp">
 
             <TextView
-                android:id="@+id/news_description_paragraph1"
+                android:id="@+id/news_title_description"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="4dp"
                 android:textSize="18sp"
-                android:visibility="gone" />
+                android:visibility="visible" />
+
+            <TextView
+                android:id="@+id/news_sub_title"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:layout_marginBottom="4dp"
+                android:textSize="18sp"
+                android:textStyle="bold"
+                android:visibility="visible" />
+
+            <TextView
+                android:id="@+id/news_description_paragraph1"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:layout_marginBottom="4dp"
+                android:textSize="18sp"
+                android:visibility="visible" />
 
             <TextView
                 android:id="@+id/news_description_paragraph2"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="4dp"
-                android:layout_marginBottom="4dp"
-                android:textSize="18sp"
-                android:visibility="gone" />
-
-            <TextView
-                android:id="@+id/news_description_paragraph3"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="4dp"
-                android:layout_marginBottom="4dp"
-                android:textSize="18sp"
-                android:visibility="gone" />
-
-            <TextView
-                android:id="@+id/news_description_paragraph4"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="4dp"
                 android:layout_marginBottom="16dp"
                 android:textSize="18sp"
-                android:visibility="gone" />
+                android:visibility="visible" />
 
             <TextView
                 android:id="@+id/news_date"
@@ -157,7 +158,7 @@
                 android:layout_marginTop="4dp"
                 android:text="Date : "
                 android:textSize="10sp"
-                android:visibility="gone" />
+                android:visibility="visible" />
         </LinearLayout>
 
     </LinearLayout>

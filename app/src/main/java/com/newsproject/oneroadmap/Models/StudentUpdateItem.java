@@ -17,6 +17,8 @@ public class StudentUpdateItem {
     private String lastDate;
     @PropertyName("image_url")
     private String imageUrl;
+    @PropertyName("icon_url")
+    private String iconUrl;
     @PropertyName("notification_pdf_url")
     private String notificationPdfUrl;
     @PropertyName("selection_pdf_url")
@@ -30,7 +32,7 @@ public class StudentUpdateItem {
 
     public StudentUpdateItem(int id, String title, String education, String ageRestriction,
                              String applicationMethod, String description, String applicationLink,
-                             String lastDate, String imageUrl, String notificationPdfUrl,
+                             String lastDate, String imageUrl, String iconUrl, String notificationPdfUrl,
                              String selectionPdfUrl, String createdAt) {
         this.id = id;
         this.title = title;
@@ -41,6 +43,7 @@ public class StudentUpdateItem {
         this.applicationLink = applicationLink;
         this.lastDate = lastDate;
         this.imageUrl = imageUrl;
+        this.iconUrl = iconUrl;
         this.notificationPdfUrl = notificationPdfUrl;
         this.selectionPdfUrl = selectionPdfUrl;
         this.createdAt = createdAt;
@@ -126,6 +129,16 @@ public class StudentUpdateItem {
     @PropertyName("image_url")
     public void setImageUrl(String imageUrl) {
         this.imageUrl = imageUrl;
+    }
+
+    @PropertyName("icon_url")
+    public String getIconUrl() {
+        return iconUrl;
+    }
+
+    @PropertyName("icon_url")
+    public void setIconUrl(String iconUrl) {
+        this.iconUrl = iconUrl;
     }
 
     @PropertyName("notification_pdf_url")
