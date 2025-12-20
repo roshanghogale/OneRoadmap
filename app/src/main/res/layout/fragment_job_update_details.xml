@@ -304,7 +304,7 @@
                                         android:layout_weight="1.8"
                                         android:fontFamily="@font/yantramanav_bold"
                                         android:text="Note :"
-                                        android:textColor="#000000"
+                                        android:textColor="#5645C0"
                                         android:textSize="18sp"
                                         android:textStyle="bold"
                                         android:visibility="visible" />
@@ -317,7 +317,7 @@
                                         android:layout_weight="1"
                                         android:fontFamily="@font/yantramanav_regular"
                                         android:text="कंपनीचा इंटरव्यू जे आहे ते मालक हरिओम भाऊ घेतील इंटरव्यूवर तुला टाईम वर हजर राहणे आवश्यक आहे"
-                                        android:textColor="#5645C0"
+                                        android:textColor="#000000"
                                         android:textSize="16sp" />
                                 </LinearLayout>
 

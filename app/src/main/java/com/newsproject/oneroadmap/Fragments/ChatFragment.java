@@ -31,6 +31,10 @@ import com.newsproject.oneroadmap.Models.Reply;
 import com.newsproject.oneroadmap.R;
 import com.newsproject.oneroadmap.Utils.ApiClient;
 
+import androidx.core.content.res.ResourcesCompat;
+import java.util.Map;
+import java.util.HashMap;
+
 import org.imaginativeworld.whynotimagecarousel.ImageCarousel;
 import org.imaginativeworld.whynotimagecarousel.model.CarouselItem;
 
@@ -61,11 +65,44 @@ public class ChatFragment extends Fragment {
     private boolean isFabOpen = false;
     
     // Filter and sort state
-    private String selectedFilter = "all"; // "all", "career", "maharashtra", "banking"
+    private String selectedFilter = "all"; // "all" or query type value (can be Marathi or English)
     private String sortOption = "recent"; // "recent" or "popular"
     
-    // Filter and sort buttons
-    private android.widget.TextView filterAll, filterCareer, filterMaharashtra, filterBanking;
+    // Filter chips container
+    private LinearLayout filterContainer;
+    private Map<String, android.widget.TextView> filterChipMap = new HashMap<>();
+    
+    // Query types from AskQuery (Marathi)
+    private final String[] queryTypes = {
+            "करिअर प्रश्न",
+            "महाराष्ट्र जॉब",
+            "केंद्र सरकार जॉब",
+            "बँकिंग जॉब",
+            "प्राव्हेट जॉब",
+            "इतर प्रश्न"
+    };
+    
+    // Map Marathi query types to English type values used in Query model
+    private final Map<String, String> queryTypeMap = new HashMap<String, String>() {{
+        put("करिअर प्रश्न", "Career");
+        put("महाराष्ट्र जॉब", "Maharashtra Government");
+        put("केंद्र सरकार जॉब", "Central Government");
+        put("बँकिंग जॉब", "Banking");
+        put("प्राव्हेट जॉब", "Private");
+        put("इतर प्रश्न", "Other");
+    }};
+    
+    // Reverse map: English to Marathi (for filtering)
+    private final Map<String, String> reverseQueryTypeMap = new HashMap<String, String>() {{
+        put("Career", "करिअर प्रश्न");
+        put("Maharashtra Government", "महाराष्ट्र जॉब");
+        put("Central Government", "केंद्र सरकार जॉब");
+        put("Banking", "बँकिंग जॉब");
+        put("Private", "प्राव्हेट जॉब");
+        put("Other", "इतर प्रश्न");
+    }};
+    
+    // Sort buttons
     private android.widget.TextView sortPopular, sortRecent;
 
     @Nullable
@@ -77,39 +114,12 @@ public class ChatFragment extends Fragment {
         chatRecycler = view.findViewById(R.id.chat_recycler);
         carousel = view.findViewById(R.id.carousel);
         linearleft = view.findViewById(R.id.linearleft);
-        
-        // Initialize filter and sort buttons
-        filterAll = view.findViewById(R.id.filter_all);
-        filterCareer = view.findViewById(R.id.filter_career);
-        filterMaharashtra = view.findViewById(R.id.filter_maharashtra);
-        filterBanking = view.findViewById(R.id.filter_banking);
+        filterContainer = view.findViewById(R.id.filter_container);
         sortPopular = view.findViewById(R.id.sort_popular);
         sortRecent = view.findViewById(R.id.sort_recent);
         
-        // Setup filter button click listeners
-        filterAll.setOnClickListener(v -> {
-            selectedFilter = "all";
-            updateFilterButtonStates();
-            applyFilterAndSort();
-        });
-        
-        filterCareer.setOnClickListener(v -> {
-            selectedFilter = "career";
-            updateFilterButtonStates();
-            applyFilterAndSort();
-        });
-        
-        filterMaharashtra.setOnClickListener(v -> {
-            selectedFilter = "maharashtra";
-            updateFilterButtonStates();
-            applyFilterAndSort();
-        });
-        
-        filterBanking.setOnClickListener(v -> {
-            selectedFilter = "banking";
-            updateFilterButtonStates();
-            applyFilterAndSort();
-        });
+        // Setup filter chips
+        setupFilterChips();
         
         // Setup sort button click listeners
         sortPopular.setOnClickListener(v -> {
@@ -125,7 +135,6 @@ public class ChatFragment extends Fragment {
         });
         
         // Set initial button states
-        updateFilterButtonStates();
         updateSortButtonStates();
 
         FloatingActionButton fabMain = view.findViewById(R.id.fab_main);
@@ -440,35 +449,113 @@ public class ChatFragment extends Fragment {
     }
     
     /**
+     * Setup filter chips dynamically based on query types
+     */
+    private void setupFilterChips() {
+        if (filterContainer == null) return;
+        
+        filterContainer.removeAllViews();
+        filterChipMap.clear();
+        
+        // Add "All" chip
+        android.widget.TextView allChip = createFilterChip("All Query", "all");
+        filterContainer.addView(allChip);
+        filterChipMap.put("all", allChip);
+        
+        // Add chips for each query type
+        for (String queryType : queryTypes) {
+            android.widget.TextView chip = createFilterChip(queryType, queryTypeMap.get(queryType));
+            filterContainer.addView(chip);
+            filterChipMap.put(queryTypeMap.get(queryType), chip);
+        }
+        
+        // Set "All" as selected by default
+        updateFilterChipStates();
+    }
+    
+    /**
+     * Create a filter chip TextView
+     */
+    private android.widget.TextView createFilterChip(String text, String filterValue) {
+        android.widget.TextView chip = new android.widget.TextView(getContext());
+        chip.setText(text);
+        chip.setTextSize(12);
+        chip.setTypeface(ResourcesCompat.getFont(getContext(), R.font.yantramanav_regular));
+        chip.setPadding(dpToPx(10), dpToPx(4), dpToPx(10), dpToPx(4));
+        chip.setClickable(true);
+        chip.setFocusable(true);
+        chip.setGravity(android.view.Gravity.CENTER);
+        chip.setTextAlignment(android.view.View.TEXT_ALIGNMENT_CENTER);
+        
+        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+        );
+        params.setMargins(dpToPx(3), 0, dpToPx(3), 0);
+        chip.setLayoutParams(params);
+        
+        chip.setOnClickListener(v -> {
+            selectedFilter = filterValue;
+            updateFilterChipStates();
+            applyFilterAndSort();
+        });
+        
+        return chip;
+    }
+    
+    /**
+     * Update filter chip states
+     */
+    private void updateFilterChipStates() {
+        for (Map.Entry<String, android.widget.TextView> entry : filterChipMap.entrySet()) {
+            String filterValue = entry.getKey();
+            android.widget.TextView chip = entry.getValue();
+            
+            if (filterValue.equals(selectedFilter)) {
+                chip.setBackgroundResource(R.drawable.rectangle_purple);
+                chip.setTextColor(getResources().getColor(android.R.color.white, null));
+            } else {
+                chip.setBackgroundResource(R.drawable.rectangle_with_stroke);
+                chip.setTextColor(getResources().getColor(R.color.text_primary, null));
+            }
+        }
+    }
+    
+    /**
      * Apply filter and sort to chats (matching iOS implementation)
+     * Filters by both Marathi and English type values for robustness
      */
     private void applyFilterAndSort() {
         ArrayList<Query> filteredChats = new ArrayList<>(allChats);
         
         // Apply filter by type
         if (!selectedFilter.equals("all")) {
-            String filterType = null;
-            switch (selectedFilter) {
-                case "career":
-                    filterType = "Career";
-                    break;
-                case "maharashtra":
-                    filterType = "Maharashtra Government";
-                    break;
-                case "banking":
-                    filterType = "Banking";
-                    break;
+            ArrayList<Query> temp = new ArrayList<>();
+            
+            // Get both Marathi and English values for the selected filter
+            String marathiValue = selectedFilter; // Assume selectedFilter is English mapped value
+            String englishValue = selectedFilter;
+            
+            // If selectedFilter is English, get the Marathi equivalent
+            if (reverseQueryTypeMap.containsKey(selectedFilter)) {
+                marathiValue = reverseQueryTypeMap.get(selectedFilter);
+            }
+            // If selectedFilter is Marathi, get the English equivalent
+            if (queryTypeMap.containsKey(selectedFilter)) {
+                englishValue = queryTypeMap.get(selectedFilter);
+                marathiValue = selectedFilter;
             }
             
-            if (filterType != null) {
-                ArrayList<Query> temp = new ArrayList<>();
-                for (Query query : filteredChats) {
-                    if (filterType.equals(query.getType())) {
+            for (Query query : filteredChats) {
+                String queryType = query.getType();
+                if (queryType != null) {
+                    // Check if query type matches either Marathi or English value
+                    if (queryType.equals(marathiValue) || queryType.equals(englishValue)) {
                         temp.add(query);
                     }
                 }
-                filteredChats = temp;
             }
+            filteredChats = temp;
         }
         
         // Apply sorting
@@ -499,47 +586,6 @@ public class ChatFragment extends Fragment {
         }
     }
     
-    /**
-     * Update filter button background states
-     */
-    private void updateFilterButtonStates() {
-        if (filterAll == null || filterCareer == null || filterMaharashtra == null || filterBanking == null) {
-            return;
-        }
-        
-        // Reset all filter buttons
-        filterAll.setBackgroundResource(R.drawable.rectangle_with_stroke);
-        filterAll.setTextColor(getResources().getColor(R.color.text_primary, null));
-        
-        filterCareer.setBackgroundResource(R.drawable.rectangle_with_stroke);
-        filterCareer.setTextColor(getResources().getColor(R.color.text_primary, null));
-        
-        filterMaharashtra.setBackgroundResource(R.drawable.rectangle_with_stroke);
-        filterMaharashtra.setTextColor(getResources().getColor(R.color.text_primary, null));
-        
-        filterBanking.setBackgroundResource(R.drawable.rectangle_with_stroke);
-        filterBanking.setTextColor(getResources().getColor(R.color.text_primary, null));
-        
-        // Set selected filter button
-        switch (selectedFilter) {
-            case "all":
-                filterAll.setBackgroundResource(R.drawable.rectangle_purple);
-                filterAll.setTextColor(getResources().getColor(android.R.color.white, null));
-                break;
-            case "career":
-                filterCareer.setBackgroundResource(R.drawable.rectangle_purple);
-                filterCareer.setTextColor(getResources().getColor(android.R.color.white, null));
-                break;
-            case "maharashtra":
-                filterMaharashtra.setBackgroundResource(R.drawable.rectangle_purple);
-                filterMaharashtra.setTextColor(getResources().getColor(android.R.color.white, null));
-                break;
-            case "banking":
-                filterBanking.setBackgroundResource(R.drawable.rectangle_purple);
-                filterBanking.setTextColor(getResources().getColor(android.R.color.white, null));
-                break;
-        }
-    }
     
     /**
      * Update sort button background states

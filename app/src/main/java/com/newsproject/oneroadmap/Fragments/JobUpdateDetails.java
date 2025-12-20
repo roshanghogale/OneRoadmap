@@ -223,8 +223,8 @@ public class JobUpdateDetails extends Fragment {
         if (note != null && !note.isEmpty()) {
             noteContainer.setVisibility(View.VISIBLE);
             noteValue.setText(note);
-            // Ensure purple color for note text
-            noteValue.setTextColor(Color.parseColor("#5645C0"));
+            // Note text should be black (default), only "Note" label is blue
+            noteValue.setTextColor(Color.parseColor("#000000"));
         } else {
             noteContainer.setVisibility(View.GONE);
         }
