@@ -146,9 +146,9 @@ public class NewsUtils {
                 text = description.getParagraph2();
             }
             if (text != null && !text.isEmpty()) {
-                if (descriptionText.length() > 0) descriptionText.append("\n\n");
+            if (descriptionText.length() > 0) descriptionText.append("\n\n");
                 descriptionText.append(text);
-            }
+        }
         }
         descriptionView.setText(descriptionText.toString().trim());
 

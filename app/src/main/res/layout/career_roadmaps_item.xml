@@ -21,7 +21,8 @@
         <ImageView
             android:id="@+id/career_banner"
             android:layout_width="match_parent"
-            android:layout_height="120dp"
+            android:foreground="@drawable/rectangle_black_border"
+            android:layout_height="116dp"
             app:srcCompat="@drawable/banner_career_roadmap" />
 
     </androidx.cardview.widget.CardView>

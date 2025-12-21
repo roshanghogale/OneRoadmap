@@ -568,7 +568,10 @@ public class Result_HallTitcket extends Fragment implements ResultAdapter.OnItem
             if (isValidUrl(url1)) {
                 card1.setVisibility(View.VISIBLE);
                 btn1.setText(urls.get(0).get("title"));
-                card1.setOnClickListener(v -> openUrl(url1));
+                card1.setOnClickListener(v -> {
+                    dialog.dismiss(); // Close dialog before opening WebView
+                    openUrl(url1);
+                });
             }
         }
         if (urls != null && urls.size() > 1) {
@@ -576,7 +579,10 @@ public class Result_HallTitcket extends Fragment implements ResultAdapter.OnItem
             if (isValidUrl(url2)) {
                 card2.setVisibility(View.VISIBLE);
                 btn2.setText(urls.get(1).get("title"));
-                card2.setOnClickListener(v -> openUrl(url2));
+                card2.setOnClickListener(v -> {
+                    dialog.dismiss(); // Close dialog before opening WebView
+                    openUrl(url2);
+                });
             }
         }
         if (urls != null && urls.size() > 2) {
@@ -584,7 +590,10 @@ public class Result_HallTitcket extends Fragment implements ResultAdapter.OnItem
             if (isValidUrl(url3)) {
                 card3.setVisibility(View.VISIBLE);
                 btn3.setText(urls.get(2).get("title"));
-                card3.setOnClickListener(v -> openUrl(url3));
+                card3.setOnClickListener(v -> {
+                    dialog.dismiss(); // Close dialog before opening WebView
+                    openUrl(url3);
+                });
             }
         }
     }

@@ -16,6 +16,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowManager;
+import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
@@ -1051,13 +1052,17 @@ public class HomeFragment extends Fragment {
         dialog.getWindow().setStatusBarColor(android.graphics.Color.TRANSPARENT);
 
         // Initialize views
-        ImageView iconImageView = dialog.findViewById(R.id.circleImageView2);
+        CircleImageView iconImageView = dialog.findViewById(R.id.circleImageView2);
+        ImageButton btnClose = dialog.findViewById(R.id.btn_close);
         TextView titleText = dialog.findViewById(R.id.title_text);
         TextView educationValue = dialog.findViewById(R.id.education_requirement_value);
         TextView ageValue = dialog.findViewById(R.id.age_requirement_value);
         TextView descriptionText = dialog.findViewById(R.id.textView6);
         androidx.cardview.widget.CardView openLinkButton = dialog.findViewById(R.id.open_link_button);
         androidx.cardview.widget.CardView selectionPdfButton = dialog.findViewById(R.id.selection_pdf_button);
+        
+        // Close button click
+        btnClose.setOnClickListener(v -> dialog.dismiss());
 
         // Load icon image
         if (item.getIconUrl() != null && !item.getIconUrl().isEmpty()) {
@@ -1080,6 +1085,7 @@ public class HomeFragment extends Fragment {
         openLinkButton.setOnClickListener(v -> {
             String link = item.getApplicationLink();
             if (link != null && !link.isEmpty()) {
+                dialog.dismiss(); // Close dialog before opening WebView
                 com.newsproject.oneroadmap.Utils.WebViewHelper.openUrlInApp(this, link);
             } else {
                 Toast.makeText(context, "अर्जाची लिंक उपलब्ध नाही", Toast.LENGTH_SHORT).show();
@@ -1090,6 +1096,7 @@ public class HomeFragment extends Fragment {
         selectionPdfButton.setOnClickListener(v -> {
             String pdfUrl = item.getSelectionPdfUrl();
             if (pdfUrl != null && !pdfUrl.isEmpty()) {
+                dialog.dismiss(); // Close dialog before opening PDF viewer
                 com.newsproject.oneroadmap.Utils.PdfViewerHelper.openPdfInApp(this, pdfUrl);
             } else {
                 Toast.makeText(context, "सिलेक्शन PDF उपलब्ध नाही", Toast.LENGTH_SHORT).show();

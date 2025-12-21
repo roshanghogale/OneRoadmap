@@ -42,9 +42,15 @@ public class ShareHelper {
      */
     public void shareJobWithImage(String title, String url, String imageUrl) {
         if (title == null) title = "Latest Government Job Alert";
-        if (url == null) url = "https://play.google.com/store/apps/details?id=com.newsproject.oneroadmap";
         
-        String fullText = title + "\n\n" + url + "\n\nShared via One Roadmap App";
+        // If url is null, share only the title (for news/student updates)
+        // Otherwise, include URL and "Shared via" text (for job updates)
+        String fullText;
+        if (url == null || url.isEmpty()) {
+            fullText = title;
+        } else {
+            fullText = title + "\n\n" + url + "\n\nShared via One Roadmap App";
+        }
         
         if (imageUrl == null || imageUrl.trim().isEmpty()) {
             shareTextOnly(fullText);
@@ -91,14 +97,20 @@ public class ShareHelper {
             );
             
             Intent shareIntent = new Intent(Intent.ACTION_SEND);
-            shareIntent.setType("image/jpeg");
-            shareIntent.putExtra(Intent.EXTRA_STREAM, imageUri);
+            shareIntent.setType("image/*");
+            // Put text first, then image - some apps (like WhatsApp) need text before stream
             shareIntent.putExtra(Intent.EXTRA_TEXT, text);
+            shareIntent.putExtra(Intent.EXTRA_STREAM, imageUri);
             shareIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
             shareIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
             
-            // 1. Try WhatsApp
-            Intent whatsappIntent = (Intent) shareIntent.clone();
+            // 1. Try WhatsApp - create fresh intent to ensure text is included
+            Intent whatsappIntent = new Intent(Intent.ACTION_SEND);
+            whatsappIntent.setType("image/*");
+            whatsappIntent.putExtra(Intent.EXTRA_TEXT, text);
+            whatsappIntent.putExtra(Intent.EXTRA_STREAM, imageUri);
+            whatsappIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+            whatsappIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
             whatsappIntent.setPackage("com.whatsapp");
             try {
                 if (shareLauncher != null) {

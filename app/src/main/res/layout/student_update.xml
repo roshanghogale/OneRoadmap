@@ -19,14 +19,29 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent">
 
-        <ImageView
+        <!-- Close Button -->
+        <ImageButton
+            android:id="@+id/btn_close"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:background="@drawable/circle_dark_gray"
+            android:contentDescription="Close"
+            android:elevation="4dp"
+            android:padding="8dp"
+            android:scaleType="fitCenter"
+            android:src="@drawable/close"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:tint="@android:color/white" />
+
+        <de.hdodenhof.circleimageview.CircleImageView
             android:id="@+id/circleImageView2"
             android:layout_width="42dp"
             android:layout_height="42dp"
-            android:layout_marginTop="8dp"
             android:src="@drawable/app_logo"
+            app:layout_constraintBottom_toBottomOf="@+id/title_text"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent" />
+            app:layout_constraintTop_toTopOf="@+id/title_text" />
 
         <!-- Title TextView -->
         <TextView
@@ -40,7 +55,7 @@
             android:textColor="#000000"
             android:textSize="18sp"
             android:textStyle="bold"
-            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintEnd_toStartOf="@+id/btn_close"
             app:layout_constraintStart_toEndOf="@+id/circleImageView2"
             app:layout_constraintTop_toTopOf="parent" />
 
@@ -49,9 +64,10 @@
             android:id="@+id/info_card_1"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
-            app:cardBackgroundColor="#F2F2F2"
+            android:layout_marginTop="24dp"
+            app:cardBackgroundColor="#CDF2F2F2"
             app:cardCornerRadius="12dp"
+            app:cardElevation="0dp"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@+id/circleImageView2">
@@ -132,8 +148,9 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_marginTop="12dp"
-            app:cardBackgroundColor="#F2F2F2"
+            app:cardBackgroundColor="#CBF2F2F2"
             app:cardCornerRadius="12dp"
+            app:cardElevation="0dp"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@id/info_card_1">

@@ -19,6 +19,10 @@ import com.newsproject.oneroadmap.Models.News;
 import com.newsproject.oneroadmap.R;
 import com.newsproject.oneroadmap.Utils.BuildConfig;
 import com.newsproject.oneroadmap.Utils.TimeAgoUtil;
+import com.newsproject.oneroadmap.Utils.ShareHelper;
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
+import android.content.Intent;
 
 import java.lang.reflect.Type;
 import java.text.SimpleDateFormat;
@@ -35,6 +39,8 @@ public class NewsFragment extends Fragment {
     private ViewPager2 viewPager;
     private List<News> newsList;
     private int initialPosition;
+    private ShareHelper shareHelper;
+    private ActivityResultLauncher<Intent> shareLauncher;
 
     public NewsFragment() {
         // Required empty public constructor
@@ -64,6 +70,19 @@ public class NewsFragment extends Fragment {
                 newsList = new ArrayList<>();
             }
         }
+        
+        // Initialize ShareHelper
+        shareHelper = new ShareHelper(requireContext());
+        
+        // Initialize share launcher
+        shareLauncher = registerForActivityResult(
+                new ActivityResultContracts.StartActivityForResult(),
+                result -> {
+                    // When user returns from sharing, add coins
+                    shareHelper.onShareCompleted();
+                });
+        
+        shareHelper.setShareLauncher(shareLauncher);
     }
 
     @Override
@@ -79,7 +98,7 @@ public class NewsFragment extends Fragment {
         viewPager = view.findViewById(R.id.news_viewpager);
         
         if (newsList != null && !newsList.isEmpty()) {
-            NewsPagerAdapter adapter = new NewsPagerAdapter(newsList);
+            NewsPagerAdapter adapter = new NewsPagerAdapter(newsList, shareHelper, shareLauncher);
             viewPager.setAdapter(adapter);
             
             // Improve animation smoothness
@@ -112,9 +131,13 @@ public class NewsFragment extends Fragment {
 
     private class NewsPagerAdapter extends androidx.recyclerview.widget.RecyclerView.Adapter<NewsPagerAdapter.NewsViewHolder> {
         private final List<News> newsList;
+        private final ShareHelper shareHelper;
+        private final ActivityResultLauncher<Intent> shareLauncher;
 
-        public NewsPagerAdapter(List<News> newsList) {
+        public NewsPagerAdapter(List<News> newsList, ShareHelper shareHelper, ActivityResultLauncher<Intent> shareLauncher) {
             this.newsList = newsList;
+            this.shareHelper = shareHelper;
+            this.shareLauncher = shareLauncher;
         }
 
         @NonNull
@@ -128,7 +151,7 @@ public class NewsFragment extends Fragment {
         @Override
         public void onBindViewHolder(@NonNull NewsViewHolder holder, int position) {
             News news = newsList.get(position);
-            holder.bind(news);
+            holder.bind(news, shareHelper);
         }
 
         @Override
@@ -146,6 +169,7 @@ public class NewsFragment extends Fragment {
             private TextView paragraph1TextView;
             private TextView paragraph2TextView;
             private TextView dateTextView;
+            private View shareButtonContainer;
 
             public NewsViewHolder(@NonNull View itemView) {
                 super(itemView);
@@ -158,9 +182,10 @@ public class NewsFragment extends Fragment {
                 paragraph1TextView = itemView.findViewById(R.id.news_description_paragraph1);
                 paragraph2TextView = itemView.findViewById(R.id.news_description_paragraph2);
                 dateTextView = itemView.findViewById(R.id.news_date);
+                shareButtonContainer = itemView.findViewById(R.id.share_button_container);
             }
 
-            public void bind(News news) {
+            public void bind(News news, ShareHelper shareHelper) {
                 // Set title
                 setTextIfNotNull(titleTextView, news.getTitle());
 
@@ -181,7 +206,7 @@ public class NewsFragment extends Fragment {
                 // Set time ago
                 String timeAgo = getTimeAgo(news);
                 if (timeAgo != null && !timeAgo.isEmpty() && !timeAgo.equals("Unknown")) {
-                    timeAgoTextView.setText(timeAgo);
+                timeAgoTextView.setText(timeAgo);
                     timeAgoTextView.setVisibility(View.VISIBLE);
                 } else {
                     timeAgoTextView.setVisibility(View.GONE);
@@ -201,20 +226,13 @@ public class NewsFragment extends Fragment {
                 if (description != null) {
                     // Set paragraph1: prefer titleDescription, fallback to paragraph1
                     String paragraph1Text = null;
-                    if (description.getTitleDescription() != null && !description.getTitleDescription().isEmpty()) {
-                        paragraph1Text = description.getTitleDescription();
-                    } else if (description.getParagraph1() != null && !description.getParagraph1().isEmpty()) {
-                        paragraph1Text = description.getParagraph1();
-                    }
+                    paragraph1Text = description.getParagraph1();
                     setTextIfNotNull(paragraph1TextView, paragraph1Text);
                     
                     // Set paragraph2: prefer subTitle, fallback to paragraph2
                     String paragraph2Text = null;
-                    if (description.getSubTitle() != null && !description.getSubTitle().isEmpty()) {
-                        paragraph2Text = description.getSubTitle();
-                    } else if (description.getParagraph2() != null && !description.getParagraph2().isEmpty()) {
-                        paragraph2Text = description.getParagraph2();
-                    }
+                    paragraph2Text = description.getParagraph2();
+                    
                     setTextIfNotNull(paragraph2TextView, paragraph2Text);
                 } else {
                     paragraph1TextView.setVisibility(View.GONE);
@@ -236,6 +254,23 @@ public class NewsFragment extends Fragment {
                     }
                 } else {
                     bannerImageView.setImageResource(R.drawable.student_update_1);
+                }
+                
+                // Setup share button
+                if (shareButtonContainer != null && shareHelper != null) {
+                    shareButtonContainer.setOnClickListener(v -> {
+                        // Get news title - use getTitle() method
+                        String title = news.getTitle() != null ? news.getTitle() : "Latest News";
+                        String bannerUrl = news.getImageUrl();
+                        
+                        // Build full URL for banner if it's relative
+                        if (bannerUrl != null && !bannerUrl.isEmpty()) {
+                            bannerUrl = buildFullUrl(bannerUrl);
+                        }
+                        
+                        // Share only the title with banner image (same format as student update)
+                        shareHelper.shareJobWithImage(title, null, bannerUrl);
+                    });
                 }
             }
 

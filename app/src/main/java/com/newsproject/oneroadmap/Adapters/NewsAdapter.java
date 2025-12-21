@@ -47,7 +47,7 @@ public class NewsAdapter extends RecyclerView.Adapter<NewsAdapter.ViewHolder> {
 
         // Set title - hide if empty
         if (news.getTitle() != null && !news.getTitle().isEmpty()) {
-            holder.titleTextView.setText(news.getTitle());
+        holder.titleTextView.setText(news.getTitle());
             holder.titleTextView.setVisibility(View.VISIBLE);
         } else {
             holder.titleTextView.setVisibility(View.GONE);
@@ -64,7 +64,7 @@ public class NewsAdapter extends RecyclerView.Adapter<NewsAdapter.ViewHolder> {
         // Set time ago using TimeAgoUtil (same as JobUpdate)
         String timeAgo = getTimeAgo(news);
         if (timeAgo != null && !timeAgo.isEmpty() && !timeAgo.equals("Unknown")) {
-            holder.timeAgoTextView.setText(timeAgo);
+        holder.timeAgoTextView.setText(timeAgo);
             holder.timeAgoTextView.setVisibility(View.VISIBLE);
         } else {
             holder.timeAgoTextView.setVisibility(View.GONE);

@@ -363,6 +363,7 @@ public class PDFViewerFragment extends Fragment {
         
         pdfView.fromFile(file)
                 .defaultPage(0)
+                .spacing(16) // Add gap between pages (in pixels)
                 .enableSwipe(true)
                 .swipeHorizontal(false)
                 .enableDoubletap(true) // Enable double tap to zoom
