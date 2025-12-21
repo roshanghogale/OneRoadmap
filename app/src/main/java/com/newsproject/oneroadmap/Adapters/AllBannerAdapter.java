@@ -20,6 +20,15 @@ public class AllBannerAdapter extends RecyclerView.Adapter<AllBannerAdapter.View
 
     private final List<StudentUpdateItem> itemList;
     private final Context context;
+    private OnItemClickListener onItemClickListener;
+
+    public interface OnItemClickListener {
+        void onItemClick(StudentUpdateItem item);
+    }
+
+    public void setOnItemClickListener(OnItemClickListener listener) {
+        this.onItemClickListener = listener;
+    }
 
     public AllBannerAdapter(List<StudentUpdateItem> itemList, Context context) {
         this.itemList = itemList;
@@ -63,6 +72,12 @@ public class AllBannerAdapter extends RecyclerView.Adapter<AllBannerAdapter.View
                     }
                 })
                 .into(holder.imageView);
+
+        holder.itemView.setOnClickListener(v -> {
+            if (onItemClickListener != null) {
+                onItemClickListener.onItemClick(item);
+            }
+        });
     }
 
     @Override

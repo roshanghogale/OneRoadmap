@@ -14,6 +14,10 @@ public class Story {
     private String type; // e.g., post, promotion
     private String postDocumentId; // backend job update id
     private String webUrl; // for promotion/external links
+    private String videoUrl; // video URL for video stories
+    private String bannerUrl; // banner URL (alternative to imageUrl)
+    private String mediaType; // "video" or "image"
+    private long createdAtTimestamp; // timestamp for sorting
 
     public Story() {}
 
@@ -141,5 +145,37 @@ public class Story {
 
     public void setWebUrl(String webUrl) {
         this.webUrl = webUrl;
+    }
+
+    public String getVideoUrl() {
+        return videoUrl;
+    }
+
+    public void setVideoUrl(String videoUrl) {
+        this.videoUrl = videoUrl;
+    }
+
+    public String getBannerUrl() {
+        return bannerUrl;
+    }
+
+    public void setBannerUrl(String bannerUrl) {
+        this.bannerUrl = bannerUrl;
+    }
+
+    public String getMediaType() {
+        return mediaType;
+    }
+
+    public void setMediaType(String mediaType) {
+        this.mediaType = mediaType;
+    }
+
+    public long getCreatedAtTimestamp() {
+        return createdAtTimestamp;
+    }
+
+    public void setCreatedAtTimestamp(long createdAtTimestamp) {
+        this.createdAtTimestamp = createdAtTimestamp;
     }
 }

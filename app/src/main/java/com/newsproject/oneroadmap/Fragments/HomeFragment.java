@@ -72,6 +72,7 @@ import org.imaginativeworld.whynotimagecarousel.model.CarouselItem;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -169,6 +170,7 @@ public class HomeFragment extends Fragment {
                     RecyclerView.ViewHolder holder = storiesPlayer.findViewHolderForAdapterPosition(i);
                     if (holder instanceof StoriesAdapter.StoryViewHolder) {
                         ((StoriesAdapter.StoryViewHolder) holder).cancelViewTask();
+                        ((StoriesAdapter.StoryViewHolder) holder).releaseVideo();
                         Log.d(TAG, "Canceled tasks and reset progress for view holder at position: " + i);
                     }
                 }
@@ -579,6 +581,8 @@ public class HomeFragment extends Fragment {
                             String title = o.has("title") && !o.get("title").isJsonNull() ? o.get("title").getAsString() : null;
                             String iconUrl = o.has("icon_url") && !o.get("icon_url").isJsonNull() ? o.get("icon_url").getAsString() : null;
                             String bannerUrl = o.has("banner_url") && !o.get("banner_url").isJsonNull() ? o.get("banner_url").getAsString() : null;
+                            String videoUrl = o.has("video_url") && !o.get("video_url").isJsonNull() ? o.get("video_url").getAsString() : null;
+                            String mediaType = o.has("media_type") && !o.get("media_type").isJsonNull() ? o.get("media_type").getAsString() : "image";
                             boolean isMain = o.has("is_main_story") && !o.get("is_main_story").isJsonNull() && o.get("is_main_story").getAsBoolean();
                             String type = o.has("type") && !o.get("type").isJsonNull() ? o.get("type").getAsString() : "";
                             String postDocumentId = o.has("post_document_id") && !o.get("post_document_id").isJsonNull() ? o.get("post_document_id").getAsString() : null;
@@ -586,35 +590,79 @@ public class HomeFragment extends Fragment {
                             String createdAt = o.has("created_at") && !o.get("created_at").isJsonNull() ? o.get("created_at").getAsString() : null;
                             iconUrl = buildFullUrl(iconUrl);
                             bannerUrl = buildFullUrl(bannerUrl);
+                            videoUrl = buildFullUrl(videoUrl);
 
-                            if (bannerUrl == null || bannerUrl.isEmpty() || iconUrl == null || iconUrl.isEmpty()) {
+                            // Validate: need iconUrl and either bannerUrl or videoUrl
+                            if (iconUrl == null || iconUrl.isEmpty()) {
                                 continue; // skip invalid entries
+                            }
+                            if ((bannerUrl == null || bannerUrl.isEmpty()) && (videoUrl == null || videoUrl.isEmpty())) {
+                                continue; // skip if neither banner nor video
                             }
 
                             // Read targeting fields
                             List<String> educationCats = new ArrayList<>();
                             List<String> bachelorDegs = new ArrayList<>();
                             List<String> mastersDegs = new ArrayList<>();
-                            String district = o.has("district") && !o.get("district").isJsonNull() ? o.get("district").getAsString() : "";
-                            String taluka = o.has("taluka") && !o.get("taluka").isJsonNull() ? o.get("taluka").getAsString() : "";
+                            List<String> districts = new ArrayList<>();
+                            List<String> talukas = new ArrayList<>();
+                            
                             if (o.has("education_categories") && o.get("education_categories").isJsonArray()) {
                                 JsonArray a = o.getAsJsonArray("education_categories");
-                                for (int j = 0; j < a.size(); j++) educationCats.add(a.get(j).getAsString());
+                                for (int j = 0; j < a.size(); j++) {
+                                    if (!a.get(j).isJsonNull()) {
+                                        educationCats.add(a.get(j).getAsString());
+                                    }
+                                }
                             }
                             if (o.has("bachelor_degrees") && o.get("bachelor_degrees").isJsonArray()) {
                                 JsonArray a = o.getAsJsonArray("bachelor_degrees");
-                                for (int j = 0; j < a.size(); j++) bachelorDegs.add(a.get(j).getAsString());
+                                for (int j = 0; j < a.size(); j++) {
+                                    if (!a.get(j).isJsonNull()) {
+                                        bachelorDegs.add(a.get(j).getAsString());
+                                    }
+                                }
                             }
                             if (o.has("masters_degrees") && o.get("masters_degrees").isJsonArray()) {
                                 JsonArray a = o.getAsJsonArray("masters_degrees");
-                                for (int j = 0; j < a.size(); j++) mastersDegs.add(a.get(j).getAsString());
+                                for (int j = 0; j < a.size(); j++) {
+                                    if (!a.get(j).isJsonNull()) {
+                                        mastersDegs.add(a.get(j).getAsString());
+                                    }
+                                }
                             }
+                            if (o.has("district") && o.get("district").isJsonArray()) {
+                                JsonArray a = o.getAsJsonArray("district");
+                                for (int j = 0; j < a.size(); j++) {
+                                    if (!a.get(j).isJsonNull()) {
+                                        districts.add(a.get(j).getAsString());
+                                    }
+                                }
+                            }
+                            if (o.has("taluka") && o.get("taluka").isJsonArray()) {
+                                JsonArray a = o.getAsJsonArray("taluka");
+                                for (int j = 0; j < a.size(); j++) {
+                                    if (!a.get(j).isJsonNull()) {
+                                        talukas.add(a.get(j).getAsString());
+                                    }
+                                }
+                            }
+                            
+                            // Get first district and taluka for backward compatibility
+                            String district = districts.isEmpty() ? "" : districts.get(0);
+                            String taluka = talukas.isEmpty() ? "" : talukas.get(0);
 
                             boolean viewed = id != null && storyPrefs.getBoolean("viewed_" + id, false);
-                            Story story = new Story(id, title, null, bannerUrl, iconUrl, isMain, viewed);
+                            // Use bannerUrl as imageUrl for backward compatibility, or videoUrl if mediaType is video
+                            String imageUrlForStory = "video".equalsIgnoreCase(mediaType) && videoUrl != null && !videoUrl.isEmpty() 
+                                    ? videoUrl : bannerUrl;
+                            Story story = new Story(id, title, null, imageUrlForStory, iconUrl, isMain, viewed);
                             story.setType(type);
                             story.setPostDocumentId(postDocumentId);
                             story.setWebUrl(webUrl);
+                            story.setBannerUrl(bannerUrl);
+                            story.setVideoUrl(videoUrl);
+                            story.setMediaType(mediaType);
                             if (createdAt != null && !createdAt.isEmpty()) {
                                 story.setRelativeTime(computeRelativeFromString(createdAt));
                             }
@@ -625,22 +673,39 @@ public class HomeFragment extends Fragment {
                                     || mastersDegs.contains(userPostGrad);
                             boolean districtOk = (district == null || district.isEmpty()) || district.equalsIgnoreCase(userDistrict);
                             boolean talukaOk = (taluka == null || taluka.isEmpty()) || taluka.equalsIgnoreCase(userTaluka);
+                            
+                            // Filter stories based on targeting
                             if (eduOk && districtOk && talukaOk) {
-                                mains.add(story);
-                            } else {
-                                others.add(story);
+                                // Add to appropriate list based on isMainStory
+                                if (isMain) {
+                                    mains.add(story);
+                                } else {
+                                    others.add(story);
+                                }
                             }
                         }
                     }
+
+                    // Sort stories: main stories first (recent to old), then others (recent to old)
+                    Collections.sort(mains, (s1, s2) -> {
+                        // Compare by created_at timestamp (recent first = descending order)
+                        return Long.compare(s2.getCreatedAtTimestamp(), s1.getCreatedAtTimestamp());
+                    });
+                    
+                    Collections.sort(others, (s1, s2) -> {
+                        // Compare by created_at timestamp (recent first = descending order)
+                        return Long.compare(s2.getCreatedAtTimestamp(), s1.getCreatedAtTimestamp());
+                    });
 
                     final List<Story> finalMains = mains;
                     final List<Story> finalOthers = others;
                     mainHandler.post(() -> {
                         storyList.clear();
+                        // Add main stories first (recent to old), then others (recent to old)
                         storyList.addAll(finalMains);
                         storyList.addAll(finalOthers);
                         storyAdapter.notifyDataSetChanged();
-                        Log.d(TAG, "Stories loaded (API), total: " + storyList.size() + ", mains: " + finalMains.size());
+                        Log.d(TAG, "Stories loaded (API), total: " + storyList.size() + ", mains: " + finalMains.size() + ", others: " + finalOthers.size());
                     });
                 } catch (Exception e) {
                     Log.e(TAG, "Failed to parse stories API response: " + e.getMessage());
@@ -759,6 +824,70 @@ public class HomeFragment extends Fragment {
             url = url.replace("http://", "https://");
         }
         return url;
+    }
+
+    @RequiresApi(api = Build.VERSION_CODES.O)
+    private long parseCreatedAtTimestamp(String createdAt) {
+        if (createdAt == null || createdAt.trim().isEmpty()) return 0;
+
+        Long epochMillis = null;
+        // 1) Try ISO-8601 with offset or zone
+        try {
+            epochMillis = java.time.OffsetDateTime.parse(createdAt).toInstant().toEpochMilli();
+        } catch (Exception ignored) {}
+
+        if (epochMillis == null) {
+            try {
+                epochMillis = java.time.ZonedDateTime.parse(createdAt).toInstant().toEpochMilli();
+            } catch (Exception ignored) {}
+        }
+
+        // 2) Try Instant
+        if (epochMillis == null) {
+            try {
+                epochMillis = java.time.Instant.parse(createdAt).toEpochMilli();
+            } catch (Exception ignored) {}
+        }
+
+        // 3) Try local datetime without zone, assume UTC
+        if (epochMillis == null) {
+            try {
+                java.time.LocalDateTime ldt = java.time.LocalDateTime.parse(createdAt, java.time.format.DateTimeFormatter.ISO_DATE_TIME);
+                epochMillis = ldt.toInstant(java.time.ZoneOffset.UTC).toEpochMilli();
+            } catch (Exception ignored) {}
+        }
+
+        // 4) Try common custom patterns
+        if (epochMillis == null) {
+            String[] patterns = new String[] {
+                    "yyyy-MM-dd'T'HH:mm:ss'Z'",
+                    "yyyy-MM-dd HH:mm:ss",
+                    "yyyy/MM/dd HH:mm:ss",
+                    "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'",
+                    "yyyy-MM-dd'T'HH:mm:ss.SSSXXX"
+            };
+            for (String p : patterns) {
+                try {
+                    java.time.format.DateTimeFormatter f = java.time.format.DateTimeFormatter.ofPattern(p).withZone(java.time.ZoneOffset.UTC);
+                    epochMillis = java.time.Instant.from(f.parse(createdAt)).toEpochMilli();
+                    break;
+                } catch (Exception ignored) {}
+            }
+        }
+
+        // 5) If it's just a number, treat as epoch seconds or millis
+        if (epochMillis == null) {
+            try {
+                long numeric = Long.parseLong(createdAt.trim());
+                if (createdAt.trim().length() <= 10) {
+                    epochMillis = numeric * 1000L;
+                } else {
+                    epochMillis = numeric;
+                }
+            } catch (Exception ignored) {}
+        }
+
+        return epochMillis != null ? epochMillis : 0;
     }
 
     @RequiresApi(api = Build.VERSION_CODES.O)

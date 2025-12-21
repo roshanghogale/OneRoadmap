@@ -27,7 +27,7 @@ import com.bumptech.glide.Glide;
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
-import com.newsproject.oneroadmap.Adapters.StudentUpdateAdapter;
+import com.newsproject.oneroadmap.Adapters.AllBannerAdapter;
 import com.newsproject.oneroadmap.Models.StudentUpdateItem;
 import com.newsproject.oneroadmap.R;
 import com.newsproject.oneroadmap.Utils.BuildConfig;
@@ -95,7 +95,7 @@ public class AllBannersList extends Fragment {
         recyclerView.setLayoutManager(new LinearLayoutManager(getContext(), LinearLayoutManager.VERTICAL, false));
 
         List<StudentUpdateItem> itemList = new ArrayList<>();
-        StudentUpdateAdapter adapter = new StudentUpdateAdapter(itemList, getContext());
+        AllBannerAdapter adapter = new AllBannerAdapter(itemList, getContext());
         recyclerView.setAdapter(adapter);
 
         adapter.setOnItemClickListener(item -> {

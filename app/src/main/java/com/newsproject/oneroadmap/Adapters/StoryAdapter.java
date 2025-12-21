@@ -101,6 +101,7 @@ public class StoryAdapter extends RecyclerView.Adapter<StoryAdapter.StoryViewHol
         public StoryViewHolder(View itemView) {
             super(itemView);
             titleTextView = itemView.findViewById(R.id.story_title);
+            titleTextView.setSelected(true);
             uploadTimeTextView = itemView.findViewById(R.id.story_upload_time);
             imageView = itemView.findViewById(R.id.story_image_view);
             statusView = itemView.findViewById(R.id.story_status_view);
