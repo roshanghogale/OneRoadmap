@@ -1,6 +1,8 @@
 package com.newsproject.oneroadmap.Utils;
 
 import android.content.Context;
+import android.util.Log;
+
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentActivity;
 import androidx.fragment.app.FragmentManager;
@@ -88,20 +90,35 @@ public class WebViewHelper {
     /**
      * Builds full URL from relative path
      */
-    private static String buildFullUrl(String filePath) {
-        if (filePath == null || filePath.isEmpty()) {
+    private static String buildFullUrl(String input) {
+        if (input == null || input.trim().isEmpty()) {
             return null;
         }
-        // If already a full URL, return as is
-        if (filePath.startsWith("http://") || filePath.startsWith("https://")) {
-            return filePath;
+
+        input = input.trim();
+
+        // ✅ Case 1: www.google.com → https://www.google.com
+        if (input.startsWith("www.")) {
+            return "https://" + input;
         }
-        // Otherwise, prepend base URL
-        String url = BuildConfig.BASE_URL + filePath;
-        if (url.startsWith("http://")) {
-            url = url.replace("http://", "https://");
+
+        // ✅ Case 2: already absolute URL
+        if (input.startsWith("http://") || input.startsWith("https://")) {
+            return input;
         }
-        return url;
+
+        // ✅ Case 3: backend relative path (/uploads/...)
+        if (input.startsWith("/")) {
+            String url = BuildConfig.BASE_URL + input;
+            if (url.startsWith("http://")) {
+                url = url.replace("http://", "https://");
+            }
+            return url;
+        }
+
+        // ❌ Unknown format (log it for debugging)
+        Log.w("WebViewHelper", "Unknown URL format: " + input);
+        return null;
     }
 }
 

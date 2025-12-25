@@ -298,7 +298,7 @@ public class GovernmentJobs extends Fragment {
                 String userDistrict = sharedPreferences.getString("district", "");
                 String userTaluka = sharedPreferences.getString("taluka", "");
 
-                String url = "https://test.gangainstitute.in/api/sliders/government";
+                String url = "https://admin.mahaalert.cloud/api/sliders/government";
                 Request request = new Request.Builder().url(url).build();
                 sliderCall = client.newCall(request); // Track the call
                 sliderCall.enqueue(new Callback() {

@@ -5,7 +5,7 @@ import okhttp3.*;
 import java.io.IOException;
 
 public class ApiClient {
-    private static final String BASE_URL = "https://test.gangainstitute.in"; // CHANGE THIS
+    private static final String BASE_URL = "https://admin.mahaalert.cloud"; // CHANGE THIS
     private static ApiClient instance;
     private final OkHttpClient client;
 

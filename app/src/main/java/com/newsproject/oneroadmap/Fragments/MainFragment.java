@@ -48,7 +48,7 @@ import okhttp3.Request;
 import okhttp3.Response;
 
 public class MainFragment extends Fragment {
-    private static final String BASE_URL = "https://test.gangainstitute.in/api/";
+    private static final String BASE_URL = "https://admin.mahaalert.cloud/api/";
     private static final String TAG = "MainFragment";
 
     private RecyclerView careerRoadmapsRecycler;
@@ -309,7 +309,7 @@ public class MainFragment extends Fragment {
                         if (slider != null && slider.getImageUrl() != null && !slider.getImageUrl().isEmpty()) {
                             String sliderUrl = slider.getImageUrl();
                             if (sliderUrl.startsWith("/"))
-                                sliderUrl = "https://test.gangainstitute.in" + sliderUrl;
+                                sliderUrl = "https://admin.mahaalert.cloud" + sliderUrl;
                             else if (sliderUrl.startsWith("http://"))
                                 sliderUrl = sliderUrl.replace("http://", "https://");
 

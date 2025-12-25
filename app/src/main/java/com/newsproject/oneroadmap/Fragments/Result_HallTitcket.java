@@ -197,7 +197,7 @@ public class Result_HallTitcket extends Fragment implements ResultAdapter.OnItem
         }
 
         OkHttpClient client = new OkHttpClient();
-        String url = "https://test.gangainstitute.in/api/result-halltickets/?page=" + currentPage + "&limit=" + PAGE_SIZE;
+        String url = "https://admin.mahaalert.cloud/api/result-halltickets/?page=" + currentPage + "&limit=" + PAGE_SIZE;
         Request request = new Request.Builder().url(url).build();
 
         currentCall = client.newCall(request);

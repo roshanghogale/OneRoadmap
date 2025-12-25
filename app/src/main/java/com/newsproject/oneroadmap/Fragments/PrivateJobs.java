@@ -293,7 +293,7 @@ public class PrivateJobs extends Fragment {
                 String userDistrict = sharedPreferences.getString("district", "");
                 String userTaluka = sharedPreferences.getString("taluka", "");
 
-                String url = "https://test.gangainstitute.in/api/sliders/private";
+                String url = "https://admin.mahaalert.cloud/api/sliders/private";
                 Request request = new Request.Builder().url(url).build();
 
                 client.newCall(request).enqueue(new Callback() {

@@ -83,7 +83,10 @@ public class VideoFragment extends Fragment {
             loadReel(documentId);
         }
 
-        backButton.setOnClickListener(v -> requireActivity().onBackPressed());
+        backButton.setOnClickListener(v -> {
+            stopVideo();
+            requireActivity().onBackPressed();
+        });
 
         return view;
     }
@@ -127,6 +130,7 @@ public class VideoFragment extends Fragment {
                 .into(iconImage);
 
         openPostButton.setOnClickListener(v -> {
+            stopVideo();
             if (reel.getDocumentIdWebUrl() != null) {
                 com.newsproject.oneroadmap.Utils.WebViewHelper.openUrlInApp(this, reel.getDocumentIdWebUrl());
             }
@@ -189,6 +193,16 @@ public class VideoFragment extends Fragment {
     private String formatUploadDate(Date date) {
         return new SimpleDateFormat("dd MMMM yyyy", Locale.getDefault()).format(date);
     }
+
+    private void stopVideo() {
+        if (player != null) {
+            player.setPlayWhenReady(false);
+            player.stop();
+            player.release();
+            player = null;
+        }
+    }
+
 
     @Override
     public void onStop() {

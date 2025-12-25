@@ -515,24 +515,37 @@ public class HomeFragment extends Fragment {
 
     private void loadStories() {
         Log.d(TAG, "loadStories started (API)");
+
         if (!isNetworkAvailable()) {
             Log.w(TAG, "No network available, loading dummy stories");
             List<Story> dummyStories = new ArrayList<>();
-            dummyStories.add(new Story("dummy1", "Dummy Story", null, "https://example.com/dummy.jpg", "https://example.com/icon.jpg", false, false));
+            dummyStories.add(new Story(
+                    "dummy1",
+                    "Dummy Story",
+                    null,
+                    "https://example.com/dummy.jpg",
+                    "https://example.com/icon.jpg",
+                    false,
+                    false
+            ));
+
             mainHandler.post(() -> {
                 storyList.clear();
                 storyList.addAll(dummyStories);
                 storyAdapter.notifyDataSetChanged();
-                Log.d(TAG, "Loaded dummy stories, count: " + storyList.size());
-                if (!hasShownStoriesErrorToast) {
-                    Toast.makeText(getContext(), "No network, loaded dummy stories", Toast.LENGTH_SHORT).show();
-                    hasShownStoriesErrorToast = true;
+
+                for (Story s : storyList) {
+                    Log.d("STORY_FINAL_DUMMY",
+                            "id=" + s.getDocumentId()
+                                    + ", type=" + s.getType()
+                                    + ", webUrl=" + s.getWebUrl()
+                                    + ", isMain=" + s.isMainStory()
+                    );
                 }
             });
             return;
         }
 
-        // Read user preferences used for filtering main stories
         SharedPreferences prefs = requireContext().getSharedPreferences("UserPrefs", Context.MODE_PRIVATE);
         String userEducation = prefs.getString("education", "");
         String userDegree = prefs.getString("degree", "");
@@ -542,183 +555,136 @@ public class HomeFragment extends Fragment {
 
         String url = BuildConfig.BASE_URL + "/api/stories";
         Request request = new Request.Builder().url(url).build();
+
         client.newCall(request).enqueue(new Callback() {
+
             @Override
             public void onFailure(Call call, IOException e) {
-                Log.e(TAG, "Failed to fetch stories: " + e.getMessage());
-                mainHandler.post(() -> {
-                    if (!hasShownStoriesErrorToast) {
-                        Toast.makeText(getContext(), "Failed to load stories", Toast.LENGTH_SHORT).show();
-                        hasShownStoriesErrorToast = true;
-                    }
-                });
+                Log.e(TAG, "Failed to fetch stories", e);
             }
 
             @RequiresApi(api = Build.VERSION_CODES.O)
             @Override
             public void onResponse(Call call, Response response) throws IOException {
                 if (!response.isSuccessful()) {
-                    Log.e(TAG, "Unexpected response: " + response.code());
-                    mainHandler.post(() -> {
-                        if (!hasShownStoriesErrorToast) {
-                            Toast.makeText(getContext(), "Failed to load stories", Toast.LENGTH_SHORT).show();
-                            hasShownStoriesErrorToast = true;
-                        }
-                    });
+                    Log.e(TAG, "Stories API failed: " + response.code());
                     return;
                 }
 
                 String body = response.body().string();
-                try {
-                    JsonObject root = new Gson().fromJson(body, JsonObject.class);
-                    List<Story> mains = new ArrayList<>();
-                    List<Story> others = new ArrayList<>();
-                    if (root != null && root.has("stories")) {
-                        JsonArray arr = root.getAsJsonArray("stories");
-                        for (int i = 0; i < arr.size(); i++) {
-                            JsonObject o = arr.get(i).getAsJsonObject();
-                            String id = o.has("id") && !o.get("id").isJsonNull() ? o.get("id").getAsString() : null;
-                            String title = o.has("title") && !o.get("title").isJsonNull() ? o.get("title").getAsString() : null;
-                            String iconUrl = o.has("icon_url") && !o.get("icon_url").isJsonNull() ? o.get("icon_url").getAsString() : null;
-                            String bannerUrl = o.has("banner_url") && !o.get("banner_url").isJsonNull() ? o.get("banner_url").getAsString() : null;
-                            String videoUrl = o.has("video_url") && !o.get("video_url").isJsonNull() ? o.get("video_url").getAsString() : null;
-                            String mediaType = o.has("media_type") && !o.get("media_type").isJsonNull() ? o.get("media_type").getAsString() : "image";
-                            boolean isMain = o.has("is_main_story") && !o.get("is_main_story").isJsonNull() && o.get("is_main_story").getAsBoolean();
-                            String type = o.has("type") && !o.get("type").isJsonNull() ? o.get("type").getAsString() : "";
-                            String postDocumentId = o.has("post_document_id") && !o.get("post_document_id").isJsonNull() ? o.get("post_document_id").getAsString() : null;
-                            String webUrl = o.has("web_url") && !o.get("web_url").isJsonNull() ? o.get("web_url").getAsString() : null;
-                            String createdAt = o.has("created_at") && !o.get("created_at").isJsonNull() ? o.get("created_at").getAsString() : null;
-                            iconUrl = buildFullUrl(iconUrl);
-                            bannerUrl = buildFullUrl(bannerUrl);
-                            videoUrl = buildFullUrl(videoUrl);
+                JsonObject root = new Gson().fromJson(body, JsonObject.class);
 
-                            // Validate: need iconUrl and either bannerUrl or videoUrl
-                            if (iconUrl == null || iconUrl.isEmpty()) {
-                                continue; // skip invalid entries
-                            }
-                            if ((bannerUrl == null || bannerUrl.isEmpty()) && (videoUrl == null || videoUrl.isEmpty())) {
-                                continue; // skip if neither banner nor video
-                            }
+                List<Story> mains = new ArrayList<>();
+                List<Story> others = new ArrayList<>();
 
-                            // Read targeting fields
-                            List<String> educationCats = new ArrayList<>();
-                            List<String> bachelorDegs = new ArrayList<>();
-                            List<String> mastersDegs = new ArrayList<>();
-                            List<String> districts = new ArrayList<>();
-                            List<String> talukas = new ArrayList<>();
-                            
-                            if (o.has("education_categories") && o.get("education_categories").isJsonArray()) {
-                                JsonArray a = o.getAsJsonArray("education_categories");
-                                for (int j = 0; j < a.size(); j++) {
-                                    if (!a.get(j).isJsonNull()) {
-                                        educationCats.add(a.get(j).getAsString());
-                                    }
-                                }
-                            }
-                            if (o.has("bachelor_degrees") && o.get("bachelor_degrees").isJsonArray()) {
-                                JsonArray a = o.getAsJsonArray("bachelor_degrees");
-                                for (int j = 0; j < a.size(); j++) {
-                                    if (!a.get(j).isJsonNull()) {
-                                        bachelorDegs.add(a.get(j).getAsString());
-                                    }
-                                }
-                            }
-                            if (o.has("masters_degrees") && o.get("masters_degrees").isJsonArray()) {
-                                JsonArray a = o.getAsJsonArray("masters_degrees");
-                                for (int j = 0; j < a.size(); j++) {
-                                    if (!a.get(j).isJsonNull()) {
-                                        mastersDegs.add(a.get(j).getAsString());
-                                    }
-                                }
-                            }
-                            if (o.has("district") && o.get("district").isJsonArray()) {
-                                JsonArray a = o.getAsJsonArray("district");
-                                for (int j = 0; j < a.size(); j++) {
-                                    if (!a.get(j).isJsonNull()) {
-                                        districts.add(a.get(j).getAsString());
-                                    }
-                                }
-                            }
-                            if (o.has("taluka") && o.get("taluka").isJsonArray()) {
-                                JsonArray a = o.getAsJsonArray("taluka");
-                                for (int j = 0; j < a.size(); j++) {
-                                    if (!a.get(j).isJsonNull()) {
-                                        talukas.add(a.get(j).getAsString());
-                                    }
-                                }
-                            }
-                            
-                            // Get first district and taluka for backward compatibility
-                            String district = districts.isEmpty() ? "" : districts.get(0);
-                            String taluka = talukas.isEmpty() ? "" : talukas.get(0);
+                if (root != null && root.has("stories")) {
+                    JsonArray arr = root.getAsJsonArray("stories");
 
-                            boolean viewed = id != null && storyPrefs.getBoolean("viewed_" + id, false);
-                            // Use bannerUrl as imageUrl for backward compatibility, or videoUrl if mediaType is video
-                            String imageUrlForStory = "video".equalsIgnoreCase(mediaType) && videoUrl != null && !videoUrl.isEmpty() 
-                                    ? videoUrl : bannerUrl;
-                            Story story = new Story(id, title, null, imageUrlForStory, iconUrl, isMain, viewed);
-                            story.setType(type);
-                            story.setPostDocumentId(postDocumentId);
-                            story.setWebUrl(webUrl);
-                            story.setBannerUrl(bannerUrl);
-                            story.setVideoUrl(videoUrl);
-                            story.setMediaType(mediaType);
-                            if (createdAt != null && !createdAt.isEmpty()) {
-                                story.setRelativeTime(computeRelativeFromString(createdAt));
-                            }
+                    for (int i = 0; i < arr.size(); i++) {
+                        JsonObject o = arr.get(i).getAsJsonObject();
 
-                            boolean eduOk = educationCats.isEmpty() && bachelorDegs.isEmpty() && mastersDegs.isEmpty()
-                                    || educationCats.contains(userEducation)
-                                    || bachelorDegs.contains(userDegree)
-                                    || mastersDegs.contains(userPostGrad);
-                            boolean districtOk = (district == null || district.isEmpty()) || district.equalsIgnoreCase(userDistrict);
-                            boolean talukaOk = (taluka == null || taluka.isEmpty()) || taluka.equalsIgnoreCase(userTaluka);
-                            
-                            // Filter stories based on targeting
-                            if (eduOk && districtOk && talukaOk) {
-                                // Add to appropriate list based on isMainStory
-                                if (isMain) {
-                                    mains.add(story);
-                                } else {
-                                    others.add(story);
-                                }
-                            }
+                        String id = getString(o, "id");
+                        String title = getString(o, "title");
+                        String iconUrlRaw = getString(o, "icon_url");
+                        String bannerUrlRaw = getString(o, "banner_url");
+                        String videoUrlRaw = getString(o, "video_url");
+                        String mediaType = getString(o, "media_type", "image");
+                        String type = getString(o, "type");
+                        String postDocumentId = getString(o, "post_document_id");
+                        String webUrl = getString(o, "web_url");
+                        String createdAt = getString(o, "created_at");
+                        boolean isMain = o.has("is_main_story") && o.get("is_main_story").getAsBoolean();
+
+                        // 🔴 LOG RAW API DATA
+                        Log.d("STORY_RAW_API",
+                                "id=" + id
+                                        + ", type=" + type
+                                        + ", web_url=" + webUrl
+                                        + ", banner_url=" + bannerUrlRaw
+                                        + ", video_url=" + videoUrlRaw
+                        );
+
+                        String iconUrl = buildFullUrl(iconUrlRaw);
+                        String bannerUrl = buildFullUrl(bannerUrlRaw);
+                        String videoUrl = buildFullUrl(videoUrlRaw);
+
+                        // 🟡 LOG AFTER URL BUILDING
+                        Log.d("STORY_URL_BUILT",
+                                "id=" + id
+                                        + ", icon=" + iconUrl
+                                        + ", banner=" + bannerUrl
+                                        + ", video=" + videoUrl
+                        );
+
+                        if (iconUrl == null || (bannerUrl == null && videoUrl == null)) continue;
+
+                        boolean viewed = id != null && storyPrefs.getBoolean("viewed_" + id, false);
+                        String imageUrlForStory =
+                                "video".equalsIgnoreCase(mediaType) && videoUrl != null
+                                        ? videoUrl
+                                        : bannerUrl;
+
+                        Story story = new Story(id, title, null, imageUrlForStory, iconUrl, isMain, viewed);
+                        story.setType(type);
+                        story.setPostDocumentId(postDocumentId);
+                        story.setWebUrl(webUrl);
+                        story.setBannerUrl(bannerUrl);
+                        story.setVideoUrl(videoUrl);
+                        story.setMediaType(mediaType);
+
+                        if (createdAt != null) {
+                            story.setRelativeTime(computeRelativeFromString(createdAt));
+                        }
+
+                        // 🟢 LOG FINAL STORY OBJECT
+                        Log.d("STORY_FINAL_OBJ",
+                                "id=" + story.getDocumentId()
+                                        + ", type=" + story.getType()
+                                        + ", webUrl=" + story.getWebUrl()
+                                        + ", image=" + story.getImageUrl()
+                        );
+
+                        boolean eduOk = true;
+                        boolean districtOk = true;
+                        boolean talukaOk = true;
+
+                        if (eduOk && districtOk && talukaOk) {
+                            if (isMain) mains.add(story);
+                            else others.add(story);
                         }
                     }
-
-                    // Sort stories: main stories first (recent to old), then others (recent to old)
-                    Collections.sort(mains, (s1, s2) -> {
-                        // Compare by created_at timestamp (recent first = descending order)
-                        return Long.compare(s2.getCreatedAtTimestamp(), s1.getCreatedAtTimestamp());
-                    });
-                    
-                    Collections.sort(others, (s1, s2) -> {
-                        // Compare by created_at timestamp (recent first = descending order)
-                        return Long.compare(s2.getCreatedAtTimestamp(), s1.getCreatedAtTimestamp());
-                    });
-
-                    final List<Story> finalMains = mains;
-                    final List<Story> finalOthers = others;
-                    mainHandler.post(() -> {
-                        storyList.clear();
-                        // Add main stories first (recent to old), then others (recent to old)
-                        storyList.addAll(finalMains);
-                        storyList.addAll(finalOthers);
-                        storyAdapter.notifyDataSetChanged();
-                        Log.d(TAG, "Stories loaded (API), total: " + storyList.size() + ", mains: " + finalMains.size() + ", others: " + finalOthers.size());
-                    });
-                } catch (Exception e) {
-                    Log.e(TAG, "Failed to parse stories API response: " + e.getMessage());
-                    mainHandler.post(() -> {
-                        if (!hasShownStoriesErrorToast) {
-                            Toast.makeText(getContext(), "Failed to parse stories", Toast.LENGTH_SHORT).show();
-                            hasShownStoriesErrorToast = true;
-                        }
-                    });
                 }
+
+                Collections.sort(mains, (a, b) -> Long.compare(b.getCreatedAtTimestamp(), a.getCreatedAtTimestamp()));
+                Collections.sort(others, (a, b) -> Long.compare(b.getCreatedAtTimestamp(), a.getCreatedAtTimestamp()));
+
+                mainHandler.post(() -> {
+                    storyList.clear();
+                    storyList.addAll(mains);
+                    storyList.addAll(others);
+                    storyAdapter.notifyDataSetChanged();
+
+                    Log.d(TAG,
+                            "Stories loaded → total="
+                                    + storyList.size()
+                                    + ", mains=" + mains.size()
+                                    + ", others=" + others.size()
+                    );
+                });
             }
         });
     }
+
+    /** Helper */
+    private String getString(JsonObject o, String key) {
+        return o.has(key) && !o.get(key).isJsonNull() ? o.get(key).getAsString() : null;
+    }
+
+    private String getString(JsonObject o, String key, String def) {
+        String v = getString(o, key);
+        return v != null ? v : def;
+    }
+
 
     private void loadCurrentAffairsData() {
         Log.d(TAG, "loadCurrentAffairsData started (API)");
@@ -1601,7 +1567,7 @@ public class HomeFragment extends Fragment {
         String userDistrict = sharedPreferences.getString("district", "");
         String userTaluka = sharedPreferences.getString("taluka", "");
 
-        String url = "https://test.gangainstitute.in/api/sliders/home";
+        String url = "https://admin.mahaalert.cloud/api/sliders/home";
         Request request = new Request.Builder().url(url).build();
         client.newCall(request).enqueue(new Callback() {
             @Override
