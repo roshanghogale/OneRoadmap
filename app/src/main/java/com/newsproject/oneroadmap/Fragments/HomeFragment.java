@@ -1606,11 +1606,12 @@ public class HomeFragment extends Fragment {
                             if (slider.getImageUrl() == null || slider.getImageUrl().isEmpty()) continue;
 
                             boolean isUniversal = false, educationMatch = false, locationMatch = false;
-                            List<String> sliderEducationCategories = slider.getEducationCategories();
-                            List<String> sliderBachelorDegrees = slider.getBachelorDegrees();
-                            List<String> sliderMastersDegrees = slider.getMastersDegrees();
-                            String sliderDistrict = slider.getDistrict() != null ? slider.getDistrict() : "";
-                            String sliderTaluka = slider.getTaluka() != null ? slider.getTaluka() : "";
+                            List<String> sliderEducationCategories = slider.getEducationCategoriesSafe();
+                            List<String> sliderBachelorDegrees = slider.getBachelorDegreesSafe();
+                            List<String> sliderMastersDegrees = slider.getMastersDegreesSafe();
+                            String sliderDistrict = slider.getDistrictSafe();
+                            String sliderTaluka = slider.getTalukaSafe();
+
 
                             if (!slider.isSpecific()) {
                                 isUniversal = true;

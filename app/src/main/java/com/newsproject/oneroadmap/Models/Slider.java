@@ -1,11 +1,12 @@
 package com.newsproject.oneroadmap.Models;
 
-import android.os.Parcel;
-import android.os.Parcelable;
+import com.google.gson.JsonElement;
 import com.google.gson.annotations.SerializedName;
+import java.util.ArrayList;
 import java.util.List;
 
-public class Slider implements Parcelable {
+public class Slider {
+
     @SerializedName("id")
     private int id;
 
@@ -30,20 +31,22 @@ public class Slider implements Parcelable {
     @SerializedName("other_type")
     private String otherType;
 
+    // ⚠️ Changed to JsonElement
     @SerializedName("education_categories")
-    private List<String> educationCategories;
+    private JsonElement educationCategories;
 
     @SerializedName("bachelor_degrees")
-    private List<String> bachelorDegrees;
+    private JsonElement bachelorDegrees;
 
     @SerializedName("masters_degrees")
-    private List<String> mastersDegrees;
+    private JsonElement mastersDegrees;
 
+    // ⚠️ Changed to JsonElement (API sends [])
     @SerializedName("district")
-    private String district;
+    private JsonElement district;
 
     @SerializedName("taluka")
-    private String taluka;
+    private JsonElement taluka;
 
     @SerializedName("image_url")
     private String imageUrl;
@@ -54,121 +57,57 @@ public class Slider implements Parcelable {
     @SerializedName("updated_at")
     private String updatedAt;
 
-    // No-argument constructor
-    public Slider() {
+    /* ---------------- SAFE GETTERS ---------------- */
+
+    public List<String> getEducationCategoriesSafe() {
+        return jsonToList(educationCategories);
     }
 
-    // Full constructor
-    public Slider(int id, String title, String postDocumentId, String webUrl, String type, String pageType,
-                  boolean isSpecific, String otherType, List<String> educationCategories,
-                  List<String> bachelorDegrees, List<String> mastersDegrees, String district,
-                  String taluka, String imageUrl, String createdAt, String updatedAt) {
-        this.id = id;
-        this.title = title;
-        this.postDocumentId = postDocumentId;
-        this.webUrl = webUrl;
-        this.type = type;
-        this.pageType = pageType;
-        this.isSpecific = isSpecific;
-        this.otherType = otherType;
-        this.educationCategories = educationCategories;
-        this.bachelorDegrees = bachelorDegrees;
-        this.mastersDegrees = mastersDegrees;
-        this.district = district;
-        this.taluka = taluka;
-        this.imageUrl = imageUrl;
-        this.createdAt = createdAt;
-        this.updatedAt = updatedAt;
+    public List<String> getBachelorDegreesSafe() {
+        return jsonToList(bachelorDegrees);
     }
 
-    // Getters and Setters
+    public List<String> getMastersDegreesSafe() {
+        return jsonToList(mastersDegrees);
+    }
+
+    public String getDistrictSafe() {
+        return jsonToString(district);
+    }
+
+    public String getTalukaSafe() {
+        return jsonToString(taluka);
+    }
+
+    /* ---------------- HELPERS ---------------- */
+
+    private List<String> jsonToList(JsonElement element) {
+        List<String> list = new ArrayList<>();
+        if (element == null || element.isJsonNull()) return list;
+
+        if (element.isJsonArray()) {
+            element.getAsJsonArray().forEach(e -> {
+                if (!e.isJsonNull()) list.add(e.getAsString());
+            });
+        }
+        return list;
+    }
+
+    private String jsonToString(JsonElement element) {
+        if (element == null || element.isJsonNull()) return "";
+        if (element.isJsonPrimitive()) return element.getAsString();
+        return "";
+    }
+
+    /* ---------------- NORMAL GETTERS ---------------- */
+
     public int getId() { return id; }
-    public void setId(int id) { this.id = id; }
     public String getTitle() { return title; }
-    public void setTitle(String title) { this.title = title; }
     public String getPostDocumentId() { return postDocumentId; }
-    public void setPostDocumentId(String postDocumentId) { this.postDocumentId = postDocumentId; }
     public String getWebUrl() { return webUrl; }
-    public void setWebUrl(String webUrl) { this.webUrl = webUrl; }
     public String getType() { return type; }
-    public void setType(String type) { this.type = type; }
     public String getPageType() { return pageType; }
-    public void setPageType(String pageType) { this.pageType = pageType; }
     public boolean isSpecific() { return isSpecific; }
-    public void setSpecific(boolean specific) { isSpecific = specific; }
     public String getOtherType() { return otherType; }
-    public void setOtherType(String otherType) { this.otherType = otherType; }
-    public List<String> getEducationCategories() { return educationCategories; }
-    public void setEducationCategories(List<String> educationCategories) { this.educationCategories = educationCategories; }
-    public List<String> getBachelorDegrees() { return bachelorDegrees; }
-    public void setBachelorDegrees(List<String> bachelorDegrees) { this.bachelorDegrees = bachelorDegrees; }
-    public List<String> getMastersDegrees() { return mastersDegrees; }
-    public void setMastersDegrees(List<String> mastersDegrees) { this.mastersDegrees = mastersDegrees; }
-    public String getDistrict() { return district; }
-    public void setDistrict(String district) { this.district = district; }
-    public String getTaluka() { return taluka; }
-    public void setTaluka(String taluka) { this.taluka = taluka; }
     public String getImageUrl() { return imageUrl; }
-    public void setImageUrl(String imageUrl) { this.imageUrl = imageUrl; }
-    public String getCreatedAt() { return createdAt; }
-    public void setCreatedAt(String createdAt) { this.createdAt = createdAt; }
-    public String getUpdatedAt() { return updatedAt; }
-    public void setUpdatedAt(String updatedAt) { this.updatedAt = updatedAt; }
-
-    // Parcelable implementation
-    protected Slider(Parcel in) {
-        id = in.readInt();
-        title = in.readString();
-        postDocumentId = in.readString();
-        webUrl = in.readString();
-        type = in.readString();
-        pageType = in.readString();
-        isSpecific = in.readByte() != 0;
-        otherType = in.readString();
-        educationCategories = in.createStringArrayList();
-        bachelorDegrees = in.createStringArrayList();
-        mastersDegrees = in.createStringArrayList();
-        district = in.readString();
-        taluka = in.readString();
-        imageUrl = in.readString();
-        createdAt = in.readString();
-        updatedAt = in.readString();
-    }
-
-    public static final Creator<Slider> CREATOR = new Creator<Slider>() {
-        @Override
-        public Slider createFromParcel(Parcel in) {
-            return new Slider(in);
-        }
-
-        @Override
-        public Slider[] newArray(int size) {
-            return new Slider[size];
-        }
-    };
-
-    @Override
-    public int describeContents() {
-        return 0;
-    }
-
-    @Override
-    public void writeToParcel(Parcel dest, int flags) {
-        dest.writeInt(id);
-        dest.writeString(title);
-        dest.writeString(postDocumentId);
-        dest.writeString(webUrl);
-        dest.writeString(type);
-        dest.writeString(pageType);
-        dest.writeByte((byte) (isSpecific ? 1 : 0));
-        dest.writeString(otherType);
-        dest.writeStringList(educationCategories);
-        dest.writeStringList(bachelorDegrees);
-        dest.writeStringList(mastersDegrees);
-        dest.writeString(district);
-        dest.writeString(taluka);
-        dest.writeString(imageUrl);
-        dest.writeString(createdAt);
-        dest.writeString(updatedAt);
-    }
 }
