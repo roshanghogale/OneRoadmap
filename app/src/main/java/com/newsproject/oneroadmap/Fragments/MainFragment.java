@@ -152,7 +152,7 @@ public class MainFragment extends Fragment {
 
                         if (roadmaps != null && !roadmaps.isEmpty()) {
                             for (CareerRoadmaps roadmap : roadmaps) {
-                                if ("startup".equalsIgnoreCase(roadmap.getType()) || "job".equalsIgnoreCase(roadmap.getType())) {
+                                if ("startup".equalsIgnoreCase(roadmap.getType()) || "career".equalsIgnoreCase(roadmap.getType())) {
                                     if (roadmap.getEducationCategories() != null)
                                         uniqueCategories.addAll(roadmap.getEducationCategories());
 
@@ -206,7 +206,7 @@ public class MainFragment extends Fragment {
         jobCard.setOnClickListener(v -> {
             if (isJobCardFirstClick) {
                 isEducationFilterActive = true;
-                filterByType("job");
+                filterByType("career");
                 isJobCardFirstClick = false;
                 isStartupCardFirstClick = true;
             } else {
