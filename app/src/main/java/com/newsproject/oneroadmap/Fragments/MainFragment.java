@@ -64,7 +64,6 @@ public class MainFragment extends Fragment {
     private final Gson gson = new Gson();
     private String userEducationCategory = "All";
     private List<String> educationOptions = new ArrayList<>();
-
     private boolean isJobCardFirstClick = true;
     private boolean isStartupCardFirstClick = true;
     private boolean isEducationFilterActive = false;

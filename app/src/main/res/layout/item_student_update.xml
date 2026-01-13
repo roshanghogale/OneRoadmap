@@ -17,9 +17,9 @@
 
         <ImageView
             android:id="@+id/student_update_image"
-            android:layout_width="280dp"
-            android:layout_height="160dp"
-            android:scaleType="centerCrop"
+            android:layout_width="320dp"
+            android:layout_height="200dp"
+            android:scaleType="centerInside"
             app:srcCompat="@drawable/student_update_1" />
     </androidx.cardview.widget.CardView>
 
