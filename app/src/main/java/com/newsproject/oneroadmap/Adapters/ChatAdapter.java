@@ -1,10 +1,15 @@
 package com.newsproject.oneroadmap.Adapters;
 
+import android.app.Dialog;
 import android.content.Context;
+import android.graphics.Color;
+import android.graphics.drawable.ColorDrawable;
+import android.text.Layout;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.Window;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
@@ -125,18 +130,28 @@ public class ChatAdapter extends RecyclerView.Adapter<ChatAdapter.ChatViewHolder
 
         // Handle reply section visibility and population
         holder.expandButton.setOnClickListener(v -> {
-            Reply reply = query.getReply();
-            String replyText = reply != null ? reply.getTitle() : null;
 
-            if (replyText.equals("") && replyText == null) {
-                Toast.makeText(context, "Reply is not present yet " + reply.getTitle(), Toast.LENGTH_SHORT).show();
+            Reply reply = query.getReply();
+
+            if (reply == null
+                    || reply.getTitle() == null
+                    || reply.getTitle().trim().isEmpty()
+                    || reply.getTitle().equalsIgnoreCase("null")) {
+
+                holder.replyList.setVisibility(View.GONE);
+                holder.linearHorizontal.setVisibility(View.GONE);
+
+                Toast.makeText(context, "Reply is not present yet", Toast.LENGTH_SHORT).show();
                 return;
             }
 
+            String replyText = reply.getTitle();
+
             boolean willShow = holder.replyList.getVisibility() == View.GONE;
+
             if (willShow) {
                 holder.replyList.setVisibility(View.VISIBLE);
-                holder.replyList.removeAllViews(); // Clear previous replies
+                holder.replyList.removeAllViews();
 
                 LayoutInflater inflater = LayoutInflater.from(context);
                 View replyView = inflater.inflate(R.layout.item_reply, holder.replyList, false);
@@ -146,6 +161,27 @@ public class ChatAdapter extends RecyclerView.Adapter<ChatAdapter.ChatViewHolder
 
                 titleTextView.setText(replyText);
                 nameTextView.setText(reply.getName());
+                Toast.makeText(context, "" + reply.getName(), Toast.LENGTH_SHORT).show();
+
+                titleTextView.setOnClickListener(v1 -> {
+                    Layout layout = titleTextView.getLayout();
+                    if (layout == null) return;
+
+                    int lastVisibleLine = titleTextView.getLineCount() - 1;
+
+                    boolean isEllipsized =
+                            layout.getEllipsisCount(lastVisibleLine) > 0;
+
+                    if (isEllipsized) {
+                        titleTextView.setClickable(true);
+                        titleTextView.setOnClickListener(v2 -> {
+                            showReplyDialog(titleTextView.getText().toString());
+                        });
+                    } else {
+                        titleTextView.setClickable(false);
+                        titleTextView.setOnClickListener(null);
+                    }
+                });
 
                 holder.replyList.addView(replyView);
                 holder.linearHorizontal.setVisibility(View.VISIBLE);
@@ -153,7 +189,8 @@ public class ChatAdapter extends RecyclerView.Adapter<ChatAdapter.ChatViewHolder
                 TextView lbl = findFirstTextView(holder.expandButton);
                 ImageView icon = findFirstImageView(holder.expandButton);
                 if (lbl != null) lbl.setText("Hide answer");
-                if (icon != null) icon.setRotation(180f); // simulate arrow up
+                if (icon != null) icon.setRotation(180f);
+
             } else {
                 holder.replyList.setVisibility(View.GONE);
                 holder.linearHorizontal.setVisibility(View.GONE);
@@ -161,9 +198,27 @@ public class ChatAdapter extends RecyclerView.Adapter<ChatAdapter.ChatViewHolder
                 TextView lbl = findFirstTextView(holder.expandButton);
                 ImageView icon = findFirstImageView(holder.expandButton);
                 if (lbl != null) lbl.setText("Show answer");
-                if (icon != null) icon.setRotation(0f); // arrow down
+                if (icon != null) icon.setRotation(0f);
             }
         });
+    }
+
+    private void showReplyDialog(String fullText) {
+        Dialog dialog = new Dialog(context);
+        dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
+        dialog.setContentView(R.layout.dialog_full_reply);
+        dialog.setCancelable(true);
+
+        TextView txt = dialog.findViewById(R.id.txt_full_reply);
+        ImageView close = dialog.findViewById(R.id.btn_close);
+
+        txt.setText(fullText);
+        close.setOnClickListener(v -> dialog.dismiss());
+
+        dialog.getWindow().setBackgroundDrawable(
+                new ColorDrawable(Color.TRANSPARENT)
+        );
+        dialog.show();
     }
 
     private void toggleLike(ChatViewHolder holder, Query query, int position) {

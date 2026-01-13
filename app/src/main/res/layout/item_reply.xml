@@ -19,9 +19,13 @@
         android:paddingTop="8dp"
         android:paddingEnd="8dp"
         android:paddingBottom="8dp"
-        android:text="आकाश बीसीए नंतर तुम्ही विप्रोसोबत करू शकता कार्यक्रम"
         android:textColor="@color/white"
-        android:textSize="14sp" />
+        android:textSize="14sp"
+
+        android:maxLines="2"
+        android:ellipsize="end"
+        android:lineSpacingExtra="2dp"/>
+
 
     <LinearLayout
         android:layout_width="wrap_content"
