@@ -62,12 +62,17 @@
                     android:textSize="14sp"
                     android:textStyle="bold" />
 
-                <Spinner
-                    android:id="@+id/spinnerTwelfth"
+                <TextView
+                    android:id="@+id/tvTwelfth"
                     android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
+                    android:layout_height="45dp"
                     android:background="@drawable/spinner_background"
-                    android:paddingStart="12dp" />
+                    android:padding="12dp"
+                    android:gravity="center_vertical"
+                    android:text="Select Option"
+                    android:textColor="@android:color/darker_gray"
+                    android:drawableEnd="@drawable/arrow_down"/>
+
 
                 <TextView
                     android:textColor="@color/black"
@@ -79,12 +84,17 @@
                     android:textSize="14sp"
                     android:textStyle="bold" />
 
-                <Spinner
-                    android:id="@+id/spinnerEducation"
+                <TextView
+                    android:id="@+id/tvEducation"
                     android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
+                    android:layout_height="45dp"
                     android:background="@drawable/spinner_background"
-                    android:paddingStart="12dp"/>
+                    android:padding="12dp"
+                    android:gravity="center_vertical"
+                    android:text="Select Option"
+                    android:textColor="@android:color/darker_gray"
+                    android:drawableEnd="@drawable/arrow_down"/>
+
 
                 <!-- 12th Grade -->
 
@@ -99,12 +109,17 @@
                     android:textSize="14sp"
                     android:textStyle="bold" />
 
-                <Spinner
-                    android:id="@+id/spinnerDegree"
+                <TextView
+                    android:id="@+id/tvDegree"
                     android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
+                    android:layout_height="45dp"
                     android:background="@drawable/spinner_background"
-                    android:paddingStart="12dp"/>
+                    android:padding="12dp"
+                    android:gravity="center_vertical"
+                    android:text="Select Option"
+                    android:textColor="@android:color/darker_gray"
+                    android:drawableEnd="@drawable/arrow_down"/>
+
 
                 <!-- Post Graduation -->
                 <TextView
@@ -117,13 +132,17 @@
                     android:layout_marginBottom="8dp"
                     android:layout_marginTop="16dp"/>
 
-                <Spinner
-                    android:id="@+id/spinnerPostGrad"
+                <TextView
+                    android:id="@+id/tvPostGrad"
                     android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginBottom="8dp"
+                    android:layout_height="45dp"
                     android:background="@drawable/spinner_background"
-                    android:paddingStart="12dp"/>
+                    android:padding="12dp"
+                    android:gravity="center_vertical"
+                    android:text="Select Option"
+                    android:textColor="@android:color/darker_gray"
+                    android:drawableEnd="@drawable/arrow_down"/>
+
             </LinearLayout>
 
             <!-- Icon fully outside card -->

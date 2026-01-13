@@ -171,7 +171,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginBottom="18dp"
-                    android:background="@drawable/spinner_background"
+                    android:backgroundTint="@color/blue"
                     android:paddingStart="12dp"
                     android:text="Select Study Materials" />
 
@@ -185,13 +185,16 @@
                     android:layout_marginTop="4dp"
                     android:layout_marginBottom="8dp"/>
 
-                <Spinner
-                    android:id="@+id/spinnerDistrict3"
+                <TextView
+                    android:id="@+id/tvDistrict"
                     android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
+                    android:layout_height="45dp"
                     android:background="@drawable/spinner_background"
-                    android:paddingStart="12dp"
-                    android:layout_marginBottom="12dp"/>
+                    android:padding="12dp"
+                    android:gravity="center_vertical"
+                    android:text="Select District"
+                    android:textColor="@android:color/darker_gray"
+                    android:drawableEnd="@drawable/arrow_down"/>
 
                 <!-- Taluka spinner -->
                 <TextView
@@ -201,16 +204,20 @@
                     android:text="तालुका"
                     android:textSize="14sp"
                     android:textStyle="bold"
-                    android:layout_marginTop="4dp"
-                    android:layout_marginBottom="8dp"/>
+                    android:layout_marginTop="8dp"
+                    android:layout_marginBottom="4dp"/>
 
-                <Spinner
-                    android:id="@+id/spinnerTaluka3"
+                <TextView
+                    android:id="@+id/tvTaluka"
                     android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
+                    android:layout_height="45dp"
+                    android:layout_marginTop="8dp"
                     android:background="@drawable/spinner_background"
-                    android:paddingStart="12dp"
-                    android:layout_marginBottom="8dp"/>
+                    android:padding="12dp"
+                    android:gravity="center_vertical"
+                    android:text="Select Taluka"
+                    android:textColor="@android:color/darker_gray"
+                    android:drawableEnd="@drawable/arrow_down"/>
 
             </LinearLayout>
 
