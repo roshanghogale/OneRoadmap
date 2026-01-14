@@ -23,6 +23,7 @@ import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.activity.OnBackPressedCallback;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
@@ -166,13 +167,10 @@ public class HomeFragment extends Fragment {
             RecyclerView.Adapter adapter = storiesPlayer.getAdapter();
             if (adapter instanceof StoriesAdapter) {
                 StoriesAdapter storiesAdapter = (StoriesAdapter) adapter;
-                for (int i = 0; i < storiesPlayer.getChildCount(); i++) {
-                    RecyclerView.ViewHolder holder = storiesPlayer.findViewHolderForAdapterPosition(i);
-                    if (holder instanceof StoriesAdapter.StoryViewHolder) {
-                        ((StoriesAdapter.StoryViewHolder) holder).cancelViewTask();
-                        ((StoriesAdapter.StoryViewHolder) holder).releaseVideo();
-                        Log.d(TAG, "Canceled tasks and reset progress for view holder at position: " + i);
-                    }
+                StoriesAdapter.StoryViewHolder holder = (StoriesAdapter.StoryViewHolder) storiesPlayer.findViewHolderForAdapterPosition(storiesAdapter.getCurrentVisiblePosition());
+                if (holder instanceof StoriesAdapter.StoryViewHolder) {
+                    ((StoriesAdapter.StoryViewHolder) holder).cancelViewTask();
+                    ((StoriesAdapter.StoryViewHolder) holder).releaseVideo();
                 }
             }
             storiesPlayer.setVisibility(View.GONE);
@@ -216,26 +214,43 @@ public class HomeFragment extends Fragment {
             // Listen for scroll changes
             storiesPlayer.clearOnScrollListeners();
             storiesPlayer.addOnScrollListener(new RecyclerView.OnScrollListener() {
-                @Override
-                public void onScrolled(@NonNull RecyclerView recyclerView, int dx, int dy) {
-                    LinearLayoutManager lm = (LinearLayoutManager) recyclerView.getLayoutManager();
-                    if (lm != null) {
-                        int visiblePos = lm.findFirstCompletelyVisibleItemPosition();
-                        if (visiblePos != RecyclerView.NO_POSITION && visiblePos != storiesAdapterLocal.getCurrentVisiblePosition()) {
-                            storiesAdapterLocal.setCurrentVisiblePosition(visiblePos);
 
-                            // Cancel / schedule tasks for every attached child
-                            for (int i = 0; i < recyclerView.getChildCount(); i++) {
-                                View child = recyclerView.getChildAt(i);
-                                RecyclerView.ViewHolder vh = recyclerView.getChildViewHolder(child);
-                                if (vh instanceof StoriesAdapter.StoryViewHolder) {
-                                    StoriesAdapter.StoryViewHolder holder = (StoriesAdapter.StoryViewHolder) vh;
-                                    int pos = vh.getAdapterPosition();
-                                    if (pos == visiblePos) {
-                                        holder.scheduleViewTask(storyList.get(pos), pos);
-                                    } else {
-                                        holder.cancelViewTask();
-                                    }
+                @Override
+                public void onScrollStateChanged(@NonNull RecyclerView recyclerView, int newState) {
+                    super.onScrollStateChanged(recyclerView, newState);
+
+                    // ONLY act when scrolling stops
+                    if (newState == RecyclerView.SCROLL_STATE_IDLE) {
+
+                        LinearLayoutManager lm =
+                                (LinearLayoutManager) recyclerView.getLayoutManager();
+                        if (lm == null) return;
+
+                        int snappedPos = lm.findFirstCompletelyVisibleItemPosition();
+                        if (snappedPos == RecyclerView.NO_POSITION) return;
+
+                        storiesAdapterLocal.setCurrentVisiblePosition(snappedPos);
+
+                        // HARD RULE: only ONE holder runs
+                        for (int i = 0; i < recyclerView.getChildCount(); i++) {
+                            View child = recyclerView.getChildAt(i);
+                            RecyclerView.ViewHolder vh =
+                                    recyclerView.getChildViewHolder(child);
+
+                            if (vh instanceof StoriesAdapter.StoryViewHolder) {
+                                StoriesAdapter.StoryViewHolder holder =
+                                        (StoriesAdapter.StoryViewHolder) vh;
+
+                                int pos = vh.getAdapterPosition();
+
+                                holder.resetProgressCompletely(); // 🔴 FORCE STOP ALL
+
+                                if (pos == snappedPos) {
+                                    holder.scheduleViewTask(
+                                            storyList.get(pos),
+                                            pos
+                                    );
+                                    holder.resumeVideo();
                                 }
                             }
                         }

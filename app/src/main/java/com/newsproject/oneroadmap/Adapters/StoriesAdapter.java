@@ -1,9 +1,7 @@
 package com.newsproject.oneroadmap.Adapters;
 
 import android.content.Context;
-import android.content.Intent;
 import android.content.SharedPreferences;
-import android.net.Uri;
 import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
@@ -26,11 +24,9 @@ import com.google.android.exoplayer2.ExoPlayer;
 import com.google.android.exoplayer2.MediaItem;
 import com.google.android.exoplayer2.Player;
 import com.google.android.exoplayer2.ui.PlayerView;
-import com.google.android.exoplayer2.upstream.DefaultHttpDataSource;
-import com.google.android.exoplayer2.upstream.cache.CacheDataSource;
 import com.google.android.exoplayer2.upstream.cache.LeastRecentlyUsedCacheEvictor;
 import com.google.android.exoplayer2.upstream.cache.SimpleCache;
-import com.google.android.exoplayer2.util.Util;
+
 import java.io.File;
 import com.newsproject.oneroadmap.Fragments.HomeFragment;
 import com.newsproject.oneroadmap.Models.JobUpdate;
@@ -162,7 +158,7 @@ public class StoriesAdapter extends RecyclerView.Adapter<StoriesAdapter.StoryVie
         if (holder.progressBar != null) {
             holder.progressBar.setProgress(0);
         }
-        
+
         // Show loading indicator
         if (holder.loadingProgress != null) {
             holder.loadingProgress.setVisibility(View.VISIBLE);
@@ -308,7 +304,7 @@ public class StoriesAdapter extends RecyclerView.Adapter<StoriesAdapter.StoryVie
 
         // Preload adjacent stories for faster loading
         preloadAdjacentStories(position);
-        
+
         // Only schedule task if this is the currently visible story
         if (position == currentVisiblePosition && storiesPlayer.getVisibility() == View.VISIBLE) {
             holder.scheduleViewTask(story, position);
@@ -366,7 +362,7 @@ public class StoriesAdapter extends RecyclerView.Adapter<StoriesAdapter.StoryVie
     @Override
     public void onViewRecycled(@NonNull StoryViewHolder holder) {
         super.onViewRecycled(holder);
-        holder.cancelViewTask();
+        holder.resetProgressCompletely();
         holder.releaseVideo();
     }
 
@@ -596,7 +592,7 @@ public class StoriesAdapter extends RecyclerView.Adapter<StoriesAdapter.StoryVie
             }
         }
 
-        private void resumeVideo() {
+        public void resumeVideo() {
             if (exoPlayer != null) {
                 if (exoPlayer.getPlaybackState() == Player.STATE_READY) {
                     // Video is ready, hide banner and play
@@ -639,7 +635,9 @@ public class StoriesAdapter extends RecyclerView.Adapter<StoriesAdapter.StoryVie
                     }
                     // Notify adapter to update UI (grey border)
                     adapter.notifyItemChanged(position);
+                    resetProgressCompletely();
                     HomeFragment.updateAdapter(adapter.context, position, adapter.storyAdapter);
+
 
                     // Advance to next story
                     if (position < adapter.stories.size() - 1) {
@@ -718,6 +716,30 @@ public class StoriesAdapter extends RecyclerView.Adapter<StoriesAdapter.StoryVie
                 if (exoPlayer.isPlaying() && progress < 100) {
                     handler.postDelayed(this::updateVideoProgress, 100);
                 }
+            }
+        }
+
+        public void resetProgressCompletely() {
+            // Stop timers
+            if (viewRunnable != null) {
+                handler.removeCallbacks(viewRunnable);
+                viewRunnable = null;
+            }
+            if (progressRunnable != null) {
+                handler.removeCallbacks(progressRunnable);
+                progressRunnable = null;
+            }
+
+            // Reset progress value
+            progress = 0;
+            if (progressBar != null) {
+                progressBar.setProgress(0);
+            }
+
+            // Reset video
+            if (exoPlayer != null) {
+                exoPlayer.seekTo(0);
+                exoPlayer.pause();
             }
         }
 
