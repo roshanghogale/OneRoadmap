@@ -19,9 +19,12 @@ import androidx.fragment.app.FragmentManager;
 import androidx.fragment.app.FragmentTransaction;
 
 import android.content.pm.PackageManager;
+import android.view.View;
+import android.widget.Toast;
 
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.firebase.messaging.FirebaseMessaging;
+import com.newsproject.oneroadmap.Adapters.StoriesAdapter;
 import com.newsproject.oneroadmap.Fragments.*;
 import com.newsproject.oneroadmap.Models.User;
 import com.newsproject.oneroadmap.R;
@@ -126,6 +129,11 @@ public class MainActivity extends AppCompatActivity {
 
                 if (currentFragment instanceof HomeFragment) {
                     if (HomeFragment.isStoriesPlayerVisible()) {
+                        StoriesAdapter.StoryViewHolder.cancelViewTask();
+                        StoriesAdapter.StoryViewHolder.releaseVideo();
+                        if (StoriesAdapter.storiesPlayer != null) {
+                            StoriesAdapter.storiesPlayer.setVisibility(View.GONE);
+                        }
                         HomeFragment.stopStory(MainActivity.this);
                     } else {
                         finishAffinity();
