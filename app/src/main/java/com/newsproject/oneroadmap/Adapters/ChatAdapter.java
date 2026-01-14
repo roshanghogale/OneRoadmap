@@ -161,7 +161,6 @@ public class ChatAdapter extends RecyclerView.Adapter<ChatAdapter.ChatViewHolder
 
                 titleTextView.setText(replyText);
                 nameTextView.setText(reply.getName());
-                Toast.makeText(context, "" + reply.getName(), Toast.LENGTH_SHORT).show();
 
                 titleTextView.setOnClickListener(v1 -> {
                     Layout layout = titleTextView.getLayout();

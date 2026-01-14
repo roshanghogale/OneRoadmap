@@ -222,7 +222,20 @@ public class ChatFragment extends Fragment {
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
-        
+
+        getParentFragmentManager().setFragmentResultListener(
+                "ask_query_result",
+                getViewLifecycleOwner(),
+                (requestKey, bundle) -> {
+
+                    boolean added = bundle.getBoolean("query_added", false);
+                    if (added) {
+                        refreshChatsAfterSubmit();
+                    }
+                }
+        );
+
+
         // Register back press callback
         requireActivity().getOnBackPressedDispatcher().addCallback(
                 getViewLifecycleOwner(),
@@ -256,6 +269,27 @@ public class ChatFragment extends Fragment {
         fetchChatData();
         initSlider();
     }
+
+    private void refreshChatsAfterSubmit() {
+
+        // Optional: reset filters so new chat is visible
+        selectedFilter = "all";
+        sortOption = "recent";
+        updateFilterChipStates();
+        updateSortButtonStates();
+
+        // Clear old data
+        Chats.clear();
+        allChats.clear();
+        chatAdapter.notifyDataSetChanged();
+
+        // Reload from API
+        fetchChatData();
+
+        // Scroll to top so new chat is visible
+        chatRecycler.post(() -> chatRecycler.scrollToPosition(0));
+    }
+
 
     @Override
     public void onResume() {

@@ -184,13 +184,25 @@ public class AskQuery extends DialogFragment {
                 public void onResponse(Call call, Response response) throws java.io.IOException {
                     response.close();
                     if (response.isSuccessful()) {
-                        // Close after successful submit
-                        if (getDialog() != null) {
-                            requireActivity().runOnUiThread(() -> dismiss());
-                        }
+
+                        requireActivity().runOnUiThread(() -> {
+                            // 🔔 Notify ChatFragment
+                            Bundle result = new Bundle();
+                            result.putBoolean("query_added", true);
+
+                            getParentFragmentManager().setFragmentResult(
+                                    "ask_query_result",
+                                    result
+                            );
+
+                            dismiss();
+                        });
+
                     } else {
                         requireActivity().runOnUiThread(() ->
-                                Toast.makeText(requireContext(), "Submit failed: " + response.code(), Toast.LENGTH_SHORT).show()
+                                Toast.makeText(requireContext(),
+                                        "Submit failed: " + response.code(),
+                                        Toast.LENGTH_SHORT).show()
                         );
                     }
                 }

@@ -10,9 +10,9 @@
     <LinearLayout
         android:id="@+id/url_bar"
         android:layout_width="0dp"
-        android:layout_height="72dp"
+        android:layout_height="82dp"
         android:orientation="horizontal"
-        android:background="?attr/colorPrimary"
+        android:background="@color/black"
         android:gravity="center_vertical"
         android:paddingStart="20dp"
         android:paddingEnd="12dp"
