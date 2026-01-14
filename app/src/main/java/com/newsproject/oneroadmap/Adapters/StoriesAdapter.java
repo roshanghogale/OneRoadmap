@@ -1,9 +1,9 @@
 package com.newsproject.oneroadmap.Adapters;
 
+import android.app.ProgressDialog;
 import android.content.Context;
-import android.content.Intent;
 import android.content.SharedPreferences;
-import android.net.Uri;
+import android.graphics.drawable.Drawable;
 import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
@@ -20,17 +20,20 @@ import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.bumptech.glide.Glide;
+import com.bumptech.glide.load.DataSource;
 import com.bumptech.glide.load.engine.DiskCacheStrategy;
 import androidx.annotation.Nullable;
+
+import com.bumptech.glide.load.engine.GlideException;
+import com.bumptech.glide.request.RequestListener;
+import com.bumptech.glide.request.target.Target;
 import com.google.android.exoplayer2.ExoPlayer;
 import com.google.android.exoplayer2.MediaItem;
 import com.google.android.exoplayer2.Player;
 import com.google.android.exoplayer2.ui.PlayerView;
-import com.google.android.exoplayer2.upstream.DefaultHttpDataSource;
-import com.google.android.exoplayer2.upstream.cache.CacheDataSource;
 import com.google.android.exoplayer2.upstream.cache.LeastRecentlyUsedCacheEvictor;
 import com.google.android.exoplayer2.upstream.cache.SimpleCache;
-import com.google.android.exoplayer2.util.Util;
+
 import java.io.File;
 import com.newsproject.oneroadmap.Fragments.HomeFragment;
 import com.newsproject.oneroadmap.Models.JobUpdate;
@@ -38,6 +41,7 @@ import com.newsproject.oneroadmap.Models.JobViewModel;
 import com.newsproject.oneroadmap.Models.Story;
 import com.newsproject.oneroadmap.R;
 import com.newsproject.oneroadmap.Utils.ShareHelper;
+import com.newsproject.oneroadmap.Utils.WebViewHelper;
 
 import java.util.HashMap;
 import java.util.List;
@@ -50,7 +54,7 @@ public class StoriesAdapter extends RecyclerView.Adapter<StoriesAdapter.StoryVie
     private final Context context;
     private final List<Story> stories;
     private final StoryAdapter storyAdapter;
-    private final RecyclerView storiesPlayer;
+    public static RecyclerView storiesPlayer = null;
     private final SharedPreferences storyPrefs;
     private final Map<String, JobUpdate> jobUpdateCache;
     private static SimpleCache videoCache;
@@ -162,7 +166,7 @@ public class StoriesAdapter extends RecyclerView.Adapter<StoriesAdapter.StoryVie
         if (holder.progressBar != null) {
             holder.progressBar.setProgress(0);
         }
-        
+
         // Show loading indicator
         if (holder.loadingProgress != null) {
             holder.loadingProgress.setVisibility(View.VISIBLE);
@@ -198,15 +202,15 @@ public class StoriesAdapter extends RecyclerView.Adapter<StoriesAdapter.StoryVie
                 Glide.with(context)
                         .load(bannerUrl)
                         .diskCacheStrategy(DiskCacheStrategy.ALL)
-                        .listener(new com.bumptech.glide.request.RequestListener<android.graphics.drawable.Drawable>() {
+                        .listener(new RequestListener<Drawable>() {
                             @Override
-                            public boolean onLoadFailed(@Nullable com.bumptech.glide.load.engine.GlideException e, Object model, com.bumptech.glide.request.target.Target<android.graphics.drawable.Drawable> target, boolean isFirstResource) {
+                            public boolean onLoadFailed(@Nullable GlideException e, Object model, Target<Drawable> target, boolean isFirstResource) {
                                 // Keep loading indicator visible for video loading
                                 return false;
                             }
 
                             @Override
-                            public boolean onResourceReady(android.graphics.drawable.Drawable resource, Object model, com.bumptech.glide.request.target.Target<android.graphics.drawable.Drawable> target, com.bumptech.glide.load.DataSource dataSource, boolean isFirstResource) {
+                            public boolean onResourceReady(Drawable resource, Object model, Target<Drawable> target, DataSource dataSource, boolean isFirstResource) {
                                 // Keep loading indicator visible for video loading
                                 return false;
                             }
@@ -238,9 +242,9 @@ public class StoriesAdapter extends RecyclerView.Adapter<StoriesAdapter.StoryVie
                             .load(imageUrl)
                             .diskCacheStrategy(DiskCacheStrategy.ALL)
                             .thumbnail(0.1f) // Show thumbnail immediately while full image loads
-                            .listener(new com.bumptech.glide.request.RequestListener<android.graphics.drawable.Drawable>() {
+                            .listener(new RequestListener<Drawable>() {
                                 @Override
-                                public boolean onLoadFailed(@Nullable com.bumptech.glide.load.engine.GlideException e, Object model, com.bumptech.glide.request.target.Target<android.graphics.drawable.Drawable> target, boolean isFirstResource) {
+                                public boolean onLoadFailed(@Nullable GlideException e, Object model, Target<Drawable> target, boolean isFirstResource) {
                                     if (holder.loadingProgress != null) {
                                         holder.loadingProgress.setVisibility(View.GONE);
                                     }
@@ -248,7 +252,7 @@ public class StoriesAdapter extends RecyclerView.Adapter<StoriesAdapter.StoryVie
                                 }
 
                                 @Override
-                                public boolean onResourceReady(android.graphics.drawable.Drawable resource, Object model, com.bumptech.glide.request.target.Target<android.graphics.drawable.Drawable> target, com.bumptech.glide.load.DataSource dataSource, boolean isFirstResource) {
+                                public boolean onResourceReady(Drawable resource, Object model, Target<Drawable> target, DataSource dataSource, boolean isFirstResource) {
                                     if (holder.loadingProgress != null) {
                                         holder.loadingProgress.setVisibility(View.GONE);
                                     }
@@ -380,12 +384,12 @@ public class StoriesAdapter extends RecyclerView.Adapter<StoriesAdapter.StoryVie
         CircleImageView iconImage;
         TextView title, timeAgo, openPostButton, shareButton;
         ProgressBar progressBar, loadingProgress;
-        PlayerView videoPlayerView;
-        private ExoPlayer exoPlayer;
-        private Player.Listener videoListener;
-        private final Handler handler;
-        private Runnable viewRunnable;
-        private Runnable progressRunnable;
+        static PlayerView videoPlayerView;
+        private static ExoPlayer exoPlayer;
+        private static Player.Listener videoListener;
+        private static Handler handler = null;
+        private static Runnable viewRunnable;
+        private static Runnable progressRunnable;
         private int progress = 0;
         private final StoriesAdapter adapter;
 
@@ -422,7 +426,7 @@ public class StoriesAdapter extends RecyclerView.Adapter<StoriesAdapter.StoryVie
                     if (postId == null || postId.trim().isEmpty()) return;
 
                     final String finalId = postId.trim();
-                    android.app.ProgressDialog progressDialog = new android.app.ProgressDialog(adapter.context);
+                    ProgressDialog progressDialog = new ProgressDialog(adapter.context);
                     progressDialog.setMessage("Loading...");
                     progressDialog.setCancelable(false);
                     progressDialog.show();
@@ -439,7 +443,7 @@ public class StoriesAdapter extends RecyclerView.Adapter<StoriesAdapter.StoryVie
                     }
                 } else if (story.getWebUrl() != null && !story.getWebUrl().isEmpty()) {
                     HomeFragment.stopStory(adapter.context);
-                    com.newsproject.oneroadmap.Utils.WebViewHelper.openUrlInApp(adapter.context, story.getWebUrl());
+                    WebViewHelper.openUrlInApp(adapter.context, story.getWebUrl());
                 }
             });
 
@@ -590,7 +594,7 @@ public class StoriesAdapter extends RecyclerView.Adapter<StoriesAdapter.StoryVie
             }
         }
 
-        private void pauseVideo() {
+        private static void pauseVideo() {
             if (exoPlayer != null && exoPlayer.isPlaying()) {
                 exoPlayer.pause();
             }
@@ -612,7 +616,7 @@ public class StoriesAdapter extends RecyclerView.Adapter<StoriesAdapter.StoryVie
             }
         }
 
-        public void releaseVideo() {
+        public static void releaseVideo() {
             if (exoPlayer != null) {
                 if (videoListener != null) {
                     exoPlayer.removeListener(videoListener);
@@ -721,7 +725,7 @@ public class StoriesAdapter extends RecyclerView.Adapter<StoriesAdapter.StoryVie
             }
         }
 
-        public void cancelViewTask() {
+        public static void cancelViewTask() {
             if (viewRunnable != null) {
                 handler.removeCallbacks(viewRunnable);
                 viewRunnable = null;
