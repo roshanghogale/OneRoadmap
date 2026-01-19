@@ -31,6 +31,7 @@ import androidx.cardview.widget.CardView;
 import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
+import androidx.fragment.app.FragmentActivity;
 import androidx.fragment.app.FragmentTransaction;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
@@ -158,117 +159,163 @@ public class HomeFragment extends Fragment {
         jobViewModel = new ViewModelProvider(this).get(JobViewModel.class);
     }
 
+// =====================
+// STORY PLAYER HELPERS
+// =====================
+
+// =====================
+// STORY PLAYER HELPERS
+// =====================
+
     public static boolean isStoriesPlayerVisible() {
         return storiesPlayer != null && storiesPlayer.getVisibility() == View.VISIBLE;
     }
 
-    public static void stopStory(Context context) {
-        if (storiesPlayer != null) {
-            RecyclerView.Adapter adapter = storiesPlayer.getAdapter();
-            if (adapter instanceof StoriesAdapter) {
-                StoriesAdapter storiesAdapter = (StoriesAdapter) adapter;
-                StoriesAdapter.StoryViewHolder holder = (StoriesAdapter.StoryViewHolder) storiesPlayer.findViewHolderForAdapterPosition(storiesAdapter.getCurrentVisiblePosition());
-                if (holder instanceof StoriesAdapter.StoryViewHolder) {
-                    ((StoriesAdapter.StoryViewHolder) holder).cancelViewTask();
-                    ((StoriesAdapter.StoryViewHolder) holder).releaseVideo();
+// =========================
+// ONLY STORY-RELATED PARTS SHOWN FULLY
+// REST OF YOUR FILE REMAINS EXACTLY SAME
+// =========================
+
+    public static void playStory(
+            Context context,
+            int startPosition,
+            List<Story> storyList,
+            StoryAdapter storyAdapter
+    ) {
+        if (storiesPlayer == null || storyList == null || storyList.isEmpty()) return;
+
+        storiesPlayer.setVisibility(View.VISIBLE);
+
+        StoriesAdapter storiesAdapter =
+                new StoriesAdapter(context, storyList, storyAdapter, storiesPlayer);
+
+        storiesPlayer.setAdapter(storiesAdapter);
+        storiesAdapter.setCurrentVisiblePosition(startPosition);
+
+        LinearLayoutManager lm =
+                (LinearLayoutManager) storiesPlayer.getLayoutManager();
+
+        if (lm != null) {
+            lm.scrollToPosition(startPosition);
+        }
+
+        // 🔥 FORCE FIRST STORY TO START (CRITICAL FIX)
+        storiesPlayer.post(() -> {
+            RecyclerView.ViewHolder vh =
+                    storiesPlayer.findViewHolderForAdapterPosition(startPosition);
+
+            if (vh instanceof StoriesAdapter.StoryViewHolder) {
+                ((StoriesAdapter.StoryViewHolder) vh).onBecameVisible();
+            }
+        });
+
+        PagerSnapHelper snapHelper = new PagerSnapHelper();
+        if (storiesPlayer.getOnFlingListener() == null) {
+            snapHelper.attachToRecyclerView(storiesPlayer);
+        }
+
+        storiesPlayer.clearOnScrollListeners();
+        storiesPlayer.addOnScrollListener(new RecyclerView.OnScrollListener() {
+
+            @Override
+            public void onScrollStateChanged(
+                    @NonNull RecyclerView rv,
+                    int newState
+            ) {
+
+                // 🔥 STOP ALL WHEN SWIPE STARTS
+                if (newState == RecyclerView.SCROLL_STATE_DRAGGING) {
+                    for (int i = 0; i < rv.getChildCount(); i++) {
+                        RecyclerView.ViewHolder vh =
+                                rv.getChildViewHolder(rv.getChildAt(i));
+                        if (vh instanceof StoriesAdapter.StoryViewHolder) {
+                            ((StoriesAdapter.StoryViewHolder) vh).onBecameInvisible();
+                        }
+                    }
+                    return;
                 }
-            }
-            storiesPlayer.setVisibility(View.GONE);
-            Log.d(TAG, "storiesPlayer stopped and set to GONE");
-            // Show bottom navigation again
-            if (context instanceof androidx.fragment.app.FragmentActivity) {
-                androidx.fragment.app.FragmentActivity activity = (androidx.fragment.app.FragmentActivity) context;
-                android.view.View bottom = activity.findViewById(R.id.bottom_navigation);
-                if (bottom != null) bottom.setVisibility(View.VISIBLE);
-            }
-        }
-    }
 
-    public static void updateAdapter(Context context, int position, StoryAdapter storyAdapter) {
-        storyAdapter.notifyItemChanged(position);
-        Log.d(TAG, "Notified story adapter for position: " + position);
-        if (position + 1 < storyAdapter.getItemCount()) {
-            storiesPlayer.smoothScrollToPosition(position + 1);
-            Log.d(TAG, "Scrolled to next story position: " + (position + 1));
-        } else {
-            Toast.makeText(context, "No more stories to play.", Toast.LENGTH_SHORT).show();
-            Log.d(TAG, "No more stories, showed toast");
-        }
-    }
+                if (newState != RecyclerView.SCROLL_STATE_IDLE) return;
 
-    public static void playStory(Context context, int position, List<Story> storyList, StoryAdapter storyAdapter) {
-        Log.d(TAG, "playStory called at position: " + position);
-        if (storiesPlayer != null) {
-            storiesPlayer.setVisibility(View.VISIBLE);
-            StoriesAdapter storiesAdapterLocal = new StoriesAdapter(context, storyList, storyAdapter, storiesPlayer);
-            storiesPlayer.setAdapter(storiesAdapterLocal);
+                View snapView = snapHelper.findSnapView(rv.getLayoutManager());
+                if (snapView == null) return;
 
-            // Set initial visible position
-            storiesAdapterLocal.setCurrentVisiblePosition(position);
+                int snappedPos = lm.getPosition(snapView);
+                if (snappedPos == RecyclerView.NO_POSITION) return;
 
-            LinearLayoutManager layoutManager = (LinearLayoutManager) storiesPlayer.getLayoutManager();
-            if (layoutManager != null) {
-                layoutManager.scrollToPosition(position);
-            }
+                storiesAdapter.setCurrentVisiblePosition(snappedPos);
 
-            // Listen for scroll changes
-            storiesPlayer.clearOnScrollListeners();
-            storiesPlayer.addOnScrollListener(new RecyclerView.OnScrollListener() {
+                // ▶️ START ONLY SNAPPED STORY
+                for (int i = 0; i < rv.getChildCount(); i++) {
+                    RecyclerView.ViewHolder vh =
+                            rv.getChildViewHolder(rv.getChildAt(i));
 
-                @Override
-                public void onScrollStateChanged(@NonNull RecyclerView recyclerView, int newState) {
-                    super.onScrollStateChanged(recyclerView, newState);
+                    if (vh instanceof StoriesAdapter.StoryViewHolder) {
+                        StoriesAdapter.StoryViewHolder holder =
+                                (StoriesAdapter.StoryViewHolder) vh;
 
-                    // ONLY act when scrolling stops
-                    if (newState == RecyclerView.SCROLL_STATE_IDLE) {
-
-                        LinearLayoutManager lm =
-                                (LinearLayoutManager) recyclerView.getLayoutManager();
-                        if (lm == null) return;
-
-                        int snappedPos = lm.findFirstCompletelyVisibleItemPosition();
-                        if (snappedPos == RecyclerView.NO_POSITION) return;
-
-                        storiesAdapterLocal.setCurrentVisiblePosition(snappedPos);
-
-                        // HARD RULE: only ONE holder runs
-                        for (int i = 0; i < recyclerView.getChildCount(); i++) {
-                            View child = recyclerView.getChildAt(i);
-                            RecyclerView.ViewHolder vh =
-                                    recyclerView.getChildViewHolder(child);
-
-                            if (vh instanceof StoriesAdapter.StoryViewHolder) {
-                                StoriesAdapter.StoryViewHolder holder =
-                                        (StoriesAdapter.StoryViewHolder) vh;
-
-                                int pos = vh.getAdapterPosition();
-
-                                holder.resetProgressCompletely(); // 🔴 FORCE STOP ALL
-
-                                if (pos == snappedPos) {
-                                    holder.scheduleViewTask(
-                                            storyList.get(pos),
-                                            pos
-                                    );
-                                    holder.resumeVideo();
-                                }
-                            }
+                        if (holder.getAdapterPosition() == snappedPos) {
+                            holder.onBecameVisible();
+                        } else {
+                            holder.onBecameInvisible();
                         }
                     }
                 }
-            });
-
-            // Hide bottom nav
-            if (context instanceof androidx.fragment.app.FragmentActivity) {
-                androidx.fragment.app.FragmentActivity activity = (androidx.fragment.app.FragmentActivity) context;
-                View bottom = activity.findViewById(R.id.bottom_navigation);
-                if (bottom != null) bottom.setVisibility(View.GONE);
             }
-        } else {
-            Log.e(TAG, "storiesPlayer is null");
-            Toast.makeText(context, "Cannot play story", Toast.LENGTH_SHORT).show();
+        });
+
+        // Hide bottom navigation
+        if (context instanceof FragmentActivity) {
+            View bottom =
+                    ((FragmentActivity) context)
+                            .findViewById(R.id.bottom_navigation);
+            if (bottom != null) bottom.setVisibility(View.GONE);
         }
     }
+
+    public static void stopStory(Context context) {
+        if (storiesPlayer == null) return;
+
+        RecyclerView.Adapter adapter = storiesPlayer.getAdapter();
+
+        if (adapter instanceof StoriesAdapter) {
+            for (int i = 0; i < storiesPlayer.getChildCount(); i++) {
+                RecyclerView.ViewHolder vh =
+                        storiesPlayer.getChildViewHolder(
+                                storiesPlayer.getChildAt(i)
+                        );
+
+                if (vh instanceof StoriesAdapter.StoryViewHolder) {
+                    ((StoriesAdapter.StoryViewHolder) vh).onBecameInvisible();
+                }
+            }
+        }
+
+        storiesPlayer.setAdapter(null);
+        storiesPlayer.setVisibility(View.GONE);
+
+        if (context instanceof FragmentActivity) {
+            View bottom =
+                    ((FragmentActivity) context)
+                            .findViewById(R.id.bottom_navigation);
+            if (bottom != null) bottom.setVisibility(View.VISIBLE);
+        }
+    }
+
+    public static void updateAdapter(
+            Context context,
+            int position,
+            StoryAdapter storyAdapter
+    ) {
+        if (storiesPlayer == null) return;
+
+        if (position + 1 < storyAdapter.getItemCount()) {
+            storiesPlayer.smoothScrollToPosition(position + 1);
+        } else {
+            stopStory(context);
+        }
+    }
+
 
     @Nullable
     @Override
@@ -1140,6 +1187,17 @@ public class HomeFragment extends Fragment {
                 }
             }
         });
+    }
+
+    @Override
+    public void onPause() {
+        super.onPause();
+        // When fragment is not in foreground, stop all story playback
+        try {
+            stopStory(requireContext());
+        } catch (Exception e) {
+            Log.e(TAG, "Failed to stop stories in onPause: " + e.getMessage(), e);
+        }
     }
 
     public void showStudentUpdateDialog(@NonNull StudentUpdateItem item) {
