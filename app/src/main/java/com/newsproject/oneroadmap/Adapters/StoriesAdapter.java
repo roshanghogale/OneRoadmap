@@ -79,7 +79,6 @@ public class StoriesAdapter
             @NonNull StoryViewHolder holder,
             int position
     ) {
-        // ❌ NEVER start media or progress here
         holder.bind(stories.get(position));
     }
 
@@ -92,8 +91,7 @@ public class StoriesAdapter
     // VIEW HOLDER
     // =====================================================
 
-    public static class StoryViewHolder
-            extends RecyclerView.ViewHolder {
+    public static class StoryViewHolder extends RecyclerView.ViewHolder {
 
         private static final long IMAGE_DURATION_MS = 5000;
 
@@ -104,6 +102,7 @@ public class StoriesAdapter
         private final TextView shareButton;
         private final PlayerView playerView;
         private final ProgressBar progressBar;
+        private final ProgressBar loadingProgress;
 
         private final Handler handler = new Handler(Looper.getMainLooper());
 
@@ -129,9 +128,9 @@ public class StoriesAdapter
             shareButton = itemView.findViewById(R.id.textView23);
             playerView = itemView.findViewById(R.id.video_player);
             progressBar = itemView.findViewById(R.id.progressBar3);
+            loadingProgress = itemView.findViewById(R.id.loading_progress);
 
-            // ================= BUTTONS =================
-
+            // -------- Buttons --------
             closeButton.setOnClickListener(v ->
                     HomeFragment.stopStory(adapter.context)
             );
@@ -139,9 +138,8 @@ public class StoriesAdapter
             openButton.setOnClickListener(v -> {
                 int pos = getAdapterPosition();
                 if (pos == RecyclerView.NO_POSITION) return;
-
                 Story s = adapter.stories.get(pos);
-                if (s.getWebUrl() != null && !s.getWebUrl().isEmpty()) {
+                if (s.getWebUrl() != null) {
                     HomeFragment.stopStory(adapter.context);
                     WebViewHelper.openUrlInApp(adapter.context, s.getWebUrl());
                 }
@@ -150,40 +148,26 @@ public class StoriesAdapter
             shareButton.setOnClickListener(v -> {
                 int pos = getAdapterPosition();
                 if (pos == RecyclerView.NO_POSITION) return;
-
                 Story s = adapter.stories.get(pos);
                 new ShareHelper(adapter.context)
                         .sharePost("Check this out: " + s.getTitle(), s.getWebUrl());
             });
 
-            // ================= PAUSE ON HOLD =================
+            // -------- Pause on hold --------
             itemView.setOnTouchListener((v, event) -> {
-
-                // Allow buttons to receive clicks
                 if (event.getAction() == MotionEvent.ACTION_DOWN) {
-                    View focus = v.findFocus();
-                    if (focus == closeButton || focus == openButton || focus == shareButton) {
-                        return false;
-                    }
-                }
-
-                switch (event.getAction()) {
-                    case MotionEvent.ACTION_DOWN:
-                        pauseVideo();
-                        pauseProgress();
-                        return true;
-
-                    case MotionEvent.ACTION_UP:
-                    case MotionEvent.ACTION_CANCEL:
-                        resumeVideo();
-                        resumeProgress();
-                        return true;
+                    pauseVideo();
+                    pauseProgress();
+                    return true;
+                } else if (event.getAction() == MotionEvent.ACTION_UP ||
+                        event.getAction() == MotionEvent.ACTION_CANCEL) {
+                    resumeVideo();
+                    resumeProgress();
+                    return true;
                 }
                 return false;
             });
         }
-
-        // ================= BIND =================
 
         void bind(Story s) {
             story = s;
@@ -195,10 +179,9 @@ public class StoriesAdapter
 
             banner.setVisibility(View.VISIBLE);
             playerView.setVisibility(View.GONE);
+            loadingProgress.setVisibility(View.GONE);
             progressBar.setProgress(0);
         }
-
-        // ================= VISIBILITY =================
 
         public void onBecameVisible() {
             reset();
@@ -212,6 +195,8 @@ public class StoriesAdapter
         // ================= MEDIA =================
 
         private void loadMedia() {
+            loadingProgress.setVisibility(View.VISIBLE);
+
             boolean isVideo =
                     "video".equalsIgnoreCase(story.getMediaType())
                             && story.getVideoUrl() != null;
@@ -228,9 +213,6 @@ public class StoriesAdapter
         private void loadImage() {
             final long session = playSessionId;
 
-            banner.setVisibility(View.VISIBLE);
-            playerView.setVisibility(View.GONE);
-
             Glide.with(itemView)
                     .load(story.getBannerUrl())
                     .listener(new RequestListener<Drawable>() {
@@ -243,9 +225,8 @@ public class StoriesAdapter
                                 boolean isFirstResource
                         ) {
                             if (session != playSessionId) return true;
-                            if (getAdapterPosition() != adapter.getCurrentVisiblePosition())
-                                return true;
 
+                            loadingProgress.setVisibility(View.GONE);
                             startImageProgress(session);
                             return false;
                         }
@@ -257,6 +238,7 @@ public class StoriesAdapter
                                 Target<Drawable> target,
                                 boolean isFirstResource
                         ) {
+                            loadingProgress.setVisibility(View.GONE);
                             return false;
                         }
                     })
@@ -264,12 +246,10 @@ public class StoriesAdapter
         }
 
         private void startImageProgress(long session) {
-            progressBar.setProgress(0);
             long start = System.currentTimeMillis();
 
             progressRunnable = () -> {
                 if (session != playSessionId) return;
-                if (getAdapterPosition() != adapter.getCurrentVisiblePosition()) return;
 
                 long elapsed = System.currentTimeMillis() - start;
                 int p = (int) (elapsed * 100 / IMAGE_DURATION_MS);
@@ -303,8 +283,8 @@ public class StoriesAdapter
                 public void onPlaybackStateChanged(int state) {
                     if (session != playSessionId) return;
 
-                    if (state == Player.STATE_READY &&
-                            getAdapterPosition() == adapter.getCurrentVisiblePosition()) {
+                    if (state == Player.STATE_READY) {
+                        loadingProgress.setVisibility(View.GONE);
                         exoPlayer.play();
                         startVideoProgress(session);
                     }
@@ -341,26 +321,17 @@ public class StoriesAdapter
         }
 
         private void pauseProgress() {
-            if (progressRunnable != null) {
-                handler.removeCallbacks(progressRunnable);
-            }
+            if (progressRunnable != null) handler.removeCallbacks(progressRunnable);
         }
 
         private void resumeProgress() {
-            if (progressRunnable != null) {
-                handler.post(progressRunnable);
-            }
+            if (progressRunnable != null) handler.post(progressRunnable);
         }
 
         private void goNext() {
             int pos = getAdapterPosition();
             if (pos != adapter.getCurrentVisiblePosition()) return;
-
-            HomeFragment.updateAdapter(
-                    itemView.getContext(),
-                    pos,
-                    adapter.storyAdapter
-            );
+            HomeFragment.updateAdapter(itemView.getContext(), pos, adapter.storyAdapter);
         }
 
         private void reset() {
@@ -371,10 +342,10 @@ public class StoriesAdapter
                 progressRunnable = null;
             }
 
+            loadingProgress.setVisibility(View.GONE);
             progressBar.setProgress(0);
 
             if (exoPlayer != null) {
-                exoPlayer.pause();
                 exoPlayer.release();
                 exoPlayer = null;
             }
