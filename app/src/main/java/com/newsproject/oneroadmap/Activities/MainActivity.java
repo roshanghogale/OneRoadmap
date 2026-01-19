@@ -129,11 +129,6 @@ public class MainActivity extends AppCompatActivity {
 
                 if (currentFragment instanceof HomeFragment) {
                     if (HomeFragment.isStoriesPlayerVisible()) {
-                        StoriesAdapter.StoryViewHolder.cancelViewTask();
-                        StoriesAdapter.StoryViewHolder.releaseVideo();
-                        if (StoriesAdapter.storiesPlayer != null) {
-                            StoriesAdapter.storiesPlayer.setVisibility(View.GONE);
-                        }
                         HomeFragment.stopStory(MainActivity.this);
                     } else {
                         finishAffinity();
