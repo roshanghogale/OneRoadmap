@@ -59,7 +59,7 @@ public class ProfileFragment extends Fragment {
     private DatabaseHelper dbHelper;
     private ApiClient apiClient;
     private String userId;
-
+    private boolean isInitializing = true;
     private TextView profileName, currentAffairsSelection, jobsSelection, coinTextView,
             studyMaterialSelection, profileTxtJobByStream;
     private ImageView profileNameEdit, currentAffairsEdit, jobsEdit, profileImage, studyMaterialEdit;
@@ -76,8 +76,17 @@ public class ProfileFragment extends Fragment {
             "Government", "Police & Defence", "Banking", "Self Improvement"
     };
     List<String> ageGroupOptions = new ArrayList<>(Arrays.asList(
-            "Select Age Group", "१४ ते १८ ", "१९ ते २५", "२६ ते ३१", "३२ पेक्षा जास्त "
+            "Select Age Group",
+            "14 ते 18",
+            "19 ते 25",
+            "26 ते 31",
+            "32 पेक्षा जास्त"
     ));
+    private String lastTwelfthValue = null;
+    private boolean shouldEnableAdvancedEducation(String twelfth) {
+        return "माझ या पुढील शिक्षण आहे".equals(twelfth);
+    }
+
 
     /* --------------------------------------------------------------------- */
     @Override
@@ -171,29 +180,55 @@ public class ProfileFragment extends Fragment {
         spinnerTwelfth.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
             public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
-                if (isReverting) return; // Don't process programmatic selections
-                
-                boolean enableAdvanced = (position == 3); // "नाही या पुढील शिक्षण आहे"
-                setAdvancedEducationEnabled(enableAdvanced);
 
-                // ---- UPDATE JOB TEXT (same logic as LoginPage3) -----------------
-                updateJobTextByTwelfth(DataConstants.TWELFTH_OPTIONS.get(position));
+                if (isReverting || isInitializing) return;
 
-                if (!enableAdvanced) {
-                    isReverting = true;
-                    spinnerEducation.setSelection(0);
-                    spinnerDegree.setSelection(0);
-                    spinnerPostGrad.setSelection(0);
-                    isReverting = false;
+                String selectedTwelfth = DataConstants.TWELFTH_OPTIONS.get(position);
+
+                // First time init safety
+                if (lastTwelfthValue == null) {
+                    lastTwelfthValue = selectedTwelfth;
+                    return;
                 }
+
+                if (selectedTwelfth.equals(lastTwelfthValue)) return;
+
+                showConfirmationDialog(
+                        "twelfth",
+                        selectedTwelfth,
+                        // YES
+                        () -> {
+                            lastTwelfthValue = selectedTwelfth;
+                            saveToSharedPreferences("twelfth", selectedTwelfth);
+
+                            boolean enableAdvanced =
+                                    shouldEnableAdvancedEducation(selectedTwelfth);
+
+                            setAdvancedEducationEnabled(enableAdvanced);
+                            updateJobTextByTwelfth(selectedTwelfth);
+
+                            if (!enableAdvanced) {
+                                isReverting = true;
+                                spinnerEducation.setSelection(0);
+                                spinnerDegree.setSelection(0);
+                                spinnerPostGrad.setSelection(0);
+                                isReverting = false;
+                            }
+
+                            updateSQLiteUser();
+                        },
+                        // NO
+                        () -> {
+                            isReverting = true;
+                            int oldPos = DataConstants.TWELFTH_OPTIONS.indexOf(lastTwelfthValue);
+                            spinnerTwelfth.setSelection(oldPos >= 0 ? oldPos : 0);
+                            isReverting = false;
+                        }
+                );
             }
 
             @Override
-            public void onNothingSelected(AdapterView<?> parent) {
-                if (isReverting) return;
-                setAdvancedEducationEnabled(false);
-                updateJobTextByTwelfth(DataConstants.TWELFTH_OPTIONS.get(0));
-            }
+            public void onNothingSelected(AdapterView<?> parent) {}
         });
 
         // Education Category
@@ -234,7 +269,7 @@ public class ProfileFragment extends Fragment {
         spinnerEducation.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
             public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
-                if (isReverting) return;
+                if (isReverting || isInitializing) return;
                 String selected = DataConstants.EDUCATION_OPTIONS.get(position);
                 String current  = sharedPreferences.getString("education",
                         DataConstants.EDUCATION_OPTIONS.get(0));
@@ -245,7 +280,7 @@ public class ProfileFragment extends Fragment {
                         saveToSharedPreferences("education", selected);
                         updateDegreeAndPostGradSpinners(selected);
                         saveToSharedPreferences("degree", "Select Degree");
-                        saveToSharedPreferences("postGraduation", "Select Post Graduation");
+                        saveToSharedPreferences("postGrad", "Select Post Graduation");
                         updateSQLiteUser();
                     }, () -> {
                         isReverting = true;
@@ -316,7 +351,7 @@ public class ProfileFragment extends Fragment {
         postGradAdapter.clear(); postGradAdapter.addAll(postGrads); postGradAdapter.notifyDataSetChanged();
 
         String savedDegree = sharedPreferences.getString("degree", degrees.get(0));
-        String savedPostGrad = sharedPreferences.getString("postGraduation", postGrads.get(0));
+        String savedPostGrad = sharedPreferences.getString("postGrad", postGrads.get(0));
 
         isReverting = true;
         spinnerDegree.setSelection(degrees.indexOf(savedDegree) >= 0 ? degrees.indexOf(savedDegree) : 0);
@@ -356,7 +391,7 @@ public class ProfileFragment extends Fragment {
         spinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
             public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
-                if (isReverting) return;
+                if (isReverting || isInitializing) return;
                 String selected = options.get(position);
                 String current  = sharedPreferences.getString(prefKey, options.get(0));
                 if (!selected.equals(current) && !selected.equals(options.get(0))) {
@@ -380,7 +415,7 @@ public class ProfileFragment extends Fragment {
     private AdapterView.OnItemSelectedListener createDegreeListener() {
         return new AdapterView.OnItemSelectedListener() {
             @Override public void onItemSelected(AdapterView<?> parent, View view, int pos, long id) {
-                if (isReverting) return;
+                if (isReverting || isInitializing) return;
                 String selected = degreeAdapter.getItem(pos);
                 String current  = sharedPreferences.getString("degree", "Select Degree");
                 if (!selected.equals(current) && !selected.equals("Select Degree")) {
@@ -407,13 +442,13 @@ public class ProfileFragment extends Fragment {
     private AdapterView.OnItemSelectedListener createPostGradListener() {
         return new AdapterView.OnItemSelectedListener() {
             @Override public void onItemSelected(AdapterView<?> parent, View view, int pos, long id) {
-                if (isReverting) return;
+                if (isReverting || isInitializing) return;
                 String selected = postGradAdapter.getItem(pos);
-                String current  = sharedPreferences.getString("postGraduation", "Select Post Graduation");
+                String current  = sharedPreferences.getString("postGrad", "Select Post Graduation");
                 if (!selected.equals(current) && !selected.equals("Select Post Graduation")) {
-                    showConfirmationDialog("postGraduation", selected, () -> {
+                    showConfirmationDialog("postGrad", selected, () -> {
                         spinnerPostGrad.setSelection(pos);
-                        saveToSharedPreferences("postGraduation", selected);
+                        saveToSharedPreferences("postGrad", selected);
                         updateSQLiteUser();
                     }, () -> {
                         isReverting = true;
@@ -434,7 +469,7 @@ public class ProfileFragment extends Fragment {
     private AdapterView.OnItemSelectedListener createDistrictListener() {
         return new AdapterView.OnItemSelectedListener() {
             @Override public void onItemSelected(AdapterView<?> parent, View view, int pos, long id) {
-                if (isReverting) return;
+                if (isReverting || isInitializing) return;
                 String selected = DataConstants.DISTRICTS.get(pos);
                 String current  = sharedPreferences.getString("district",
                         DataConstants.DISTRICTS.get(0));
@@ -463,7 +498,7 @@ public class ProfileFragment extends Fragment {
     private AdapterView.OnItemSelectedListener createTalukaListener() {
         return new AdapterView.OnItemSelectedListener() {
             @Override public void onItemSelected(AdapterView<?> parent, View view, int pos, long id) {
-                if (isReverting) return;
+                if (isReverting || isInitializing) return;
                 String selected = talukaAdapter.getItem(pos);
                 String current  = sharedPreferences.getString("taluka", "Select Taluka");
                 if (!selected.equals(current) && !selected.equals("Select Taluka")) {
@@ -505,14 +540,14 @@ public class ProfileFragment extends Fragment {
                 .setTitle("Edit Name");
         EditText input = new EditText(requireContext());
         input.setInputType(InputType.TYPE_CLASS_TEXT);
-        input.setText(sharedPreferences.getString("userName", "User"));
+        input.setText(sharedPreferences.getString("name", "User"));
         b.setView(input);
         b.setPositiveButton("OK", (d, w) -> {
             String newName = input.getText().toString().trim();
-            if (!newName.isEmpty() && !newName.equals(sharedPreferences.getString("userName", "User"))) {
-                showConfirmationDialog("userName", newName, () -> {
+            if (!newName.isEmpty() && !newName.equals(sharedPreferences.getString("name", "User"))) {
+                showConfirmationDialog("name", newName, () -> {
                     profileName.setText(newName);
-                    saveToSharedPreferences("userName", newName);
+                    saveToSharedPreferences("name", newName);
                     updateSQLiteUser();
                 }, () -> {});
             }
@@ -573,7 +608,7 @@ public class ProfileFragment extends Fragment {
     /* --------------------------------------------------------------------- */
     private void setupGenderListener() {
         radioGroupGender.setOnCheckedChangeListener((group, checkedId) -> {
-            if (isReverting) return;
+            if (isReverting || isInitializing) return;
             String selected = checkedId == R.id.radio_men ? "पुरुष" : "स्त्री";
             String current  = sharedPreferences.getString("gender", "");
             if (!selected.equals(current)) {
@@ -648,54 +683,40 @@ public class ProfileFragment extends Fragment {
 
     /* --------------------------------------------------------------------- */
     private void updateSQLiteUser() {
-        if (userId == null || userId.isEmpty()) return;
-
-        // Get values from SharedPreferences with proper defaults
-        String userName = sharedPreferences.getString("userName", "User");
-        String gender = sharedPreferences.getString("gender", "");
-        String avatar = sharedPreferences.getString("avatar", "girl_profile");
-        String degree = sharedPreferences.getString("degree", "Select Degree");
-        String postGraduation = sharedPreferences.getString("postGraduation", "Select Post Graduation");
-        String district = sharedPreferences.getString("district", "Select District");
-        String taluka = sharedPreferences.getString("taluka", "Select Taluka");
-        String ageGroup = sharedPreferences.getString("ageGroup", "Select Age Group");
-        String education = sharedPreferences.getString("education", "Select Education Category");
-        String twelfth = sharedPreferences.getString("twelfth", DataConstants.TWELFTH_OPTIONS.get(0));
+        if (userId == null) return;
 
         User user = new User(
                 userId,
-                userName,
-                gender,
-                avatar,
+                sharedPreferences.getString("name", "User"),
+                sharedPreferences.getString("gender", ""),
+                sharedPreferences.getString("avatar", "girl_profile"),
+
                 sharedPreferences.getBoolean("study_Government", false),
-                sharedPreferences.getBoolean("study_Police___Defence", false),
+                sharedPreferences.getBoolean("study_Police_Defence", false),
                 sharedPreferences.getBoolean("study_Banking", false),
                 sharedPreferences.getBoolean("study_Self_Improvement", false),
-                degree,
-                postGraduation,
-                district,
-                taluka,
+
+                sharedPreferences.getString("degree", "Select Degree"),
+                sharedPreferences.getString("postGrad", "Select Post Graduation"),
+                sharedPreferences.getString("district", "Select District"),
+                sharedPreferences.getString("taluka", "Select Taluka"),
                 sharedPreferences.getBoolean("currentAffairs", false),
                 sharedPreferences.getBoolean("jobs", false),
-                ageGroup,
-                education,
-                twelfth
+                sharedPreferences.getString("ageGroup", ""),
+                sharedPreferences.getString("education", ""),
+                sharedPreferences.getString("twelfth",
+                        DataConstants.TWELFTH_OPTIONS.get(0))
         );
 
         try {
-            // Check if user exists, if not insert, otherwise update
-            User existingUser = dbHelper.getUser(userId);
-            if (existingUser != null) {
+            if (dbHelper.getUser(userId) != null)
                 dbHelper.updateUser(user);
-            } else {
-                // User doesn't exist in DB, insert it
+            else
                 dbHelper.insertUser(user);
-            }
+
             syncToServer(user);
         } catch (Exception e) {
-            Toast.makeText(requireContext(),
-                    "DB Error: " + e.getMessage(), Toast.LENGTH_LONG).show();
-            Log.e("ProfileFragment", "Error updating user: " + e.getMessage(), e);
+            Log.e("Profile", "DB update failed", e);
         }
     }
 
@@ -746,12 +767,13 @@ public class ProfileFragment extends Fragment {
         User user = dbHelper.getUser(userId);
         if (user != null) loadUserData(user);
         else loadFromSharedPrefs();
+        isInitializing = false;
     }
 
     private void loadUserData(User user) {
         // First, sync SharedPreferences with database values to ensure consistency
         syncSharedPreferencesFromUser(user);
-        
+
         profileName.setText(user.getName() != null ? user.getName() : "User");
         loadAvatar(user.getAvatar());
         setGender(user.getGender());
@@ -763,10 +785,10 @@ public class ProfileFragment extends Fragment {
 
         updateJobTextByTwelfth(user.getTwelfth());
     }
-    
+
     private void syncSharedPreferencesFromUser(User user) {
         // Sync all user data to SharedPreferences to ensure consistency
-        editor.putString("userName", user.getName() != null ? user.getName() : "User");
+        editor.putString("name", user.getName() != null ? user.getName() : "User");
         editor.putString("gender", user.getGender() != null ? user.getGender() : "");
         editor.putString("avatar", user.getAvatar() != null ? user.getAvatar() : "girl_profile");
         editor.putBoolean("study_Government", user.isStudyGovernment());
@@ -774,7 +796,7 @@ public class ProfileFragment extends Fragment {
         editor.putBoolean("study_Banking", user.isStudyBanking());
         editor.putBoolean("study_Self_Improvement", user.isStudySelfImprovement());
         editor.putString("degree", user.getDegree() != null ? user.getDegree() : "Select Degree");
-        editor.putString("postGraduation", user.getPostGraduation() != null ? user.getPostGraduation() : "Select Post Graduation");
+        editor.putString("postGrad", user.getPostGraduation() != null ? user.getPostGraduation() : "Select Post Graduation");
         editor.putString("district", user.getDistrict() != null ? user.getDistrict() : "Select District");
         editor.putString("taluka", user.getTaluka() != null ? user.getTaluka() : "Select Taluka");
         editor.putBoolean("currentAffairs", user.isCurrentAffairs());
@@ -786,7 +808,7 @@ public class ProfileFragment extends Fragment {
     }
 
     private void loadFromSharedPrefs() {
-        profileName.setText(sharedPreferences.getString("userName", "User"));
+        profileName.setText(sharedPreferences.getString("name", "User"));
         loadAvatar(sharedPreferences.getString("avatar", "girl_profile"));
         setGender(sharedPreferences.getString("gender", ""));
         setSpinnersFromPrefs();
@@ -824,20 +846,21 @@ public class ProfileFragment extends Fragment {
         if (user.getTwelfth() != null) editor.putString("twelfth", user.getTwelfth());
         if (user.getEducation() != null) editor.putString("education", user.getEducation());
         if (user.getDegree() != null) editor.putString("degree", user.getDegree());
-        if (user.getPostGraduation() != null) editor.putString("postGraduation", user.getPostGraduation());
+        if (user.getPostGraduation() != null) editor.putString("postGrad", user.getPostGraduation());
         if (user.getDistrict() != null) editor.putString("district", user.getDistrict());
         if (user.getTaluka() != null) editor.putString("taluka", user.getTaluka());
         editor.apply();
-        
+
         setSpinnerSelection(spinnerAgeGroup, ageGroupOptions, user.getAgeGroup());
-        
+
         // Set twelfth first, which controls advanced education
         String twelfth = user.getTwelfth() != null ? user.getTwelfth() : DataConstants.TWELFTH_OPTIONS.get(0);
+        lastTwelfthValue = twelfth;
         isReverting = true;
         setSpinnerSelection(spinnerTwelfth, DataConstants.TWELFTH_OPTIONS, twelfth);
         // Update advanced education enabled state based on twelfth selection
         int twelfthPos = DataConstants.TWELFTH_OPTIONS.indexOf(twelfth);
-        boolean enableAdvanced = twelfthPos != 3; // "नाही या पुढील शिक्षण आहे" is at position 3
+        boolean enableAdvanced = shouldEnableAdvancedEducation(twelfth);
         setAdvancedEducationEnabled(enableAdvanced);
         // Update job text
         updateJobTextByTwelfth(twelfth);
@@ -862,17 +885,18 @@ public class ProfileFragment extends Fragment {
 
         setSpinnerSelection(spinnerAgeGroup, ageGroupOptions,
                 sharedPreferences.getString("ageGroup", "Select Age Group"));
-        
+
         // Set twelfth with proper state updates
         String twelfth = sharedPreferences.getString("twelfth", DataConstants.TWELFTH_OPTIONS.get(0));
         isReverting = true;
         setSpinnerSelection(spinnerTwelfth, DataConstants.TWELFTH_OPTIONS, twelfth);
         // Update advanced education enabled state based on twelfth selection
         int twelfthPos = DataConstants.TWELFTH_OPTIONS.indexOf(twelfth);
-        boolean enableAdvanced = twelfthPos != 3; // "नाही या पुढील शिक्षण आहे" is at position 3
+        boolean enableAdvanced = shouldEnableAdvancedEducation(twelfth);
         setAdvancedEducationEnabled(enableAdvanced);
         // Update job text
         updateJobTextByTwelfth(twelfth);
+        lastTwelfthValue = twelfth;
         isReverting = false;
 
         setSpinnerSelection(spinnerEducation, DataConstants.EDUCATION_OPTIONS,
@@ -885,7 +909,7 @@ public class ProfileFragment extends Fragment {
         setSpinnerSelection(spinnerPostGrad,
                 new ArrayList<>(DataConstants.POST_GRAD_MAP.getOrDefault(
                         education, Arrays.asList("Select Post Graduation"))),
-                sharedPreferences.getString("postGraduation", "Select Post Graduation"));
+                sharedPreferences.getString("postGrad", "Select Post Graduation"));
 
         String district = sharedPreferences.getString("district", "Select District");
         setSpinnerSelection(spinnerDistrict, DataConstants.DISTRICTS, district);
@@ -1005,7 +1029,7 @@ public class ProfileFragment extends Fragment {
                             "WhatsApp is not installed. Please install WhatsApp to share and earn coins.", Toast.LENGTH_LONG).show();
                     return;
                 }
-                
+
                 Uri uri = generateBannerWithText();
                 Intent intent = new Intent(Intent.ACTION_SEND)
                         .setType("image/*")
@@ -1015,7 +1039,7 @@ public class ProfileFragment extends Fragment {
                         .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
                         .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                         .setPackage("com.whatsapp");
-                
+
                 startActivityForResult(intent, 100);
             } catch (Exception e) {
                 Toast.makeText(requireContext(),
