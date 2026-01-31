@@ -94,7 +94,7 @@ public class PDFViewerFragment extends Fragment {
         if (getArguments() != null) pdfUrl = getArguments().getString(ARG_PDF_URL);
         
         // Get userId from SharedPreferences
-        SharedPreferences prefs = requireContext().getSharedPreferences("user_prefs", Context.MODE_PRIVATE);
+        SharedPreferences prefs = requireContext().getSharedPreferences("UserPrefs", Context.MODE_PRIVATE);
         userId = prefs.getString("userId", "");
         if (userId != null && !userId.isEmpty()) {
             coinManager = new CoinManager(requireContext(), userId);

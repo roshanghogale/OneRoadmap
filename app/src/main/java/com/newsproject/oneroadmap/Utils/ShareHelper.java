@@ -24,7 +24,7 @@ public class ShareHelper {
     
     public ShareHelper(Context context) {
         this.context = context;
-        android.content.SharedPreferences prefs = context.getSharedPreferences("user_prefs", Context.MODE_PRIVATE);
+        android.content.SharedPreferences prefs = context.getSharedPreferences("UserPrefs", Context.MODE_PRIVATE);
         this.userId = prefs.getString("userId", "");
         if (userId != null && !userId.isEmpty()) {
             this.coinManager = new CoinManager(context, userId);
@@ -37,45 +37,42 @@ public class ShareHelper {
         this.shareLauncher = launcher;
     }
     
+    // Standard share message and link for all shares
+    private static final String STANDARD_SHARE_MESSAGE = 
+            "महाराष्ट्र व केंद्र शासनाच्या\n\nसर्व सरकारी जॉब - ची माहिती सरळ तुमच्या स्मार्ट फोनवर मिळवा 👇👇\n\nhttps://mahaalert.in/";
+    
     /**
      * Main method — call this to share job with banner image
+     * Always uses standard message, share_demo image, and mahaalert.in link
      */
     public void shareJobWithImage(String title, String url, String imageUrl) {
-        if (title == null) title = "Latest Government Job Alert";
-        
-        // If url is null, share only the title (for news/student updates)
-        // Otherwise, include URL and "Shared via" text (for job updates)
-        String fullText;
-        if (url == null || url.isEmpty()) {
-            fullText = title;
-        } else {
-            fullText = title + "\n\n" + url + "\n\nShared via One Roadmap App";
+        // Always use standard message and share_demo image
+        shareWithStandardImage();
+    }
+    
+    /**
+     * Share with standard share_demo image from drawables
+     */
+    private void shareWithStandardImage() {
+        try {
+            // Load share_demo image from drawables
+            android.content.res.Resources res = context.getResources();
+            int resId = res.getIdentifier("share_demo", "drawable", context.getPackageName());
+            
+            if (resId != 0) {
+                android.graphics.Bitmap bitmap = android.graphics.BitmapFactory.decodeResource(res, resId);
+                if (bitmap != null) {
+                    shareImageWithText(bitmap, STANDARD_SHARE_MESSAGE);
+                    return;
+                }
+            }
+            
+            // Fallback to text only if image not found
+            shareTextOnly(STANDARD_SHARE_MESSAGE);
+        } catch (Exception e) {
+            // Fallback to text only on error
+            shareTextOnly(STANDARD_SHARE_MESSAGE);
         }
-        
-        if (imageUrl == null || imageUrl.trim().isEmpty()) {
-            shareTextOnly(fullText);
-            return;
-        }
-        
-        // Download image using Glide and share
-        Glide.with(context)
-                .asBitmap()
-                .load(imageUrl)
-                .into(new CustomTarget<Bitmap>() {
-                    @Override
-                    public void onResourceReady(@NonNull Bitmap bitmap, @Nullable Transition<? super Bitmap> transition) {
-                        shareImageWithText(bitmap, fullText);
-                    }
-                    
-                    @Override
-                    public void onLoadFailed(@Nullable Drawable errorDrawable) {
-                        // Image failed → share text only
-                        shareTextOnly(fullText);
-                    }
-                    
-                    @Override
-                    public void onLoadCleared(@Nullable Drawable placeholder) {}
-                });
     }
     
     private void shareImageWithText(Bitmap bitmap, String text) {
@@ -104,7 +101,7 @@ public class ShareHelper {
             shareIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
             shareIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
             
-            // 1. Try WhatsApp - create fresh intent to ensure text is included
+            // Only use WhatsApp - set package explicitly
             Intent whatsappIntent = new Intent(Intent.ACTION_SEND);
             whatsappIntent.setType("image/*");
             whatsappIntent.putExtra(Intent.EXTRA_TEXT, text);
@@ -112,31 +109,11 @@ public class ShareHelper {
             whatsappIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
             whatsappIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
             whatsappIntent.setPackage("com.whatsapp");
-            try {
-                if (shareLauncher != null) {
-                    shareLauncher.launch(whatsappIntent);
-                } else {
-                    context.startActivity(whatsappIntent);
-                }
-                return;
-            } catch (Exception e) { /* ignore */ }
             
-            // 2. Try WhatsApp Business
-            whatsappIntent.setPackage("com.whatsapp.w4b");
-            try {
-                if (shareLauncher != null) {
-                    shareLauncher.launch(whatsappIntent);
-                } else {
-                    context.startActivity(whatsappIntent);
-                }
-                return;
-            } catch (Exception e) { /* ignore */ }
-            
-            // 3. Show chooser with all apps (WhatsApp will appear at top)
             if (shareLauncher != null) {
-                shareLauncher.launch(Intent.createChooser(shareIntent, "Share Job Update"));
+                shareLauncher.launch(whatsappIntent);
             } else {
-                context.startActivity(Intent.createChooser(shareIntent, "Share Job Update"));
+                context.startActivity(whatsappIntent);
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -150,41 +127,21 @@ public class ShareHelper {
         intent.setType("text/plain");
         intent.putExtra(Intent.EXTRA_TEXT, text);
         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-        
-        // Try WhatsApp first
         intent.setPackage("com.whatsapp");
-        try {
-            if (shareLauncher != null) {
-                shareLauncher.launch(intent);
-            } else {
-                context.startActivity(intent);
-            }
-            return;
-        } catch (Exception e) {}
         
-        intent.setPackage("com.whatsapp.w4b");
-        try {
-            if (shareLauncher != null) {
-                shareLauncher.launch(intent);
-            } else {
-                context.startActivity(intent);
-            }
-            return;
-        } catch (Exception e) {}
-        
-        // Final fallback
         if (shareLauncher != null) {
-            shareLauncher.launch(Intent.createChooser(intent, "Share via"));
+            shareLauncher.launch(intent);
         } else {
-            context.startActivity(Intent.createChooser(intent, "Share via"));
+            context.startActivity(intent);
         }
     }
     
     /**
      * Legacy method for backward compatibility
+     * Always uses standard message, share_demo image, and mahaalert.in link
      */
     public void sharePost(String title, String url) {
-        shareJobWithImage(title, url, null);
+        shareWithStandardImage();
     }
     
     /**

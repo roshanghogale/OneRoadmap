@@ -22,7 +22,17 @@ import com.newsproject.oneroadmap.Utils.TimeAgoUtil;
 import com.newsproject.oneroadmap.Utils.ShareHelper;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
+import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
+import android.os.Handler;
+import android.os.Looper;
+import android.app.AlertDialog;
+import android.graphics.Color;
+import android.graphics.drawable.ColorDrawable;
+import android.widget.Button;
+import android.widget.TextView;
+import android.view.LayoutInflater;
 
 import java.lang.reflect.Type;
 import java.text.SimpleDateFormat;
@@ -41,6 +51,8 @@ public class NewsFragment extends Fragment {
     private int initialPosition;
     private ShareHelper shareHelper;
     private ActivityResultLauncher<Intent> shareLauncher;
+    private Handler handler = new Handler(Looper.getMainLooper());
+    private int displayedCoins = 0;
 
     public NewsFragment() {
         // Required empty public constructor
@@ -78,8 +90,21 @@ public class NewsFragment extends Fragment {
         shareLauncher = registerForActivityResult(
                 new ActivityResultContracts.StartActivityForResult(),
                 result -> {
-                    // When user returns from sharing, add coins
-                    shareHelper.onShareCompleted();
+                    // When user returns from sharing, add coins and show dialog
+                    if (shareHelper != null) {
+                        // Get current coins to show in dialog
+                        android.content.SharedPreferences prefs = requireContext().getSharedPreferences("UserPrefs", Context.MODE_PRIVATE);
+                        String userId = prefs.getString("userId", "");
+                        if (userId != null && !userId.isEmpty()) {
+                            com.newsproject.oneroadmap.Utils.DatabaseHelper dbHelper = new com.newsproject.oneroadmap.Utils.DatabaseHelper(requireContext());
+                            int current = dbHelper.getUserCoins(userId);
+                            com.newsproject.oneroadmap.Utils.CoinManager coinManager = new com.newsproject.oneroadmap.Utils.CoinManager(requireContext(), userId);
+                            coinManager.addCoinsForShare(newCoins -> {
+                                // Show coin animation dialog
+                                showCoinAnimationDialog(current, newCoins);
+                            });
+                        }
+                    }
                 });
         
         shareHelper.setShareLauncher(shareLauncher);
@@ -352,5 +377,31 @@ public class NewsFragment extends Fragment {
                         .replace('9', '९');
             }
         }
+    }
+    
+    private void showCoinAnimationDialog(int start, int end) {
+        View view = LayoutInflater.from(requireContext())
+                .inflate(R.layout.coin_dialog_layout, null);
+        TextView count = view.findViewById(R.id.coin_count);
+        Button ok = view.findViewById(R.id.ok_button);
+        count.setText("Coins: " + start);
+        AlertDialog dialog = new AlertDialog.Builder(requireContext())
+                .setView(view).create();
+        if (dialog.getWindow() != null)
+            dialog.getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
+        ok.setOnClickListener(v -> dialog.dismiss());
+        dialog.show();
+
+        displayedCoins = start;
+        handler.post(new Runnable() {
+            @Override public void run() {
+                if (!isAdded() || getActivity() == null) return;
+                if (displayedCoins < end) {
+                    displayedCoins++;
+                    count.setText("Coins: " + displayedCoins);
+                    handler.postDelayed(this, 20);
+                }
+            }
+        });
     }
 }

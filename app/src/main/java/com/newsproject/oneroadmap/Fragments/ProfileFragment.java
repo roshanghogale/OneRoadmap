@@ -29,6 +29,8 @@ import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AlertDialog;
 import androidx.core.content.FileProvider;
 import androidx.fragment.app.Fragment;
@@ -39,13 +41,16 @@ import com.google.gson.Gson;
 import com.newsproject.oneroadmap.Adapters.AvatarAdapter;
 import com.newsproject.oneroadmap.R;
 import com.newsproject.oneroadmap.Utils.ApiClient;
+import com.newsproject.oneroadmap.Utils.CoinManager;
 import com.newsproject.oneroadmap.Utils.DataConstants;
 import com.newsproject.oneroadmap.Utils.DatabaseHelper;
+import com.newsproject.oneroadmap.Utils.ShareHelper;
 import com.newsproject.oneroadmap.Activities.LoginActivity;
 import com.newsproject.oneroadmap.Models.User;
 
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -1138,66 +1143,45 @@ public class ProfileFragment extends Fragment {
     }
 
     /* --------------------------------------------------------------------- */
+    private ShareHelper profileShareHelper;
+    private ActivityResultLauncher<Intent> profileShareLauncher;
+    
     private void setupShareButton() {
+        // Initialize ShareHelper
+        profileShareHelper = new ShareHelper(requireContext());
+        
+        // Initialize share launcher
+        profileShareLauncher = registerForActivityResult(
+                new androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult(),
+                result -> {
+                    // When user returns from sharing, add coins and show dialog
+                    if (userId != null && !userId.isEmpty()) {
+                        int current = dbHelper.getUserCoins(userId);
+                        CoinManager coinManager = new CoinManager(requireContext(), userId);
+                        coinManager.addCoinsForShare(newCoins -> {
+                            showCoinAnimationDialog(current, newCoins);
+                        });
+                    }
+                });
+        
+        // Set share launcher for ShareHelper
+        profileShareHelper.setShareLauncher(profileShareLauncher);
+        
         shareButtonContainer.setOnClickListener(v -> {
             try {
-                // First check if WhatsApp package is installed
-                android.content.pm.PackageManager pm = requireContext().getPackageManager();
-                try {
-                    pm.getPackageInfo("com.whatsapp", android.content.pm.PackageManager.GET_ACTIVITIES);
-                } catch (android.content.pm.PackageManager.NameNotFoundException e) {
-                    Toast.makeText(requireContext(),
-                            "WhatsApp is not installed. Please install WhatsApp to share and earn coins.", Toast.LENGTH_LONG).show();
-                    return;
-                }
-
-                Uri uri = generateBannerWithText();
-                Intent intent = new Intent(Intent.ACTION_SEND)
-                        .setType("image/*")
-                        .putExtra(Intent.EXTRA_TEXT,
-                                "Join our app: https://bit.ly/yourapp-profile")
-                        .putExtra(Intent.EXTRA_STREAM, uri)
-                        .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                        .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                        .setPackage("com.whatsapp");
-
-                startActivityForResult(intent, 100);
+                // Use ShareHelper to share with standard message and image
+                profileShareHelper.sharePost(null, null);
             } catch (Exception e) {
-                Toast.makeText(requireContext(),
-                        "Error sharing: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                Toast.makeText(
+                        requireContext(),
+                        "Unable to share right now",
+                        Toast.LENGTH_SHORT
+                ).show();
+                Log.e("Share", "Share error", e);
             }
         });
     }
 
-    private Uri generateBannerWithText() {
-        Bitmap bmp = BitmapFactory.decodeResource(getResources(),
-                R.drawable.student_update_1).copy(Bitmap.Config.ARGB_8888, true);
-        Canvas canvas = new Canvas(bmp);
-        Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
-        paint.setColor(Color.WHITE); paint.setTextSize(50);
-        paint.setTextAlign(Paint.Align.CENTER);
-        canvas.drawText("Download this app",
-                bmp.getWidth() / 2f, bmp.getHeight() - 100, paint);
-
-        File file = new File(requireContext().getCacheDir(), "banner.png");
-        try (FileOutputStream out = new FileOutputStream(file)) {
-            bmp.compress(Bitmap.CompressFormat.PNG, 100, out);
-        } catch (Exception e) { throw new RuntimeException(e); }
-        return FileProvider.getUriForFile(requireContext(),
-                "com.newsproject.oneroadmap.fileprovider", file);
-    }
-
-    @Override
-    public void onActivityResult(int requestCode, int resultCode, Intent data) {
-        super.onActivityResult(requestCode, resultCode, data);
-        if (requestCode == 100) {
-            int current = dbHelper.getUserCoins(userId);
-            int newCoins = current + 100;
-            dbHelper.updateUserCoins(userId, newCoins);
-            saveCoinsToServer(newCoins);
-            showCoinAnimationDialog(current, newCoins);
-        }
-    }
 
     private void showCoinAnimationDialog(int start, int end) {
         View view = LayoutInflater.from(requireContext())

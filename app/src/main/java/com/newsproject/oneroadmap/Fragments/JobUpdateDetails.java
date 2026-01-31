@@ -98,7 +98,7 @@ public class JobUpdateDetails extends Fragment {
         }
         
         // Get userId for coin management
-        SharedPreferences prefs = requireContext().getSharedPreferences("user_prefs", Context.MODE_PRIVATE);
+        SharedPreferences prefs = requireContext().getSharedPreferences("UserPrefs", Context.MODE_PRIVATE);
         userId = prefs.getString("userId", "");
         coinDbHelper = new DatabaseHelper(requireContext());
         

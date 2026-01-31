@@ -1,6 +1,7 @@
 package com.newsproject.oneroadmap.Adapters;
 
 import android.content.Context;
+import android.content.Intent;
 import android.graphics.drawable.Drawable;
 import android.os.Handler;
 import android.os.Looper;
@@ -12,6 +13,7 @@ import android.widget.ImageView;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 
+import androidx.activity.result.ActivityResultLauncher;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.recyclerview.widget.RecyclerView;
@@ -40,6 +42,9 @@ public class StoriesAdapter
     private final List<Story> stories;
     final StoryAdapter storyAdapter;
     private final RecyclerView storiesPlayer;
+    private final ActivityResultLauncher<Intent> shareLauncher;
+    private static StoryViewHolder currentlyPlayingHolder = null;
+
 
     private int currentVisiblePosition = 0;
 
@@ -47,12 +52,14 @@ public class StoriesAdapter
             Context context,
             List<Story> stories,
             StoryAdapter storyAdapter,
-            RecyclerView storiesPlayer
+            RecyclerView storiesPlayer,
+            ActivityResultLauncher<Intent> shareLauncher
     ) {
         this.context = context;
         this.stories = stories;
         this.storyAdapter = storyAdapter;
         this.storiesPlayer = storiesPlayer;
+        this.shareLauncher = shareLauncher;
     }
 
     public int getCurrentVisiblePosition() {
@@ -149,8 +156,13 @@ public class StoriesAdapter
                 int pos = getAdapterPosition();
                 if (pos == RecyclerView.NO_POSITION) return;
                 Story s = adapter.stories.get(pos);
-                new ShareHelper(adapter.context)
-                        .sharePost("Check this out: " + s.getTitle(), s.getWebUrl());
+                ShareHelper shareHelper = new ShareHelper(adapter.context);
+                // Set share launcher to detect when sharing completes
+                if (adapter.shareLauncher != null) {
+                    shareHelper.setShareLauncher(adapter.shareLauncher);
+                }
+                // Share with standard message and image
+                shareHelper.sharePost(null, null);
             });
 
             // -------- Pause on hold --------
@@ -184,13 +196,27 @@ public class StoriesAdapter
         }
 
         public void onBecameVisible() {
+
+            // 🔥 STOP PREVIOUS VIDEO IMMEDIATELY
+            if (currentlyPlayingHolder != null && currentlyPlayingHolder != this) {
+                currentlyPlayingHolder.onBecameInvisible();
+            }
+
+            currentlyPlayingHolder = this;
+
             reset();
             loadMedia();
         }
 
+
         public void onBecameInvisible() {
             reset();
+
+            if (currentlyPlayingHolder == this) {
+                currentlyPlayingHolder = null;
+            }
         }
+
 
         // ================= MEDIA =================
 

@@ -24,6 +24,8 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.activity.OnBackPressedCallback;
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
@@ -141,12 +143,31 @@ public class HomeFragment extends Fragment {
     private Map<String, News> newsCache = new HashMap<>(); // Cache for news items
     private String top5PdfUrl = "";
     private RecentlyOpenedDatabaseHelper recentDb;
+    private static ActivityResultLauncher<Intent> storyShareLauncher;
 
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         executorService = Executors.newSingleThreadExecutor();
         Log.d(TAG, "ExecutorService created in onCreate");
+        
+        // Initialize share launcher for stories
+        storyShareLauncher = registerForActivityResult(
+                new ActivityResultContracts.StartActivityForResult(),
+                result -> {
+                    // When user returns from sharing, add coins
+                    SharedPreferences prefs = requireContext().getSharedPreferences("UserPrefs", Context.MODE_PRIVATE);
+                    String userId = prefs.getString("userId", "");
+                    if (userId != null && !userId.isEmpty()) {
+                        com.newsproject.oneroadmap.Utils.DatabaseHelper dbHelper = new com.newsproject.oneroadmap.Utils.DatabaseHelper(requireContext());
+                        int current = dbHelper.getUserCoins(userId);
+                        com.newsproject.oneroadmap.Utils.CoinManager coinManager = new com.newsproject.oneroadmap.Utils.CoinManager(requireContext(), userId);
+                        coinManager.addCoinsForShare(newCoins -> {
+                            // Coins added successfully
+                            //Toast.makeText(requireContext(), "You earned 100 coins!", Toast.LENGTH_SHORT).show();
+                        });
+                    }
+                });
 
         // Initialize OkHttpClient
         int cacheSize = 10 * 1024 * 1024; // 10 MB cache
@@ -187,7 +208,7 @@ public class HomeFragment extends Fragment {
         storiesPlayer.setVisibility(View.VISIBLE);
 
         StoriesAdapter storiesAdapter =
-                new StoriesAdapter(context, storyList, storyAdapter, storiesPlayer);
+                new StoriesAdapter(context, storyList, storyAdapter, storiesPlayer, storyShareLauncher);
 
         storiesPlayer.setAdapter(storiesAdapter);
         storiesAdapter.setCurrentVisiblePosition(startPosition);
