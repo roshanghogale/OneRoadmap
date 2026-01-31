@@ -375,7 +375,7 @@ public class PDFViewerFragment extends Fragment {
                     
                     // Set initial zoom level to create space on left and right
                     // Users can zoom in to use full width or zoom out to see more space
-                    pdfView.zoomTo(0.85f); // Adjust this value to control initial spacing
+                    pdfView.zoomTo(1.0f); // Adjust this value to control initial spacing
                     pdfView.moveTo(0, 0); // Reset position to top-left corner
                     
                     Log.d(TAG, "PDF loaded, pages: " + nbPages);

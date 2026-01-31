@@ -915,6 +915,7 @@
                     android:orientation="horizontal">
 
                     <TextView
+                        android:id="@+id/tag_career_roadmap"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginStart="3dp"
@@ -929,6 +930,7 @@
                         android:textSize="14sp" />
 
                     <TextView
+                        android:id="@+id/tag_result_hallticket"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginStart="3dp"
@@ -943,6 +945,7 @@
                         android:textSize="14sp" />
 
                     <TextView
+                        android:id="@+id/tag_govt_jobs"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginStart="3dp"
@@ -964,6 +967,7 @@
                     android:orientation="horizontal">
 
                     <TextView
+                        android:id="@+id/tag_banking_jobs"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginStart="3dp"
@@ -978,6 +982,7 @@
                         android:textSize="14sp" />
 
                     <TextView
+                        android:id="@+id/tag_all_jobs"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginStart="3dp"
@@ -986,12 +991,13 @@
                         android:background="@drawable/rectangle_with_stroke_pink"
                         android:fontFamily="@font/yantramanav_regular"
                         android:padding="8dp"
-                        android:text="सरकारी जॉब"
+                        android:text="सर्व जॉब"
                         android:textAlignment="center"
                         android:textColor="@color/text_primary"
                         android:textSize="14sp" />
 
                     <TextView
+                        android:id="@+id/tag_private_jobs"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginStart="3dp"
@@ -1000,7 +1006,7 @@
                         android:background="@drawable/rectangle_with_stroke_lightgreen"
                         android:fontFamily="@font/yantramanav_regular"
                         android:padding="8dp"
-                        android:text="खाजगी जॉब"
+                        android:text="प्राव्हेट जॉब"
                         android:textAlignment="center"
                         android:textColor="@color/text_primary"
                         android:textSize="14sp" />

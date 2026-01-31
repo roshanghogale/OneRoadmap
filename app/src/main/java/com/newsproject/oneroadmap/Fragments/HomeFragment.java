@@ -144,6 +144,8 @@ public class HomeFragment extends Fragment {
     private String top5PdfUrl = "";
     private RecentlyOpenedDatabaseHelper recentDb;
     private static ActivityResultLauncher<Intent> storyShareLauncher;
+    private TextView tagCareerRoadmap, tagResultHallTicket, tagGovtJobs;
+    private TextView tagBankingJobs, tagAllJobs, tagPrivateJobs;
 
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
@@ -367,6 +369,14 @@ public class HomeFragment extends Fragment {
 
     private void initViews(View view) {
         Log.d(TAG, "initViews called");
+        tagCareerRoadmap    = view.findViewById(R.id.tag_career_roadmap);
+        tagResultHallTicket = view.findViewById(R.id.tag_result_hallticket);
+        tagGovtJobs         = view.findViewById(R.id.tag_govt_jobs);
+
+        tagBankingJobs      = view.findViewById(R.id.tag_banking_jobs);
+        tagAllJobs          = view.findViewById(R.id.tag_all_jobs);
+        tagPrivateJobs      = view.findViewById(R.id.tag_private_jobs);
+
         saveButton = view.findViewById(R.id.save_button);
         mainScrollView = view.findViewById(R.id.main_scroll);
         storyRecycler = view.findViewById(R.id.story_recycler);
@@ -396,7 +406,7 @@ public class HomeFragment extends Fragment {
 
         // Load user data from SharedPreferences
         SharedPreferences sharedPreferences = requireContext().getSharedPreferences("UserPrefs", Context.MODE_PRIVATE);
-        String userNameText = sharedPreferences.getString("userName", "Guest");
+        String userNameText = sharedPreferences.getString("name", "Guest");
         String[] userNames = userNameText.split(" ");
         userName.setText(userNames[0]);
         Log.d(TAG, "Set userName text: " + userNames[0]);
@@ -469,6 +479,61 @@ public class HomeFragment extends Fragment {
 
     private void setupClickListeners() {
         Log.d(TAG, "setupClickListeners called");
+
+        // Career Roadmap → MainFragment (or CareerRoadmapFragment)
+        tagCareerRoadmap.setOnClickListener(v -> {
+            getParentFragmentManager()
+                    .beginTransaction()
+                    .replace(R.id.fragment_container, new MainFragment())
+                    .addToBackStack(null)
+                    .commit();
+        });
+
+// Result & Hall Ticket
+        tagResultHallTicket.setOnClickListener(v -> {
+            getParentFragmentManager()
+                    .beginTransaction()
+                    .replace(R.id.fragment_container, new Result_HallTitcket())
+                    .addToBackStack(null)
+                    .commit();
+        });
+
+// Government Jobs
+        tagGovtJobs.setOnClickListener(v -> {
+            getParentFragmentManager()
+                    .beginTransaction()
+                    .replace(R.id.fragment_container, new GovernmentJobs())
+                    .addToBackStack(null)
+                    .commit();
+        });
+
+// Banking Jobs
+        tagBankingJobs.setOnClickListener(v -> {
+            getParentFragmentManager()
+                    .beginTransaction()
+                    .replace(R.id.fragment_container, new BankingJobs())
+                    .addToBackStack(null)
+                    .commit();
+        });
+
+// All Jobs
+        tagAllJobs.setOnClickListener(v -> {
+            getParentFragmentManager()
+                    .beginTransaction()
+                    .replace(R.id.fragment_container, new AllCategory())
+                    .addToBackStack(null)
+                    .commit();
+        });
+
+// Private Jobs
+        tagPrivateJobs.setOnClickListener(v -> {
+            getParentFragmentManager()
+                    .beginTransaction()
+                    .replace(R.id.fragment_container, new PrivateJobs())
+                    .addToBackStack(null)
+                    .commit();
+        });
+
         saveButton.setOnClickListener(v -> {
             // No JobUpdate or DBHelper needed here – we just open the list
             requireActivity()
