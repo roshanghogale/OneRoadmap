@@ -7,11 +7,20 @@ import java.io.IOException;
 public class ApiClient {
     private static final String BASE_URL = "https://admin.mahaalert.cloud"; // CHANGE THIS
     private static ApiClient instance;
-    private final OkHttpClient client;
+    public final OkHttpClient client;
 
     private ApiClient() {
         client = new OkHttpClient.Builder()
                 .build();
+    }
+
+    // --------------------- Sliders (new) ---------------------
+    public void getAllSliders(Callback callback) {
+        Request request = new Request.Builder()
+                .url(BASE_URL + "/api/sliders")
+                .get()
+                .build();
+        client.newCall(request).enqueue(callback);
     }
 
     public static synchronized ApiClient getInstance() {

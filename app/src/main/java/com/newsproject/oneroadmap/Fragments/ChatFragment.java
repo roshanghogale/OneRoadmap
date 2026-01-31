@@ -2,6 +2,8 @@ package com.newsproject.oneroadmap.Fragments;
 
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
@@ -12,26 +14,30 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
+import android.widget.Toast;
 
 import androidx.activity.OnBackPressedCallback;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
-import androidx.fragment.app.FragmentTransaction;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.firebase.Timestamp;
-import com.google.firebase.firestore.FirebaseFirestore;
-import com.google.firebase.firestore.QueryDocumentSnapshot;
+import com.google.gson.Gson;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonObject;
 import com.newsproject.oneroadmap.Adapters.ChatAdapter;
 import com.newsproject.oneroadmap.Models.Query;
 import com.newsproject.oneroadmap.Models.Reply;
+import com.newsproject.oneroadmap.Models.Slider;
 import com.newsproject.oneroadmap.R;
 import com.newsproject.oneroadmap.Utils.ApiClient;
 
 import androidx.core.content.res.ResourcesCompat;
+
+import java.io.IOException;
 import java.util.Map;
 import java.util.HashMap;
 
@@ -44,6 +50,7 @@ import org.json.JSONObject;
 
 import okhttp3.Call;
 import okhttp3.Callback;
+import okhttp3.Request;
 import okhttp3.Response;
 
 import java.util.ArrayList;
@@ -433,27 +440,121 @@ public class ChatFragment extends Fragment {
         return null;
     }
 
+    private boolean isNetworkAvailable() {
+        if (!isAdded() || getContext() == null) return false;
+
+        ConnectivityManager cm =
+                (ConnectivityManager) requireContext().getSystemService(Context.CONNECTIVITY_SERVICE);
+
+        if (cm == null) return false;
+
+        NetworkInfo activeNetwork = cm.getActiveNetworkInfo();
+        return activeNetwork != null && activeNetwork.isConnectedOrConnecting();
+    }
+
     private void initSlider() {
-        executorService.execute(() -> {
-            FirebaseFirestore db = FirebaseFirestore.getInstance();
-            db.collection("slider").get()
-                    .addOnCompleteListener(task -> {
-                        if (task.isSuccessful()) {
-                            List<CarouselItem> carouselItems = new ArrayList<>();
-                            for (QueryDocumentSnapshot document : task.getResult()) {
-                                String imageUrl = document.getString("imageUrl");
-                                String caption = document.getString("title");
-                                carouselItems.add(new CarouselItem(imageUrl, caption));
-                            }
-                            mainHandler.post(() -> {
-                                if (carousel != null && isAdded() && getView() != null) {
-                                    carousel.addData(carouselItems);
-                                }
-                            });
-                        } else {
-                            Log.w(TAG, "Error getting slider data: ", task.getException());
-                        }
+        Log.d(TAG, "initSlider started (Chat - All Sliders API)");
+
+        if (carousel == null || !isAdded()) {
+            Log.e(TAG, "Carousel is null or fragment not attached");
+            return;
+        }
+
+        ExecutorService localExecutor = Executors.newSingleThreadExecutor();
+        localExecutor.execute(() -> {
+            try {
+                if (!isNetworkAvailable()) {
+                    mainHandler.post(() -> {
+                        List<CarouselItem> dummyItems = new ArrayList<>();
+                        dummyItems.add(new CarouselItem("https://picsum.photos/400/200", "Chat Dummy 1"));
+                        dummyItems.add(new CarouselItem("https://picsum.photos/401/200", "Chat Dummy 2"));
+                        carousel.setData(dummyItems);
+                        Toast.makeText(requireContext(), "No network, loaded dummy chat sliders", Toast.LENGTH_SHORT).show();
                     });
+                    return;
+                }
+
+                String url = "https://admin.mahaalert.cloud/api/sliders"; // 🔥 ALL sliders
+                Request request = new Request.Builder().url(url).build();
+
+                ApiClient.getInstance()
+                        .getInstance()
+                        .client
+                        .newCall(request)
+                        .enqueue(new okhttp3.Callback() {
+
+                            @Override
+                            public void onFailure(okhttp3.Call call, IOException e) {
+                                Log.e(TAG, "Chat slider API failed", e);
+                                mainHandler.post(() ->
+                                        Toast.makeText(requireContext(), "Failed to load chat sliders", Toast.LENGTH_SHORT).show()
+                                );
+                            }
+
+                            @Override
+                            public void onResponse(okhttp3.Call call, okhttp3.Response response) throws IOException {
+                                if (!response.isSuccessful()) {
+                                    Log.e(TAG, "Chat slider bad response: " + response.code());
+                                    mainHandler.post(() ->
+                                            Toast.makeText(requireContext(), "Failed to load chat sliders", Toast.LENGTH_SHORT).show()
+                                    );
+                                    return;
+                                }
+
+                                String body = response.body().string();
+                                Log.d(TAG, "Chat slider API response length: " + body.length());
+
+                                try {
+                                    JsonObject root = new Gson().fromJson(body, JsonObject.class);
+                                    JsonArray arr = root != null ? root.getAsJsonArray("sliders") : null;
+
+                                    if (arr == null) {
+                                        Log.w(TAG, "No sliders array found");
+                                        return;
+                                    }
+
+                                    List<CarouselItem> carouselItems = new ArrayList<>();
+
+                                    for (int i = 0; i < arr.size(); i++) {
+                                        Slider slider = new Gson().fromJson(arr.get(i), Slider.class);
+
+                                        if (slider.getImageUrl() == null || slider.getImageUrl().isEmpty()) continue;
+                                        if (slider.getPageType() == null) continue;
+
+                                        // ✅ FILTER: ONLY CHAT SLIDERS
+                                        if (!"chat".equalsIgnoreCase(slider.getPageType())) continue;
+
+                                        String imageUrl = slider.getImageUrl().replace("http://", "https://");
+                                        carouselItems.add(new CarouselItem(imageUrl, slider.getTitle()));
+                                    }
+
+                                    mainHandler.post(() -> {
+                                        if (!isAdded()) return;
+
+                                        carousel.setData(carouselItems); // ✅ SAFE & CORRECT
+
+                                        if (carouselItems.isEmpty()) {
+                                            Toast.makeText(requireContext(), "No chat sliders available", Toast.LENGTH_SHORT).show();
+                                            Log.w(TAG, "No chat sliders after filtering");
+                                        } else {
+                                            Log.d(TAG, "Chat sliders loaded: " + carouselItems.size());
+                                        }
+                                    });
+
+                                } catch (Exception e) {
+                                    Log.e(TAG, "Chat slider parse error", e);
+                                    mainHandler.post(() ->
+                                            Toast.makeText(requireContext(), "Error parsing chat sliders", Toast.LENGTH_SHORT).show()
+                                    );
+                                }
+                            }
+                        });
+
+            } catch (Exception e) {
+                Log.e(TAG, "Unexpected error in Chat initSlider()", e);
+            } finally {
+                localExecutor.shutdown();
+            }
         });
     }
 
