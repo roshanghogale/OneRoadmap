@@ -1,5 +1,6 @@
 package com.newsproject.oneroadmap.Fragments;
 
+import android.app.Dialog;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -31,8 +32,11 @@ import android.widget.Toast;
 import androidx.appcompat.app.AlertDialog;
 import androidx.core.content.FileProvider;
 import androidx.fragment.app.Fragment;
+import androidx.recyclerview.widget.GridLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.gson.Gson;
+import com.newsproject.oneroadmap.Adapters.AvatarAdapter;
 import com.newsproject.oneroadmap.R;
 import com.newsproject.oneroadmap.Utils.ApiClient;
 import com.newsproject.oneroadmap.Utils.DataConstants;
@@ -71,6 +75,7 @@ public class ProfileFragment extends Fragment {
     private boolean isReverting = false;
     private Handler handler = new Handler();
     private int displayedCoins = 0;
+    private String tempSelectedAvatar = "";
 
     private final String[] studyMaterialOptions = {
             "Government", "Police & Defence", "Banking", "Self Improvement"
@@ -147,12 +152,128 @@ public class ProfileFragment extends Fragment {
         setupGenderListener();
         setupShareButton();
         deleteAccountBtn.setOnClickListener(v -> showDeleteAccountDialog());
+        profileImage.setOnClickListener(v -> showAvatarPickerDialog());
 
         // ----- LOAD DATA --------------------------------------------------------
         // Post to ensure spinners are fully initialized before loading data
         view.post(() -> loadProfileData());
 
         return view;
+    }
+
+    private void showAvatarPickerDialog() {
+
+        Dialog dialog = new Dialog(requireContext());
+        dialog.setContentView(R.layout.dialog_avatar_picker);
+        dialog.setCancelable(true);
+
+        RecyclerView recyclerView = dialog.findViewById(R.id.avatarRecyclerDialog);
+        Button btnSave   = dialog.findViewById(R.id.btnSaveAvatar);
+        Button btnCancel = dialog.findViewById(R.id.btnCancelAvatar);
+
+        // ------------------ Avatar list ------------------
+        List<String> avatarList = new ArrayList<>();
+        String gender = sharedPreferences.getString("gender", "पुरुष");
+
+        if (gender.equals("पुरुष")) {
+            for (int i = 1; i <= 15; i++) avatarList.add("ma" + i);
+        } else {
+            for (int i = 1; i <= 15; i++) avatarList.add("ga" + i);
+        }
+
+        tempSelectedAvatar = sharedPreferences.getString("avatar", "");
+
+        AvatarAdapter adapter = new AvatarAdapter(
+                requireContext(),
+                avatarList,
+                drawableName -> tempSelectedAvatar = drawableName
+        );
+
+        // ------------------ GRID + SPACING (IMPORTANT PART) ------------------
+        int spanCount = 4;
+        int spacingPx = (int) (10 * getResources().getDisplayMetrics().density); // 12dp
+
+        GridLayoutManager layoutManager =
+                new GridLayoutManager(requireContext(), spanCount);
+        recyclerView.setLayoutManager(layoutManager);
+        recyclerView.setAdapter(adapter);
+
+        // Remove old decoration to avoid stacking
+        if (recyclerView.getItemDecorationCount() > 0) {
+            recyclerView.removeItemDecorationAt(0);
+        }
+
+        recyclerView.addItemDecoration(new RecyclerView.ItemDecoration() {
+            @Override
+            public void getItemOffsets(
+                    android.graphics.Rect outRect,
+                    View view,
+                    RecyclerView parent,
+                    RecyclerView.State state
+            ) {
+                int position = parent.getChildAdapterPosition(view);
+                int column = position % spanCount;
+
+                outRect.left  = spacingPx - column * spacingPx / spanCount;
+                outRect.right = (column + 1) * spacingPx / spanCount;
+
+                if (position < spanCount) {
+                    outRect.top = spacingPx;
+                }
+                outRect.bottom = spacingPx;
+            }
+        });
+
+        adapter.setSelectedAvatar(tempSelectedAvatar);
+
+        // ------------------ SAVE ------------------
+        btnSave.setOnClickListener(v -> {
+            if (tempSelectedAvatar.isEmpty()) {
+                Toast.makeText(
+                        requireContext(),
+                        "Please select an avatar",
+                        Toast.LENGTH_SHORT
+                ).show();
+                return;
+            }
+
+            showConfirmationDialog(
+                    "avatar",
+                    "profile icon",
+                    () -> {
+                        saveAvatar(tempSelectedAvatar);
+                        dialog.dismiss();
+                    },
+                    () -> {} // dialog stays open
+            );
+        });
+
+        // ------------------ CANCEL ------------------
+        btnCancel.setOnClickListener(v -> dialog.dismiss());
+
+        // ------------------ WINDOW STYLE ------------------
+        if (dialog.getWindow() != null) {
+            dialog.getWindow().setBackgroundDrawable(
+                    new ColorDrawable(Color.TRANSPARENT)
+            );
+        }
+
+        dialog.show();
+    }
+
+    private void saveAvatar(String avatar) {
+
+        // 1️⃣ Save to SharedPreferences
+        editor.putString("avatar", avatar).apply();
+
+        // 2️⃣ Update UI immediately
+        loadAvatar(avatar);
+
+        // 3️⃣ Update SQLite + server
+        updateSQLiteUser();
+
+        Toast.makeText(requireContext(),
+                "Profile photo updated", Toast.LENGTH_SHORT).show();
     }
 
     @Override
@@ -1124,5 +1245,28 @@ public class ProfileFragment extends Fragment {
                 }
             });
         }
+    }
+
+    private RecyclerView.ItemDecoration avatarSpacing(int spanCount, int spacingPx) {
+        return new RecyclerView.ItemDecoration() {
+            @Override
+            public void getItemOffsets(
+                    android.graphics.Rect outRect,
+                    View view,
+                    RecyclerView parent,
+                    RecyclerView.State state
+            ) {
+                int position = parent.getChildAdapterPosition(view);
+                int column = position % spanCount;
+
+                outRect.left  = spacingPx - column * spacingPx / spanCount;
+                outRect.right = (column + 1) * spacingPx / spanCount;
+
+                if (position < spanCount) {
+                    outRect.top = spacingPx;
+                }
+                outRect.bottom = spacingPx;
+            }
+        };
     }
 }
