@@ -80,7 +80,7 @@ public class LoginPage2 extends Fragment {
                     tvTwelfth.setTextColor(Color.BLACK);
 
                     boolean needAdvanced =
-                            value.equals(DataConstants.TWELFTH_OPTIONS.get(3));
+                            value.equals(DataConstants.TWELFTH_OPTIONS.get(2));
                     setAdvancedEnabled(needAdvanced);
                 })
         );
@@ -182,7 +182,7 @@ public class LoginPage2 extends Fragment {
         }
 
         boolean needAdvanced =
-                selectedTwelfth.equals(DataConstants.TWELFTH_OPTIONS.get(3));
+                selectedTwelfth.equals(DataConstants.TWELFTH_OPTIONS.get(2));
 
         if (needAdvanced && (selectedEducation.isEmpty() || selectedDegree.isEmpty())) {
             toast("सर्व आवश्यक माहिती भरा");

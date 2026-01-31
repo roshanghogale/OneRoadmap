@@ -54,10 +54,10 @@ public class LoginPage1 extends Fragment implements AvatarAdapter.OnAvatarClickL
     private String selectedAgeGroup = "";
 
     private final List<String> ageGroups = Arrays.asList(
-            "१४ ते १८",
-            "१९ ते २५",
-            "२६ ते ३१",
-            "३२ पेक्षा जास्त"
+            "14 ते 18",
+            "19 ते 25",
+            "26 ते 31",
+            "32 पेक्षा जास्त"
     );
 
     @Override

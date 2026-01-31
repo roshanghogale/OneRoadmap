@@ -17,7 +17,7 @@ public class DataConstants {
     public static final Map<String, List<String>> TALUKA_MAP = new HashMap<>();
 
     public static final List<String> TWELFTH_OPTIONS = Arrays.asList(
-             "सध्या दहावीला आहे", "सध्या बारावीला आह", "नाही या पुढील शिक्षण आहे ", "दहावी बारावी नंतर शाळा सोडली"
+             "सध्या दहावीला आहे", "सध्या बारावीला आहे", "माझ या पुढील शिक्षण आहे"
     );
 
     /** NEW – text that must appear in the two TextViews */
