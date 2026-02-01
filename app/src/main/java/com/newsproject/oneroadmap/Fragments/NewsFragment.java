@@ -9,6 +9,7 @@ import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.cardview.widget.CardView;
 import androidx.fragment.app.Fragment;
 import androidx.viewpager2.widget.ViewPager2;
 
@@ -383,7 +384,7 @@ public class NewsFragment extends Fragment {
         View view = LayoutInflater.from(requireContext())
                 .inflate(R.layout.coin_dialog_layout, null);
         TextView count = view.findViewById(R.id.coin_count);
-        Button ok = view.findViewById(R.id.ok_button);
+        CardView ok = view.findViewById(R.id.btn_close);
         count.setText("Coins: " + start);
         AlertDialog dialog = new AlertDialog.Builder(requireContext())
                 .setView(view).create();

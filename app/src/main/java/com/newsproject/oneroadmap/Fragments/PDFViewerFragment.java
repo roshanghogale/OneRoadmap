@@ -24,6 +24,7 @@ import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.cardview.widget.CardView;
 import androidx.core.content.ContextCompat;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
@@ -493,7 +494,7 @@ public class PDFViewerFragment extends Fragment {
         View view = LayoutInflater.from(requireContext())
                 .inflate(R.layout.coin_dialog_layout, null);
         TextView count = view.findViewById(R.id.coin_count);
-        Button ok = view.findViewById(R.id.ok_button);
+        CardView ok = view.findViewById(R.id.btn_close);
         count.setText("Coins: " + start);
         AlertDialog dialog = new AlertDialog.Builder(requireContext())
                 .setView(view).create();
@@ -519,7 +520,7 @@ public class PDFViewerFragment extends Fragment {
         View view = LayoutInflater.from(requireContext())
                 .inflate(R.layout.coin_dialog_layout, null);
         TextView count = view.findViewById(R.id.coin_count);
-        Button ok = view.findViewById(R.id.ok_button);
+        CardView ok = view.findViewById(R.id.btn_close);
         count.setText("Coins: " + startCoins);
         AlertDialog dialog = new AlertDialog.Builder(requireContext())
                 .setView(view).create();

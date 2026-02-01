@@ -8,10 +8,9 @@
     <androidx.cardview.widget.CardView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        app:cardBackgroundColor="#4B0082"
+        app:cardBackgroundColor="#FFFFFF"
         app:cardCornerRadius="26dp"
-        app:cardElevation="0dp"
-        app:cardPreventCornerOverlap="true"
+        app:cardElevation="8dp"
         app:cardUseCompatPadding="true"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
@@ -19,68 +18,112 @@
         app:layout_constraintTop_toTopOf="parent">
 
         <androidx.constraintlayout.widget.ConstraintLayout
-            android:background="@drawable/rectangle_purple_coin_dialog_background"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:clipChildren="true"
-            android:clipToPadding="true"
-            android:padding="16dp">
+            android:layout_height="wrap_content">
 
+            <!-- Title -->
             <TextView
-                android:id="@+id/dialog_title"
+                android:id="@+id/textView39"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginBottom="16dp"
-                android:text="Coins Earned!"
-                android:textColor="#FFFFFF"
+                android:layout_marginStart="24dp"
+                android:layout_marginTop="38dp"
+                android:text="Your Smart Coin"
+                android:textColor="#000000"
                 android:textSize="20sp"
                 android:textStyle="bold"
-                app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toTopOf="parent" />
 
-            <LinearLayout
-                android:id="@+id/coin_container"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:gravity="center"
-                android:orientation="horizontal"
+            <!-- Close Button (OK button replacement) -->
+            <androidx.cardview.widget.CardView
+                android:id="@+id/btn_close"
+                android:layout_width="28dp"
+                android:layout_height="28dp"
+                android:layout_marginTop="8dp"
+                android:layout_marginEnd="8dp"
+                app:cardBackgroundColor="#000000"
+                app:cardCornerRadius="18dp"
+                app:cardElevation="0dp"
                 app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@id/dialog_title">
+                app:layout_constraintTop_toTopOf="parent">
 
                 <ImageView
-                    android:id="@+id/coin_icon"
-                    android:layout_width="32dp"
-                    android:layout_height="32dp"
-                    android:layout_marginEnd="8dp"
-                    android:src="@drawable/coin_bag" />
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:padding="6dp"
+                    android:src="@drawable/close"
+                    app:tint="@android:color/white" />
+            </androidx.cardview.widget.CardView>
 
-                <TextView
-                    android:id="@+id/coin_count"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:fontFamily="@font/yantramanav_bold"
-                    android:text="Coins: 0"
-                    android:textColor="#FFE609"
-                    android:textSize="32sp"
-                    android:textStyle="bold" />
-            </LinearLayout>
 
-            <Button
-                android:id="@+id/ok_button"
+            <!-- Coin Value (ONLY dynamic ID) -->
+            <TextView
+                android:id="@+id/coin_count"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:layout_marginStart="24dp"
+                android:text="100.00"
+                android:textColor="#A30000"
+                android:textSize="34sp"
+                android:textStyle="bold"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@+id/textView39" />
+
+            <!-- Coin Bag Image -->
+            <ImageView
+                android:layout_width="66dp"
+                android:layout_height="66dp"
+                android:layout_marginTop="36dp"
+                android:layout_marginEnd="28dp"
+                android:src="@drawable/coin_bag"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintTop_toTopOf="parent" />
+
+            <!-- Divider -->
+            <View
+                android:id="@+id/view"
+                android:layout_width="0dp"
+                android:layout_height="1dp"
+                android:layout_marginStart="24dp"
                 android:layout_marginTop="16dp"
-                android:background="@drawable/rectangle_white"
-                android:paddingStart="16dp"
-                android:paddingEnd="16dp"
-                android:text="OK"
-                android:textColor="#FFFFFF"
+                android:layout_marginEnd="24dp"
+                android:background="#CFCFCF"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@id/coin_container" />
+                app:layout_constraintTop_toBottomOf="@+id/coin_count" />
+
+            <!-- About Title -->
+            <TextView
+                android:id="@+id/textView32"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="16dp"
+                android:layout_marginTop="16dp"
+                android:text="About Smart Coin"
+                android:textColor="#B0B0B0"
+                android:textSize="14sp"
+                android:textStyle="bold"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@+id/view" />
+
+            <!-- Description -->
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="16dp"
+                android:layout_marginTop="8dp"
+                android:layout_marginEnd="16dp"
+                android:layout_marginBottom="16dp"
+                android:text="A) Smart Coin will be used to OPEN All Premium PDF\n\nB) You can earn Smart Coins anytime - by sharing any post with friends."
+                android:textColor="#9E9E9E"
+                android:textSize="10sp"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@+id/textView32" />
 
         </androidx.constraintlayout.widget.ConstraintLayout>
     </androidx.cardview.widget.CardView>
+
 </androidx.constraintlayout.widget.ConstraintLayout>
