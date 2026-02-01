@@ -1,0 +1,280 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/purple">
+
+    <!-- ================= CENTER GUIDELINE ================= -->
+    <androidx.constraintlayout.widget.Guideline
+        android:id="@+id/center_guideline"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:orientation="horizontal"
+        app:layout_constraintGuide_percent="0.34" />
+
+    <!-- ================= CENTER GLOW ================= -->
+    <View
+        android:id="@+id/center_glow"
+        android:layout_width="0dp"
+        android:layout_height="500dp"
+        android:background="@drawable/center_glow"
+        app:layout_constraintBottom_toBottomOf="@id/img_center"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintEnd_toStartOf="@+id/center_guideline"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="@id/img_center" />
+
+    <!-- ================= CENTER IMAGE ================= -->
+    <de.hdodenhof.circleimageview.CircleImageView
+        android:id="@+id/img_center"
+        android:layout_width="192dp"
+        android:layout_height="192dp"
+        android:src="@drawable/ga2"
+        android:scaleType="centerCrop"
+        app:civ_border_width="0.5dp"
+        app:civ_border_color="@android:color/white"
+        app:layout_constraintTop_toTopOf="@id/center_guideline"
+        app:layout_constraintBottom_toBottomOf="@id/center_guideline"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+    <!-- ================= DOTTED ORBIT ================= -->
+
+    <View
+        android:id="@+id/dotted_circle"
+        android:layout_width="320dp"
+        android:layout_height="320dp"
+        android:background="@drawable/dotted_circle"
+        app:layout_constraintBottom_toBottomOf="@id/img_center"
+        app:layout_constraintEnd_toEndOf="@id/img_center"
+        app:layout_constraintHorizontal_bias="0.51"
+        app:layout_constraintStart_toStartOf="@id/img_center"
+        app:layout_constraintTop_toTopOf="@id/img_center"
+        app:layout_constraintVertical_bias="0.52" />
+
+    <!-- ================= ORBIT ICONS (4) ================= -->
+
+
+    <de.hdodenhof.circleimageview.CircleImageView
+        android:id="@+id/icon_1"
+        android:layout_width="68dp"
+        android:layout_height="68dp"
+        android:src="@drawable/ma1"
+        android:scaleType="centerCrop"
+        app:civ_border_width="1dp"
+        app:civ_border_color="@android:color/white"
+        app:layout_constraintCircle="@id/dotted_circle"
+        app:layout_constraintCircleRadius="160dp"
+        app:layout_constraintCircleAngle="215"
+        tools:ignore="MissingConstraints" />
+
+    <de.hdodenhof.circleimageview.CircleImageView
+        android:id="@+id/icon_2"
+        android:layout_width="42dp"
+        android:layout_height="42dp"
+        android:src="@drawable/ma2"
+        android:scaleType="centerCrop"
+        app:civ_border_width="1dp"
+        app:civ_border_color="@android:color/white"
+        app:layout_constraintCircle="@id/dotted_circle"
+        app:layout_constraintCircleRadius="160dp"
+        app:layout_constraintCircleAngle="310"
+        tools:ignore="MissingConstraints" />
+
+    <de.hdodenhof.circleimageview.CircleImageView
+        android:id="@+id/icon_3"
+        android:layout_width="52dp"
+        android:layout_height="52dp"
+        android:src="@drawable/ma3"
+        android:scaleType="centerCrop"
+        app:civ_border_width="1dp"
+        app:civ_border_color="@android:color/white"
+        app:layout_constraintCircle="@id/dotted_circle"
+        app:layout_constraintCircleRadius="160dp"
+        app:layout_constraintCircleAngle="56"
+        tools:ignore="MissingConstraints" />
+
+    <de.hdodenhof.circleimageview.CircleImageView
+        android:id="@+id/icon_4"
+        android:layout_width="42dp"
+        android:layout_height="42dp"
+        android:src="@drawable/ma4"
+        android:scaleType="centerCrop"
+        app:civ_border_width="1dp"
+        app:civ_border_color="@android:color/white"
+        app:layout_constraintCircle="@id/dotted_circle"
+        app:layout_constraintCircleRadius="160dp"
+        app:layout_constraintCircleAngle="135"
+        tools:ignore="MissingConstraints" />
+
+    <!-- ================= USERS ROW ================= -->
+    <LinearLayout
+        android:id="@+id/users_block"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:layout_marginTop="36dp"
+        app:layout_constraintTop_toBottomOf="@id/dotted_circle"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <!-- Text -->
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:textAlignment="center"
+                    android:layout_weight="0.7"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="25 lakh + users"
+                    android:textColor="#FFD400"
+                    android:textSize="14sp"
+                    android:textStyle="bold" />
+
+                <!-- Avatars -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_weight="1"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="16dp"
+                    android:orientation="horizontal">
+
+                    <de.hdodenhof.circleimageview.CircleImageView
+                        android:layout_width="22dp"
+                        android:layout_height="22dp"
+                        android:src="@drawable/ga2"
+                        app:civ_border_width="1dp"
+                        app:civ_border_color="@android:color/white" />
+
+                    <de.hdodenhof.circleimageview.CircleImageView
+                        android:layout_width="22dp"
+                        android:layout_height="22dp"
+                        android:layout_marginStart="-6dp"
+                        android:src="@drawable/ga2"
+                        app:civ_border_width="1dp"
+                        app:civ_border_color="@android:color/white" />
+
+                    <de.hdodenhof.circleimageview.CircleImageView
+                        android:layout_width="22dp"
+                        android:layout_height="22dp"
+                        android:layout_marginStart="-6dp"
+                        android:src="@drawable/ga3"
+                        app:civ_border_width="1dp"
+                        app:civ_border_color="@android:color/white" />
+                </LinearLayout>
+            </LinearLayout>
+
+
+            <TextView
+                android:textAlignment="center"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="all over the social media platforms"
+                android:textColor="#DDFFFFFF"
+                android:textSize="12sp" />
+        </LinearLayout>
+
+        <!-- App Icon -->
+        <ImageView
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:layout_marginStart="12dp"
+            android:src="@drawable/main_active_ic"
+            android:scaleType="centerInside"
+            app:tint="@color/white" />
+    </LinearLayout>
+
+    <!-- ================= INDICATOR ================= -->
+    <LinearLayout
+        android:id="@+id/indicator"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:orientation="horizontal"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/users_block">
+
+        <View
+            android:id="@+id/dot1"
+            android:layout_width="40dp"
+            android:layout_height="4dp"
+            android:background="@android:color/white" />
+
+        <View
+            android:id="@+id/dot2"
+            android:layout_width="40dp"
+            android:layout_height="4dp"
+            android:layout_marginHorizontal="8dp"
+            android:background="#66FFFFFF" />
+
+        <View
+            android:id="@+id/dot3"
+            android:layout_width="40dp"
+            android:layout_height="4dp"
+            android:background="#66FFFFFF" />
+    </LinearLayout>
+
+    <!-- ================= TITLE ================= -->
+    <TextView
+        android:id="@+id/tv_title"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:text="Maharashtra Job"
+        android:textAlignment="center"
+        android:textColor="@android:color/white"
+        android:textSize="22sp"
+        android:textStyle="bold"
+        app:layout_constraintTop_toBottomOf="@id/indicator"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+    <!-- ================= SUBTITLE ================= -->
+    <TextView
+        android:id="@+id/tv_subtitle"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:layout_marginHorizontal="32dp"
+        android:text="Maharashtra state, Central and private job update available"
+        android:textColor="#DDFFFFFF"
+        android:textSize="14sp"
+        android:gravity="center"
+        app:layout_constraintTop_toBottomOf="@id/tv_title"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+    <!-- ================= NEXT BUTTON ================= -->
+    <androidx.cardview.widget.CardView
+        android:id="@+id/btn_next"
+        android:layout_width="52dp"
+        android:layout_height="52dp"
+        android:layout_marginBottom="72dp"
+        app:cardCornerRadius="16dp"
+        app:cardBackgroundColor="@android:color/white"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <ImageView
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:padding="8dp"
+            android:src="@drawable/arrow_right"
+            app:tint="@color/purple" />
+    </androidx.cardview.widget.CardView>
+
+</androidx.constraintlayout.widget.ConstraintLayout>
