@@ -1,5 +1,6 @@
 package com.newsproject.oneroadmap.Activities;
 
+import android.annotation.SuppressLint;
 import android.os.Bundle;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.viewpager2.widget.ViewPager2;
@@ -13,55 +14,58 @@ import java.util.List;
 
 public class Onboarding extends AppCompatActivity {
 
+    private OnboardingAdapter adapter;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
         setContentView(R.layout.activity_onboarding);
 
         ViewPager2 viewPager = findViewById(R.id.onboardingViewPager);
+        viewPager.setUserInputEnabled(false); // 🔒 disable swipe
 
         List<OnboardingModel> list = new ArrayList<>();
 
         list.add(new OnboardingModel(
                 R.drawable.ga2,
-                R.drawable.ma1,
-                R.drawable.ma2,
-                R.drawable.ma3,
-                R.drawable.ma4,
+                R.drawable.ga8,
+                R.drawable.ga9,
+                R.drawable.ga1,
+                R.drawable.ga5,
                 "Maharashtra Job",
                 "Maharashtra state, Central and private job update available"
         ));
 
         list.add(new OnboardingModel(
                 R.drawable.ga3,
-                R.drawable.ma2,
-                R.drawable.ma3,
-                R.drawable.ma4,
-                R.drawable.ma1,
+                R.drawable.ga6,
+                R.drawable.ga4,
+                R.drawable.ga2,
+                R.drawable.ga5,
                 "Career Roadmap",
                 "Information About The Right RoadMap According To Your Education"
         ));
 
         list.add(new OnboardingModel(
                 R.drawable.ga4,
-                R.drawable.ma4,
-                R.drawable.ma1,
-                R.drawable.ma2,
-                R.drawable.ma3,
+                R.drawable.ga1,
+                R.drawable.ga2,
+                R.drawable.ga3,
+                R.drawable.ga5,
                 "Customise Your Notifications",
                 "Customise your notifications for perfect updates"
         ));
 
-        viewPager.setAdapter(new OnboardingAdapter(list, viewPager));
+        adapter = new OnboardingAdapter(this, list);
+        viewPager.setAdapter(adapter);
+    }
 
-        viewPager.registerOnPageChangeCallback(
-                new ViewPager2.OnPageChangeCallback() {
-                    @Override
-                    public void onPageSelected(int position) {
-                        super.onPageSelected(position);
-                    }
-                }
-        );
+    @SuppressLint("GestureBackNavigation")
+    @Override
+    public void onBackPressed() {
+        if (adapter != null && adapter.handleBack()) {
+            return; // onboarding handled back
+        }
+        super.onBackPressed(); // exit app
     }
 }

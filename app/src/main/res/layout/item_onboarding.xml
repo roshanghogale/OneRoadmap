@@ -192,7 +192,7 @@
             android:layout_height="32dp"
             android:layout_marginStart="12dp"
             android:src="@drawable/main_active_ic"
-            android:scaleType="centerInside"
+            android:scaleType="centerCrop"
             app:tint="@color/white" />
     </LinearLayout>
 
