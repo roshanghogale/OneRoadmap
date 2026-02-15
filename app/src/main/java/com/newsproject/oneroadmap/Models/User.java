@@ -27,7 +27,7 @@ public class User {
     /** Constructor used by LoginPage3 & ProfileFragment */
     public User(String userId, String name, String gender, String avatar,
                 boolean studyGovernment, boolean studyPoliceDefence,
-                boolean studyBanking, boolean studySelfImprovement,
+                boolean studyBanking,
                 String degree, String postGraduation,
                 String district, String taluka,
                 boolean currentAffairs, boolean jobs,

@@ -450,7 +450,7 @@
                         android:layout_marginEnd="12dp"
                         android:layout_weight="1"
                         android:fontFamily="@font/yantramanav_regular"
-                        android:text="MPSC/UPSC स्टडी मटेरियल पाहिजेत ?"
+                        android:text="तुम्ही कोणत्या भरतीची तयारी करत आहे ?"
                         android:textColor="@color/text_primary"
                         android:textSize="16sp" />
 

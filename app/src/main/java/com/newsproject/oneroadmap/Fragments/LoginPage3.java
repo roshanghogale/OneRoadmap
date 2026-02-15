@@ -66,7 +66,7 @@ public class LoginPage3 extends Fragment {
     private String jobTextByTwelfth = "";
 
     private final String[] studyMaterialOptions = {
-            "Government", "Police & Defence", "Banking", "Self Improvement"
+            "Government", "Police & Defence", "Banking"
     };
     private final boolean[] selectedStudyMaterials = new boolean[studyMaterialOptions.length];
 
@@ -224,7 +224,7 @@ public class LoginPage3 extends Fragment {
     private void setupStudyMaterialDialog() {
         btnStudyMaterial.setOnClickListener(v -> {
             new AlertDialog.Builder(requireContext())
-                    .setTitle("FREE स्टडी मटेरियल कोणत्या भरतीची पाहिजे ?")
+                    .setTitle("तुम्ही कोणत्या भरतीची तयारी करत आहे ?")
                     .setMultiChoiceItems(
                             studyMaterialOptions,
                             selectedStudyMaterials,
@@ -315,7 +315,7 @@ public class LoginPage3 extends Fragment {
         }
 
         if (!anyStudy) {
-            toast("कृपया किमान एक स्टडी मटेरियल निवडा!");
+            toast("कृपया किमान एक भरती निवडा!");
             return;
         }
 
@@ -330,7 +330,6 @@ public class LoginPage3 extends Fragment {
                 selectedStudyMaterials[0],
                 selectedStudyMaterials[1],
                 selectedStudyMaterials[2],
-                selectedStudyMaterials[3],
                 degree, postGrad,
                 selectedDistrict, selectedTaluka,
                 rgCurrentPdf.getCheckedRadioButtonId() == R.id.rbPdfYes,

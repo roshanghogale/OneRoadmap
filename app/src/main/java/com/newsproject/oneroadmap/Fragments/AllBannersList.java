@@ -136,7 +136,6 @@ public class AllBannersList extends Fragment {
                             int id = o.has("id") && !o.get("id").isJsonNull() ? o.get("id").getAsInt() : 0;
                             String title = o.has("title") && !o.get("title").isJsonNull() ? o.get("title").getAsString() : "";
                             String education = o.has("education") && !o.get("education").isJsonNull() ? o.get("education").getAsString() : "";
-                            String ageRestriction = o.has("age_restriction") && !o.get("age_restriction").isJsonNull() ? o.get("age_restriction").getAsString() : "";
                             String applicationMethod = o.has("application_method") && !o.get("application_method").isJsonNull() ? o.get("application_method").getAsString() : "";
                             String description = o.has("description") && !o.get("description").isJsonNull() ? o.get("description").getAsString() : "";
                             String applicationLink = o.has("application_link") && !o.get("application_link").isJsonNull() ? o.get("application_link").getAsString() : "";
@@ -155,7 +154,7 @@ public class AllBannersList extends Fragment {
 
                             if (imageUrl == null || imageUrl.isEmpty()) continue;
 
-                            fetched.add(new StudentUpdateItem(id, title, education, ageRestriction, applicationMethod,
+                            fetched.add(new StudentUpdateItem(id, title, education, applicationMethod,
                                     description, applicationLink, lastDate, imageUrl, iconUrl, notificationPdfUrl, selectionPdfUrl, createdAt));
                         }
                     }
@@ -202,7 +201,6 @@ public class AllBannersList extends Fragment {
         ImageButton btnClose = dialog.findViewById(R.id.btn_close);
         TextView titleText = dialog.findViewById(R.id.title_text);
         TextView educationValue = dialog.findViewById(R.id.education_requirement_value);
-        TextView ageValue = dialog.findViewById(R.id.age_requirement_value);
         TextView descriptionText = dialog.findViewById(R.id.textView6);
         androidx.cardview.widget.CardView openLinkButton = dialog.findViewById(R.id.open_link_button);
         androidx.cardview.widget.CardView selectionPdfButton = dialog.findViewById(R.id.selection_pdf_button);
@@ -224,7 +222,6 @@ public class AllBannersList extends Fragment {
         // Set text data
         titleText.setText(item.getTitle() != null ? item.getTitle() : "N/A");
         educationValue.setText(item.getEducation() != null ? item.getEducation() : "N/A");
-        ageValue.setText(item.getAgeRestriction() != null ? item.getAgeRestriction() : "N/A");
         descriptionText.setText(item.getDescription() != null ? item.getDescription() : "N/A");
 
         // 🔗 Open Link Button Click

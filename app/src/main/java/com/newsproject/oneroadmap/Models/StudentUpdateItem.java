@@ -6,8 +6,6 @@ public class StudentUpdateItem {
     private int id;
     private String title;
     private String education;
-    @PropertyName("age_restriction")
-    private String ageRestriction;
     @PropertyName("application_method")
     private String applicationMethod;
     private String description;
@@ -30,14 +28,13 @@ public class StudentUpdateItem {
     public StudentUpdateItem() {
     }
 
-    public StudentUpdateItem(int id, String title, String education, String ageRestriction,
+    public StudentUpdateItem(int id, String title, String education,
                              String applicationMethod, String description, String applicationLink,
                              String lastDate, String imageUrl, String iconUrl, String notificationPdfUrl,
                              String selectionPdfUrl, String createdAt) {
         this.id = id;
         this.title = title;
         this.education = education;
-        this.ageRestriction = ageRestriction;
         this.applicationMethod = applicationMethod;
         this.description = description;
         this.applicationLink = applicationLink;
@@ -71,16 +68,6 @@ public class StudentUpdateItem {
 
     public void setEducation(String education) {
         this.education = education;
-    }
-
-    @PropertyName("age_restriction")
-    public String getAgeRestriction() {
-        return ageRestriction;
-    }
-
-    @PropertyName("age_restriction")
-    public void setAgeRestriction(String ageRestriction) {
-        this.ageRestriction = ageRestriction;
     }
 
     @PropertyName("application_method")

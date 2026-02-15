@@ -182,7 +182,6 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                         cur.getInt(cur.getColumnIndexOrThrow(COL_STUDY_GOV)) == 1,
                         cur.getInt(cur.getColumnIndexOrThrow(COL_STUDY_POLICE)) == 1,
                         cur.getInt(cur.getColumnIndexOrThrow(COL_STUDY_BANK)) == 1,
-                        cur.getInt(cur.getColumnIndexOrThrow(COL_STUDY_SELF)) == 1,
 
                         cur.getString(cur.getColumnIndexOrThrow(COL_DEGREE)),
                         cur.getString(cur.getColumnIndexOrThrow(COL_POST_GRADUATION)),

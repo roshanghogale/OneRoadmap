@@ -4,13 +4,8 @@ import android.app.Dialog;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
-import android.graphics.Canvas;
 import android.graphics.Color;
-import android.graphics.Paint;
 import android.graphics.drawable.ColorDrawable;
-import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 import android.text.InputType;
@@ -30,10 +25,8 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.activity.result.ActivityResultLauncher;
-import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AlertDialog;
 import androidx.cardview.widget.CardView;
-import androidx.core.content.FileProvider;
 import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -49,9 +42,6 @@ import com.newsproject.oneroadmap.Utils.ShareHelper;
 import com.newsproject.oneroadmap.Activities.LoginActivity;
 import com.newsproject.oneroadmap.Models.User;
 
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -84,7 +74,7 @@ public class ProfileFragment extends Fragment {
     private String tempSelectedAvatar = "";
 
     private final String[] studyMaterialOptions = {
-            "Government", "Police & Defence", "Banking", "Self Improvement"
+            "Government", "Police & Defence", "Banking"
     };
     List<String> ageGroupOptions = new ArrayList<>(Arrays.asList(
             "Select Age Group",
@@ -685,7 +675,7 @@ public class ProfileFragment extends Fragment {
 
     private void showStudyMaterialDialog() {
         AlertDialog.Builder b = new AlertDialog.Builder(requireContext())
-                .setTitle("FREE स्टडी मटेरियल कोणत्या भरतीची पाहिजे ?");
+                .setTitle("तुम्ही कोणत्या भरतीची तयारी करत आहे ?");
 
         boolean[] checked = new boolean[studyMaterialOptions.length];
         for (int i = 0; i < studyMaterialOptions.length; i++) {
@@ -821,7 +811,6 @@ public class ProfileFragment extends Fragment {
                 sharedPreferences.getBoolean("study_Government", false),
                 sharedPreferences.getBoolean("study_Police_Defence", false),
                 sharedPreferences.getBoolean("study_Banking", false),
-                sharedPreferences.getBoolean("study_Self_Improvement", false),
 
                 sharedPreferences.getString("degree", "Select Degree"),
                 sharedPreferences.getString("postGrad", "Select Post Graduation"),
