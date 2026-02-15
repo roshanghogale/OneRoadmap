@@ -27,31 +27,31 @@ public class Onboarding extends AppCompatActivity {
         List<OnboardingModel> list = new ArrayList<>();
 
         list.add(new OnboardingModel(
-                R.drawable.ga2,
-                R.drawable.ga8,
-                R.drawable.ga9,
-                R.drawable.ga1,
-                R.drawable.ga5,
+                R.drawable.center_onboarding_logo,
+                R.drawable.onboarding_logo2,
+                R.drawable.onboarding_logo1,
+                R.drawable.onboarding_logo4,
+                R.drawable.onboarding_logo3,
                 "Maharashtra Job",
                 "Maharashtra state, Central and private job update available"
         ));
 
         list.add(new OnboardingModel(
-                R.drawable.ga3,
-                R.drawable.ga6,
-                R.drawable.ga4,
-                R.drawable.ga2,
-                R.drawable.ga5,
+                R.drawable.center_onboarding_logo,
+                R.drawable.onboarding_logo2,
+                R.drawable.onboarding_logo1,
+                R.drawable.onboarding_logo4,
+                R.drawable.onboarding_logo3,
                 "Career Roadmap",
                 "Information About The Right RoadMap According To Your Education"
         ));
 
         list.add(new OnboardingModel(
-                R.drawable.ga4,
-                R.drawable.ga1,
-                R.drawable.ga2,
-                R.drawable.ga3,
-                R.drawable.ga5,
+                R.drawable.center_onboarding_logo,
+                R.drawable.onboarding_logo2,
+                R.drawable.onboarding_logo1,
+                R.drawable.onboarding_logo4,
+                R.drawable.onboarding_logo3,
                 "Customise Your Notifications",
                 "Customise your notifications for perfect updates"
         ));

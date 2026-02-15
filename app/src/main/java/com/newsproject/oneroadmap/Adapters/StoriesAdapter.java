@@ -110,6 +110,8 @@ public class StoriesAdapter
         private final PlayerView playerView;
         private final ProgressBar progressBar;
         private final ProgressBar loadingProgress;
+        private final TextView storyTitle;
+        private final TextView storyTime;
 
         private final Handler handler = new Handler(Looper.getMainLooper());
 
@@ -118,7 +120,7 @@ public class StoriesAdapter
 
         private final StoriesAdapter adapter;
         private Story story;
-
+        private boolean completedNaturally = false;
         private long playSessionId = 0;
 
         public StoryViewHolder(
@@ -136,6 +138,8 @@ public class StoriesAdapter
             playerView = itemView.findViewById(R.id.video_player);
             progressBar = itemView.findViewById(R.id.progressBar3);
             loadingProgress = itemView.findViewById(R.id.loading_progress);
+            storyTime = itemView.findViewById(R.id.timeAgo);
+            storyTitle = itemView.findViewById(R.id.title);
 
             // -------- Buttons --------
             closeButton.setOnClickListener(v ->
@@ -183,6 +187,9 @@ public class StoriesAdapter
 
         void bind(Story s) {
             story = s;
+
+            storyTitle.setText(s.getTitle());
+            storyTime.setText(s.getRelativeTime());
 
             Glide.with(itemView)
                     .load(s.getIconUrl())
@@ -282,6 +289,7 @@ public class StoriesAdapter
                 progressBar.setProgress(Math.min(p, 100));
 
                 if (elapsed >= IMAGE_DURATION_MS) {
+                    completedNaturally = true;
                     goNext();
                 } else {
                     handler.postDelayed(progressRunnable, 16);
@@ -316,6 +324,7 @@ public class StoriesAdapter
                     }
 
                     if (state == Player.STATE_ENDED) {
+                        completedNaturally = true;
                         goNext();
                     }
                 }
@@ -357,11 +366,28 @@ public class StoriesAdapter
         private void goNext() {
             int pos = getAdapterPosition();
             if (pos != adapter.getCurrentVisiblePosition()) return;
+
+            if (completedNaturally) {
+
+                story.setViewed(true);
+
+                itemView.getContext()
+                        .getSharedPreferences("StoryPrefs", Context.MODE_PRIVATE)
+                        .edit()
+                        .putBoolean("viewed_" + story.getDocumentId(), true)
+                        .apply();
+
+                adapter.storyAdapter.notifyItemChanged(pos);
+            }
+
+            completedNaturally = false;
+
             HomeFragment.updateAdapter(itemView.getContext(), pos, adapter.storyAdapter);
         }
 
         private void reset() {
             playSessionId++;
+            completedNaturally = false;
 
             if (progressRunnable != null) {
                 handler.removeCallbacks(progressRunnable);
