@@ -103,7 +103,7 @@ public class AllBannersList extends Fragment {
         });
 
         OkHttpClient client = new OkHttpClient();
-        String url = BuildConfig.BASE_URL + "/api/student-updates";
+        String url = BuildConfig.BASE_URL + BuildConfig.STUDENT_UPDATES;
         Request request = new Request.Builder().url(url).build();
         client.newCall(request).enqueue(new Callback() {
             @Override

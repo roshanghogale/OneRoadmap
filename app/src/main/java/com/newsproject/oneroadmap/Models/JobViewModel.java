@@ -113,10 +113,10 @@ public class JobViewModel extends ViewModel {
     }
 
     public static void fetchJobUpdate(String id, Map<String, JobUpdate> jobUpdateCache, Context context, Runnable onComplete) {
-        String base = com.newsproject.oneroadmap.Utils.BuildConfig.JOB_UPDATES_ENDPOINT;
+        String base = BuildConfig.JOB_UPDATES;
         String effectiveBase = base != null ? base : "";
         if (!effectiveBase.startsWith("http")) {
-            String root = com.newsproject.oneroadmap.Utils.BuildConfig.BASE_URL;
+            String root = BuildConfig.BASE_URL;
             if (root == null) root = "";
             if (root.endsWith("/") && effectiveBase.startsWith("/")) {
                 effectiveBase = root + effectiveBase.substring(1);
@@ -338,23 +338,28 @@ public class JobViewModel extends ViewModel {
     // Convenience methods for specific job types
     public void loadAllGovernmentJobs(OkHttpClient client, String endpoint, Context context) {
         //Log.d(TAG, "loadAllGovernmentJobs: Starting to load government jobs");
-        loadAllOfType(client, "/api/job-updates/government", "government", context);
+        loadAllOfType(client, BuildConfig.JOB_UPDATES_GOVT, "government", context);
     }
 
     public void loadAllPrivateJobs(OkHttpClient client, String endpoint, Context context) {
         //Log.d(TAG, "loadAllPrivateJobs: Starting to load private jobs");
-        loadAllOfType(client, "/api/job-updates/private", "private", context);
+        loadAllOfType(client, BuildConfig.JOB_UPDATES_PRIVATE, "private", context);
     }
 
     public void loadAllBankingJobs(OkHttpClient client, String endpoint, Context context) {
         //Log.d(TAG, "loadAllBankingJobs: Starting to load banking jobs");
-        loadAllOfType(client, "/api/job-updates/banking", "banking", context);
+        loadAllOfType(client, BuildConfig.JOB_UPDATES_BANKING, "banking", context);
     }
 
     // Method to reload jobs (useful for retry functionality)
     public void reloadJobs(OkHttpClient client, String endpoint, String jobType, Context context) {
         //Log.d(TAG, "reloadJobs: Reloading all jobs for type: " + jobType);
-        loadAllOfType(client, "/api/job-updates/" + jobType, jobType, context);
+        String reloadEndpoint = BuildConfig.JOB_UPDATES + "/" + jobType;
+        if (jobType.equalsIgnoreCase("government")) reloadEndpoint = BuildConfig.JOB_UPDATES_GOVT;
+        else if (jobType.equalsIgnoreCase("private")) reloadEndpoint = BuildConfig.JOB_UPDATES_PRIVATE;
+        else if (jobType.equalsIgnoreCase("banking")) reloadEndpoint = BuildConfig.JOB_UPDATES_BANKING;
+        
+        loadAllOfType(client, reloadEndpoint, jobType, context);
     }
 
     // Debug method to check current job counts

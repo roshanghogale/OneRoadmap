@@ -63,7 +63,7 @@ import okhttp3.Response;
 
 public class GovernmentJobs extends Fragment {
     private static final String TAG = "GovtJobs";
-    private static final String JOB_UPDATES_ENDPOINT = BuildConfig.JOB_UPDATES_ENDPOINT;
+    private static final String JOB_UPDATES_ENDPOINT = BuildConfig.JOB_UPDATES;
 
     private ImageCarousel carousel;
     private ImageView backButton;
@@ -298,7 +298,7 @@ public class GovernmentJobs extends Fragment {
                 String userDistrict = sharedPreferences.getString("district", "");
                 String userTaluka = sharedPreferences.getString("taluka", "");
 
-                String url = "https://admin.mahaalert.cloud/api/sliders/government";
+                String url = BuildConfig.BASE_URL + BuildConfig.SLIDERS_GOVT;
                 Request request = new Request.Builder().url(url).build();
                 sliderCall = client.newCall(request); // Track the call
                 sliderCall.enqueue(new Callback() {

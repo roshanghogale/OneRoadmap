@@ -66,7 +66,7 @@ import okhttp3.Response;
 
 public class BankingJobs extends Fragment {
     private static final String TAG = "BankingJobs";
-    private static final String JOB_UPDATES_ENDPOINT = BuildConfig.JOB_UPDATES_ENDPOINT;
+    private static final String JOB_UPDATES_ENDPOINT = BuildConfig.JOB_UPDATES;
     private static final String PREFS_NAME = "UserPrefs";
     private ImageCarousel carousel;
     private ImageView backButton;
@@ -437,7 +437,7 @@ public class BankingJobs extends Fragment {
                 String userDistrict = sharedPreferences.getString("district", "");
                 String userTaluka = sharedPreferences.getString("taluka", "");
 
-                String url = "https://admin.mahaalert.cloud/api/sliders/banking";
+                String url = BuildConfig.BASE_URL + BuildConfig.SLIDERS_BANKING;
                 Request request = new Request.Builder().url(url).build();
 
                 client.newCall(request).enqueue(new Callback() {

@@ -139,7 +139,7 @@ public class HomeFragment extends Fragment {
     private boolean hasShownTop5JobsErrorToast = false;
     private JobViewModel jobViewModel;
     private OkHttpClient client;
-    private LinearLayout govLinear, policeLinear, bankLinear, selfLinear;
+    private LinearLayout govLinear, policeLinear, bankLinear;
     private Map<String, News> newsCache = new HashMap<>(); // Cache for news items
     private String top5PdfUrl = "";
     private RecentlyOpenedDatabaseHelper recentDb;
@@ -402,7 +402,6 @@ public class HomeFragment extends Fragment {
         policeLinear = (LinearLayout) row1.getChildAt(1);
         LinearLayout row2 = (LinearLayout) studyCards.getChildAt(2); // Second row
         bankLinear = (LinearLayout) row2.getChildAt(0);
-        selfLinear = (LinearLayout) row2.getChildAt(1);
 
         // Load user data from SharedPreferences
         SharedPreferences sharedPreferences = requireContext().getSharedPreferences("UserPrefs", Context.MODE_PRIVATE);
@@ -610,10 +609,6 @@ public class HomeFragment extends Fragment {
             Log.d(TAG, "Category clicked: banking");
             filterAndDisplay("banking");
         });
-        selfLinear.setOnClickListener(v -> {
-            Log.d(TAG, "Category clicked: self_improvement");
-            filterAndDisplay("self_improvement");
-        });
     }
 
     private boolean isNetworkAvailable() {
@@ -643,7 +638,7 @@ public class HomeFragment extends Fragment {
             });
             // Load jobs on the main thread and initialize observer
             if (isNetworkAvailable()) {
-                jobViewModel.loadJobs(client, BuildConfig.JOB_UPDATES_ENDPOINT, requireContext());
+                jobViewModel.loadJobs(client, BuildConfig.JOB_UPDATES, requireContext());
                 loadJobUpdates(); // Ensure observer is set up
             } else {
                 mainHandler.post(() -> {
@@ -701,7 +696,7 @@ public class HomeFragment extends Fragment {
         String userDistrict = prefs.getString("district", "");
         String userTaluka = prefs.getString("taluka", "");
 
-        String url = BuildConfig.BASE_URL + "/api/stories";
+        String url = BuildConfig.BASE_URL + BuildConfig.STORIES;
         Request request = new Request.Builder().url(url).build();
 
         client.newCall(request).enqueue(new Callback() {
@@ -847,7 +842,7 @@ public class HomeFragment extends Fragment {
             return;
         }
 
-        String url = BuildConfig.BASE_URL + "/api/current-affairs";
+        String url = BuildConfig.BASE_URL + BuildConfig.CURRENT_AFFAIRS;
         Request request = new Request.Builder().url(url).build();
         client.newCall(request).enqueue(new Callback() {
             @Override
@@ -1182,7 +1177,7 @@ public class HomeFragment extends Fragment {
             return;
         }
 
-        String url = BuildConfig.BASE_URL + "/api/student-updates";
+        String url = BuildConfig.BASE_URL + BuildConfig.STUDENT_UPDATES;
         Request request = new Request.Builder().url(url).build();
         client.newCall(request).enqueue(new Callback() {
             @Override
@@ -1375,7 +1370,7 @@ public class HomeFragment extends Fragment {
             return;
         }
 
-        String url = BuildConfig.BASE_URL + "/api/study-materials/";
+        String url = BuildConfig.BASE_URL + BuildConfig.STUDY_MATERIALS;
         Request request = new Request.Builder().url(url).build();
         client.newCall(request).enqueue(new Callback() {
             @Override
@@ -1487,7 +1482,7 @@ public class HomeFragment extends Fragment {
             return;
         }
         
-        if (govLinear == null || policeLinear == null || bankLinear == null || selfLinear == null) {
+        if (govLinear == null || policeLinear == null || bankLinear == null) {
             Log.w(TAG, "updateCategoryBackgrounds: Views are null, skipping update");
             return;
         }
@@ -1515,12 +1510,7 @@ public class HomeFragment extends Fragment {
             bankText.setTextColor(ContextCompat.getColor(context, activeType.equals("banking") ? R.color.white : R.color.black));
         }
 
-        // Update self_improvement category
-        selfLinear.setBackgroundResource(activeType.equals("self_improvement") ? R.drawable.study_material_active : R.drawable.study_material_inactive);
-        if (selfLinear.getChildCount() > 1) {
-            TextView selfText = (TextView) selfLinear.getChildAt(1);
-            selfText.setTextColor(ContextCompat.getColor(context, activeType.equals("self_improvement") ? R.color.white : R.color.black));
-        }
+
     }
 
     private void loadNews() {
@@ -1542,7 +1532,7 @@ public class HomeFragment extends Fragment {
             return;
         }
 
-        String url = BuildConfig.BASE_URL + "/api/news";
+        String url = BuildConfig.BASE_URL + BuildConfig.NEWS;
         Request request = new Request.Builder().url(url).build();
         client.newCall(request).enqueue(new Callback() {
             @Override
@@ -1726,7 +1716,7 @@ public class HomeFragment extends Fragment {
         String userDistrict = sharedPreferences.getString("district", "");
         String userTaluka = sharedPreferences.getString("taluka", "");
 
-        String url = "https://admin.mahaalert.cloud/api/sliders/home";
+        String url = BuildConfig.BASE_URL + BuildConfig.SLIDERS_HOME;
         Request request = new Request.Builder().url(url).build();
         client.newCall(request).enqueue(new Callback() {
             @Override

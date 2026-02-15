@@ -26,7 +26,7 @@ import com.newsproject.oneroadmap.R;
 public class NewsUtils {
     private static final OkHttpClient client = new OkHttpClient();
     private static final android.os.Handler mainHandler = new android.os.Handler(android.os.Looper.getMainLooper());
-    private static final String BASE_URL = "https://admin.mahaalert.cloud/api/news/";
+    private static final String BASE_URL = BuildConfig.BASE_URL + BuildConfig.NEWS_DETAILS;
 
     public static void fetchNews(String id, Map<String, News> newsCache, Context context, Runnable onComplete) {
         String url = BASE_URL + id;
@@ -146,9 +146,9 @@ public class NewsUtils {
                 text = description.getParagraph2();
             }
             if (text != null && !text.isEmpty()) {
-            if (descriptionText.length() > 0) descriptionText.append("\n\n");
-                descriptionText.append(text);
-        }
+                if (descriptionText.length() > 0) descriptionText.append("\n\n");
+                    descriptionText.append(text);
+                }
         }
         descriptionView.setText(descriptionText.toString().trim());
 

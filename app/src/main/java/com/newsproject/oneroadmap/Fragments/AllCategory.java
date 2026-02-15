@@ -45,7 +45,7 @@ import okhttp3.OkHttpClient;
 
 public class AllCategory extends Fragment {
     private static final String PREFS_NAME = "UserPrefs";
-    private static final String JOB_UPDATES_ENDPOINT = BuildConfig.JOB_UPDATES_ENDPOINT;
+    private static final String JOB_UPDATES_ENDPOINT = BuildConfig.JOB_UPDATES;
 
     private FragmentAllCategoryBinding binding;
     private JobViewModel viewModel;

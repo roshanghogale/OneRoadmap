@@ -34,6 +34,7 @@ import com.newsproject.oneroadmap.Adapters.ResultAdapter;
 import com.newsproject.oneroadmap.Models.JobViewModel;
 import com.newsproject.oneroadmap.Models.ResultItem;
 import com.newsproject.oneroadmap.R;
+import com.newsproject.oneroadmap.Utils.BuildConfig;
 import com.newsproject.oneroadmap.Utils.FilterUtils;
 import com.newsproject.oneroadmap.databinding.DialogEducationFilterBinding;
 
@@ -197,7 +198,7 @@ public class Result_HallTitcket extends Fragment implements ResultAdapter.OnItem
         }
 
         OkHttpClient client = new OkHttpClient();
-        String url = "https://admin.mahaalert.cloud/api/result-halltickets/?page=" + currentPage + "&limit=" + PAGE_SIZE;
+        String url = BuildConfig.BASE_URL + BuildConfig.RESULT_HALLTICKETS + "?page=" + currentPage + "&limit=" + PAGE_SIZE;
         Request request = new Request.Builder().url(url).build();
 
         currentCall = client.newCall(request);

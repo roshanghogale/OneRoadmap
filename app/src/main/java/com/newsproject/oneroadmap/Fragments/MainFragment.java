@@ -30,6 +30,7 @@ import com.newsproject.oneroadmap.Adapters.CareerRoadmapsAdapter;
 import com.newsproject.oneroadmap.Models.CareerRoadmapSlider;
 import com.newsproject.oneroadmap.Models.CareerRoadmaps;
 import com.newsproject.oneroadmap.R;
+import com.newsproject.oneroadmap.Utils.BuildConfig;
 
 import java.io.IOException;
 import java.text.ParseException;
@@ -48,7 +49,7 @@ import okhttp3.Request;
 import okhttp3.Response;
 
 public class MainFragment extends Fragment {
-    private static final String BASE_URL = "https://admin.mahaalert.cloud/api/";
+    private static final String BASE_URL = BuildConfig.BASE_URL + BuildConfig.CAREER_ROADMAPS;
     private static final String TAG = "MainFragment";
 
     private RecyclerView careerRoadmapsRecycler;
@@ -128,7 +129,7 @@ public class MainFragment extends Fragment {
         executorService.execute(() -> {
             try {
                 Request request = new Request.Builder()
-                        .url(BASE_URL + "career-roadmaps/")
+                        .url(BASE_URL)
                         .build();
 
                 try (Response response = client.newCall(request).execute()) {
@@ -283,7 +284,7 @@ public class MainFragment extends Fragment {
         executorService.execute(() -> {
             try {
                 Request request = new Request.Builder()
-                        .url(BASE_URL + "career-roadmap-sliders")
+                        .url(BuildConfig.BASE_URL + BuildConfig.CAREER_ROADMAP_SLIDERS)
                         .build();
 
                 try (Response response = client.newCall(request).execute()) {
@@ -308,7 +309,7 @@ public class MainFragment extends Fragment {
                         if (slider != null && slider.getImageUrl() != null && !slider.getImageUrl().isEmpty()) {
                             String sliderUrl = slider.getImageUrl();
                             if (sliderUrl.startsWith("/"))
-                                sliderUrl = "https://admin.mahaalert.cloud" + sliderUrl;
+                                sliderUrl = BuildConfig.BASE_URL + sliderUrl;
                             else if (sliderUrl.startsWith("http://"))
                                 sliderUrl = sliderUrl.replace("http://", "https://");
 

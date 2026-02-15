@@ -5,7 +5,7 @@ import okhttp3.*;
 import java.io.IOException;
 
 public class ApiClient {
-    private static final String BASE_URL = "https://admin.mahaalert.cloud"; // CHANGE THIS
+    private static final String BASE_URL = BuildConfig.BASE_URL;
     private static ApiClient instance;
     public final OkHttpClient client;
 
@@ -17,7 +17,7 @@ public class ApiClient {
     // --------------------- Sliders (new) ---------------------
     public void getAllSliders(Callback callback) {
         Request request = new Request.Builder()
-                .url(BASE_URL + "/api/sliders")
+                .url(BASE_URL + BuildConfig.SLIDERS)
                 .get()
                 .build();
         client.newCall(request).enqueue(callback);
@@ -32,7 +32,7 @@ public class ApiClient {
     public void saveUser(String json, Callback callback) {
         RequestBody body = RequestBody.create(json, MediaType.get("application/json; charset=utf-8"));
         Request request = new Request.Builder()
-                .url(BASE_URL + "/api/users/save-data")
+                .url(BASE_URL + BuildConfig.USERS_SAVE)
                 .post(body)
                 .build();
         client.newCall(request).enqueue(callback);
@@ -40,7 +40,7 @@ public class ApiClient {
 
     public void getUser(String identifier, Callback callback) {
         Request request = new Request.Builder()
-                .url(BASE_URL + "/api/users/" + identifier)
+                .url(BASE_URL + BuildConfig.USERS + identifier)
                 .get()
                 .build();
         client.newCall(request).enqueue(callback);
@@ -48,7 +48,7 @@ public class ApiClient {
 
     public void deleteUser(String id, Callback callback) {
         Request request = new Request.Builder()
-                .url(BASE_URL + "/api/users/" + id)
+                .url(BASE_URL + BuildConfig.USERS + id)
                 .delete()
                 .build();
         client.newCall(request).enqueue(callback);
@@ -57,7 +57,7 @@ public class ApiClient {
     // --------------------- Queries (new) ---------------------
     public void getQueries(Callback callback) {
         Request request = new Request.Builder()
-                .url(BASE_URL + "/api/queries")
+                .url(BASE_URL + BuildConfig.QUERIES)
                 .get()
                 .build();
         client.newCall(request).enqueue(callback);
@@ -65,7 +65,7 @@ public class ApiClient {
 
     public void getQueriesByUser(String userId, Callback callback) {
         Request request = new Request.Builder()
-                .url(BASE_URL + "/api/queries/user/" + userId)
+                .url(BASE_URL + BuildConfig.QUERIES_USER + userId)
                 .get()
                 .build();
         client.newCall(request).enqueue(callback);
@@ -73,7 +73,7 @@ public class ApiClient {
 
     public void getQuery(String id, Callback callback) {
         Request request = new Request.Builder()
-                .url(BASE_URL + "/api/queries/" + id)
+                .url(BASE_URL + BuildConfig.QUERIES + "/" + id)
                 .get()
                 .build();
         client.newCall(request).enqueue(callback);
@@ -82,7 +82,7 @@ public class ApiClient {
     public void createQuery(String json, Callback callback) {
         RequestBody body = RequestBody.create(json, MediaType.get("application/json; charset=utf-8"));
         Request request = new Request.Builder()
-                .url(BASE_URL + "/api/queries")
+                .url(BASE_URL + BuildConfig.QUERIES)
                 .post(body)
                 .build();
         client.newCall(request).enqueue(callback);
@@ -96,7 +96,7 @@ public class ApiClient {
     public void updateQuery(String id, String json, Callback callback) {
         RequestBody body = RequestBody.create(json, MediaType.get("application/json; charset=utf-8"));
         Request request = new Request.Builder()
-                .url(BASE_URL + "/api/queries/" + id)
+                .url(BASE_URL + BuildConfig.QUERIES + "/" + id)
                 .put(body)
                 .build();
         client.newCall(request).enqueue(callback);
@@ -104,7 +104,7 @@ public class ApiClient {
 
     public void deleteQuery(String id, Callback callback) {
         Request request = new Request.Builder()
-                .url(BASE_URL + "/api/queries/" + id)
+                .url(BASE_URL + BuildConfig.QUERIES + "/" + id)
                 .delete()
                 .build();
         client.newCall(request).enqueue(callback);

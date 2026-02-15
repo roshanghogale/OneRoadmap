@@ -34,6 +34,7 @@ import com.newsproject.oneroadmap.Models.Reply;
 import com.newsproject.oneroadmap.Models.Slider;
 import com.newsproject.oneroadmap.R;
 import com.newsproject.oneroadmap.Utils.ApiClient;
+import com.newsproject.oneroadmap.Utils.BuildConfig;
 
 import androidx.core.content.res.ResourcesCompat;
 
@@ -474,7 +475,7 @@ public class ChatFragment extends Fragment {
                     return;
                 }
 
-                String url = "https://admin.mahaalert.cloud/api/sliders"; // 🔥 ALL sliders
+                String url = BuildConfig.BASE_URL + "/api/sliders"; // 🔥 ALL sliders
                 Request request = new Request.Builder().url(url).build();
 
                 ApiClient.getInstance()
