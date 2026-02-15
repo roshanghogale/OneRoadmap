@@ -68,7 +68,7 @@ public class PrivateJobs extends Fragment {
     private ImageView backButton;
     private RecyclerView allJobRecycler;
     private FloatingActionButton fabScrollTop;
-    private TextView privateHome, privateRegular;
+    private TextView privateInternship, privateRegular;
     private CardView chipEducation;
     private JobViewModel viewModel;
     private JobUpdateAdapter adapter;
@@ -85,7 +85,7 @@ public class PrivateJobs extends Fragment {
         carousel = view.findViewById(R.id.carousel);
         allJobRecycler = view.findViewById(R.id.recycler_job_updates);
         backButton = view.findViewById(R.id.back_button);
-        privateHome = view.findViewById(R.id.private_home);
+        privateInternship = view.findViewById(R.id.private_internship);
         privateRegular = view.findViewById(R.id.private_regular);
         chipEducation = view.findViewById(R.id.chip_education);
         fabScrollTop = view.findViewById(R.id.fab_scroll_top);
@@ -119,7 +119,7 @@ public class PrivateJobs extends Fragment {
     }
 
     private void setupListeners() {
-        privateHome.setOnClickListener(v -> viewModel.handleTypeChipClick("private", "work-home", requireContext()));
+        privateInternship.setOnClickListener(v -> viewModel.handleTypeChipClick("private", "internship", requireContext()));
         privateRegular.setOnClickListener(v -> viewModel.handleTypeChipClick("private", "regular-job", requireContext()));
 
         if (fabScrollTop != null) {
@@ -151,16 +151,16 @@ public class PrivateJobs extends Fragment {
         viewModel.getSelectedChip().observe(getViewLifecycleOwner(), selected -> {
             int defaultColor = ContextCompat.getColor(requireContext(), R.color.text_primary);
             int selectedColor = ContextCompat.getColor(requireContext(), R.color.white);
-            privateHome.setBackgroundResource(R.drawable.rectangle_with_stroke);
-            privateHome.setTextColor(defaultColor);
+            privateInternship.setBackgroundResource(R.drawable.rectangle_with_stroke);
+            privateInternship.setTextColor(defaultColor);
             privateRegular.setBackgroundResource(R.drawable.rectangle_with_stroke);
             privateRegular.setTextColor(defaultColor);
             chipEducation.setCardBackgroundColor(ContextCompat.getColor(requireContext(), R.color.chip_default));
 
             if (selected != null) {
-                if (selected.equals("private-work-home")) {
-                    privateHome.setBackgroundResource(R.drawable.rectangle_filled);
-                    privateHome.setTextColor(selectedColor);
+                if (selected.equals("private-internship")) {
+                    privateInternship.setBackgroundResource(R.drawable.rectangle_filled);
+                    privateInternship.setTextColor(selectedColor);
                 } else if (selected.equals("private-regular-job")) {
                     privateRegular.setBackgroundResource(R.drawable.rectangle_filled);
                     privateRegular.setTextColor(selectedColor);
@@ -293,7 +293,7 @@ public class PrivateJobs extends Fragment {
                 String userDistrict = sharedPreferences.getString("district", "");
                 String userTaluka = sharedPreferences.getString("taluka", "");
 
-                String url = BuildConfig.BASE_URL + "/api/sliders/private";
+                String url = BuildConfig.BASE_URL + BuildConfig.SLIDERS_PRIVATE;
                 Request request = new Request.Builder().url(url).build();
 
                 client.newCall(request).enqueue(new Callback() {
