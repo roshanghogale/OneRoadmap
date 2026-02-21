@@ -213,7 +213,6 @@ public class MainActivity extends AppCompatActivity {
                 || fragment instanceof JobUpdateDetails
                 || fragment instanceof AllBannersList
                 || fragment instanceof VideoFragment
-                || fragment instanceof PDFViewerFragment
                 || fragment instanceof WebViewFragment
                 || fragment instanceof NewsFragment;
 

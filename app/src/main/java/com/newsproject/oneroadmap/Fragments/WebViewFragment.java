@@ -23,6 +23,7 @@ import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.fragment.app.Fragment;
@@ -66,72 +67,93 @@ public class WebViewFragment extends Fragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
-        // Initialize views
         webView = view.findViewById(R.id.web_view);
         progressBar = view.findViewById(R.id.progress_bar);
         tvError = view.findViewById(R.id.tv_error);
         urlText = view.findViewById(R.id.url_text);
         copyUrlButton = view.findViewById(R.id.copy_url_button);
 
-        // Setup edge-to-edge for Android 15+
         setupEdgeToEdge(view);
-
-        // Setup WebView
         setupWebView();
 
-        // Setup URL bar
-        setupUrlBar();
+        if (url == null || url.isEmpty()) {
+            showError("Invalid URL");
+            return;
+        }
 
-        // Load URL
-        if (url != null && !url.isEmpty()) {
+        if (isPdfUrl(url)) {
+
+            View urlBar = view.findViewById(R.id.url_bar);
+            if (urlBar != null) {
+                urlBar.setVisibility(View.GONE);
+            }
+
+            loadUrl(url);   // 🔥 THIS WAS MISSING
+
+        } else {
+
+            setupUrlBar();
             urlText.setText(url);
             loadUrl(url);
-        } else {
-            showError("Invalid URL");
         }
     }
 
-    private void setupEdgeToEdge(View view) {
-        // Handle edge-to-edge for Android 11+ (API 30+)
-        // This also covers Android 15+ (API 35+) when available
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-            ViewCompat.setOnApplyWindowInsetsListener(view, (v, insets) -> {
-                WindowInsetsCompat windowInsets = insets;
-                int topInset = windowInsets.getInsets(WindowInsetsCompat.Type.statusBars()).top;
-                int bottomInset = windowInsets.getInsets(WindowInsetsCompat.Type.navigationBars()).bottom;
+    private boolean isPdfUrl(String url) {
+        if (url == null) return false;
 
-                // Apply padding to URL bar to handle status bar
+        url = url.toLowerCase();
+
+        return url.endsWith(".pdf")
+                || url.contains(".pdf?")
+                || url.contains("application/pdf");
+    }
+
+    private void setupEdgeToEdge(View rootView) {
+
+        // ❌ If PDF → DO NOT apply edge-to-edge
+        if (isPdfUrl(url)) {
+            rootView.setFitsSystemWindows(true);
+
+            if (webView != null) {
+                webView.setPadding(0, 0, 0, 0);
+            }
+
+            return;
+        }
+
+        // ✅ Normal websites → enable edge-to-edge
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+
+            ViewCompat.setOnApplyWindowInsetsListener(rootView, (v, insets) -> {
+
+                int topInset = insets.getInsets(
+                        WindowInsetsCompat.Type.statusBars()).top;
+
+                int bottomInset = insets.getInsets(
+                        WindowInsetsCompat.Type.navigationBars()).bottom;
+
                 View urlBar = v.findViewById(R.id.url_bar);
+
                 if (urlBar != null) {
                     urlBar.setPadding(
-                        urlBar.getPaddingLeft(),
-                        topInset,
-                        urlBar.getPaddingRight(),
-                        urlBar.getPaddingBottom()
+                            urlBar.getPaddingLeft(),
+                            topInset,
+                            urlBar.getPaddingRight(),
+                            urlBar.getPaddingBottom()
                     );
                 }
 
-                // Apply bottom padding to WebView to handle navigation bar
                 if (webView != null) {
                     webView.setPadding(
-                        webView.getPaddingLeft(),
-                        webView.getPaddingTop(),
-                        webView.getPaddingRight(),
-                        bottomInset
+                            webView.getPaddingLeft(),
+                            webView.getPaddingTop(),
+                            webView.getPaddingRight(),
+                            bottomInset
                     );
                 }
 
-                return windowInsets;
+                return WindowInsetsCompat.CONSUMED;
             });
-        } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            // Android 5.0+ (API 21+) - fallback for older devices
-            if (getActivity() != null && getActivity().getWindow() != null) {
-                getActivity().getWindow().getDecorView().setSystemUiVisibility(
-                        View.SYSTEM_UI_FLAG_LAYOUT_STABLE
-                                | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
-                                | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
-                );
-            }
         }
     }
 
@@ -222,24 +244,32 @@ public class WebViewFragment extends Fragment {
     }
 
     private void loadUrl(String urlString) {
+
         if (urlString == null || urlString.isEmpty()) {
             showError("Invalid URL");
             return;
         }
 
-        // Ensure URL has proper protocol
         if (!urlString.startsWith("http://") && !urlString.startsWith("https://")) {
             urlString = "https://" + urlString;
         }
 
         try {
-            webView.loadUrl(urlString);
+
+            // 🔥 If PDF → open with Google Docs Viewer (BEST METHOD)
+            if (isPdfUrl(urlString)) {
+                String googleDocsUrl =
+                        "https://docs.google.com/gview?embedded=true&url=" + urlString;
+                webView.loadUrl(googleDocsUrl);
+            } else {
+                webView.loadUrl(urlString);
+            }
+
         } catch (Exception e) {
             Log.e(TAG, "Error loading URL: " + urlString, e);
-            showError("Error loading page: " + e.getMessage());
+            showError("Error loading page");
         }
     }
-
 
     private void showError(String message) {
         if (progressBar != null) {

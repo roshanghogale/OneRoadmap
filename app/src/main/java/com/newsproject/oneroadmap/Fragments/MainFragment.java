@@ -19,6 +19,8 @@ import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -31,6 +33,8 @@ import com.newsproject.oneroadmap.Models.CareerRoadmapSlider;
 import com.newsproject.oneroadmap.Models.CareerRoadmaps;
 import com.newsproject.oneroadmap.R;
 import com.newsproject.oneroadmap.Utils.BuildConfig;
+import com.newsproject.oneroadmap.Utils.CoinAccessController;
+import com.newsproject.oneroadmap.Utils.ShareHelper;
 
 import java.io.IOException;
 import java.text.ParseException;
@@ -68,6 +72,7 @@ public class MainFragment extends Fragment {
     private boolean isJobCardFirstClick = true;
     private boolean isStartupCardFirstClick = true;
     private boolean isEducationFilterActive = false;
+    private CoinAccessController coinAccessController;
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
@@ -83,9 +88,6 @@ public class MainFragment extends Fragment {
 
         careerRoadmapsList = new ArrayList<>();
         originalRoadmapsList = new ArrayList<>();
-        adapter = new CareerRoadmapsAdapter(careerRoadmapsList, requireContext());
-        careerRoadmapsRecycler.setLayoutManager(new LinearLayoutManager(requireContext(), LinearLayoutManager.VERTICAL, false));
-        careerRoadmapsRecycler.setAdapter(adapter);
 
         executorService = Executors.newSingleThreadExecutor();
 
@@ -93,13 +95,47 @@ public class MainFragment extends Fragment {
         userEducationCategory = prefs.getString("education_category", "All");
         Log.d(TAG, "User education category: " + userEducationCategory);
 
+        String userId = prefs.getString("userId", "");
+
+        ShareHelper shareHelper = new ShareHelper(requireContext());
+
+        coinAccessController = new CoinAccessController(
+                this,
+                userId,
+                shareHelper
+        );
+
+        adapter = new CareerRoadmapsAdapter(
+                careerRoadmapsList,
+                requireContext(),
+                this,
+                coinAccessController
+        );
+
+        careerRoadmapsRecycler.setLayoutManager(new LinearLayoutManager(requireContext(), LinearLayoutManager.VERTICAL, false));
+        careerRoadmapsRecycler.setAdapter(adapter);
+
         setupCareerRoadmaps();
         setupCareerSlider();
         setupCardClicks();
         setBottomMarginsBasedOnAndroidVersion();
 
+        ActivityResultLauncher<Intent> shareLauncher =
+                registerForActivityResult(
+                        new ActivityResultContracts.StartActivityForResult(),
+                        result -> {
+                            if (coinAccessController != null) {
+                                coinAccessController.onShareCompleted();
+                            }
+                        }
+                );
+
+        shareHelper.setShareLauncher(shareLauncher);
+
         return view;
     }
+
+
 
     @Override
     public void onStop() {

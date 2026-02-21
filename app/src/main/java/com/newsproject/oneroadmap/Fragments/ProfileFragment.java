@@ -108,7 +108,7 @@ public class ProfileFragment extends Fragment {
             boolean mpsc = sharedPreferences.getBoolean("mpsc", false);
             boolean upsc = sharedPreferences.getBoolean("upsc", false);
             editor.putBoolean("study_Government", mpsc);
-            editor.putBoolean("study_Police___Defence", upsc);
+            editor.putBoolean("study_Police_Defence", upsc);
             editor.remove("mpsc").remove("upsc").apply();
         }
     }
@@ -908,7 +908,7 @@ public class ProfileFragment extends Fragment {
         editor.putString("gender", user.getGender() != null ? user.getGender() : "");
         editor.putString("avatar", user.getAvatar() != null ? user.getAvatar() : "girl_profile");
         editor.putBoolean("study_Government", user.isStudyGovernment());
-        editor.putBoolean("study_Police___Defence", user.isStudyPoliceDefence());
+        editor.putBoolean("study_Police_Defence", user.isStudyPoliceDefence());
         editor.putBoolean("study_Banking", user.isStudyBanking());
         editor.putBoolean("study_Self_Improvement", user.isStudySelfImprovement());
         editor.putString("degree", user.getDegree() != null ? user.getDegree() : "Select Degree");

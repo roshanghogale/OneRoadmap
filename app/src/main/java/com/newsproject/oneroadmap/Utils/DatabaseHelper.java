@@ -25,7 +25,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
     // NEW study-material columns
     private static final String COL_STUDY_GOV        = "study_Government";
-    private static final String COL_STUDY_POLICE     = "study_Police___Defence";
+    private static final String COL_STUDY_POLICE     = "study_Police_Defence";
     private static final String COL_STUDY_BANK       = "study_Banking";
     private static final String COL_STUDY_SELF       = "study_Self_Improvement";
 

@@ -26,6 +26,7 @@ import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.newsproject.oneroadmap.Adapters.RecentlyOpenedAdapter;
 import com.newsproject.oneroadmap.Models.JobUpdate;
 import com.newsproject.oneroadmap.R;
+import com.newsproject.oneroadmap.Utils.CoinAccessController;
 import com.newsproject.oneroadmap.Utils.TimeAgoUtil;
 import com.newsproject.oneroadmap.Utils.ShareHelper;
 import com.newsproject.oneroadmap.Utils.DatabaseHelper;
@@ -53,9 +54,8 @@ public class JobUpdateDetails extends Fragment {
     private FloatingActionButton fabShare;
     private ShareHelper shareHelper;
     private ActivityResultLauncher<Intent> shareLauncher;
-    private DatabaseHelper coinDbHelper;
+    private CoinAccessController coinAccessController;
     private String userId;
-    private int displayedCoins = 0;
 
     public JobUpdateDetails() {
         // Required empty public constructor
@@ -101,30 +101,25 @@ public class JobUpdateDetails extends Fragment {
         // Get userId for coin management
         SharedPreferences prefs = requireContext().getSharedPreferences("UserPrefs", Context.MODE_PRIVATE);
         userId = prefs.getString("userId", "");
-        coinDbHelper = new DatabaseHelper(requireContext());
         
         // Initialize ShareHelper
         shareHelper = new ShareHelper(requireContext());
-        
+
+
+        // ✅ NOW create controller (after userId is ready)
+        coinAccessController = new CoinAccessController(
+                this,
+                userId,
+                shareHelper
+        );
+
+
         // Initialize share launcher
         shareLauncher = registerForActivityResult(
                 new ActivityResultContracts.StartActivityForResult(),
                 result -> {
-                    // When user returns from sharing, add coins and show dialog
-                    // If callback is triggered, it means WhatsApp was opened, so add coins
-                    android.util.Log.d(TAG, "Share result received, resultCode: " + result.getResultCode());
-                    if (userId != null && !userId.isEmpty()) {
-                        int current = coinDbHelper.getUserCoins(userId);
-                        android.util.Log.d(TAG, "Current coins before share: " + current);
-                        // Use CoinManager to add coins (handles both local DB and server)
-                        CoinManager coinManager = new CoinManager(requireContext(), userId);
-                        coinManager.addCoinsForShare(newCoins -> {
-                            android.util.Log.d(TAG, "Coins added! New coins: " + newCoins);
-                            // Coins added and saved to server, show dialog
-                            showCoinAnimationDialog(current, newCoins);
-                        });
-                    } else {
-                        android.util.Log.w(TAG, "userId is null or empty, cannot add coins");
+                    if (coinAccessController != null) {
+                        coinAccessController.onShareCompleted();
                     }
                 });
         
@@ -251,12 +246,7 @@ public class JobUpdateDetails extends Fragment {
             container.setVisibility(View.VISIBLE);
             textView.setText(defaultText);
             textView.setOnClickListener(v -> {
-                // Check if it's a PDF URL and open in PDF viewer, otherwise open in WebView
-                if (com.newsproject.oneroadmap.Utils.PdfViewerHelper.isPdfUrl(url)) {
-                    com.newsproject.oneroadmap.Utils.PdfViewerHelper.openPdfInApp(this, url);
-                } else {
-                    com.newsproject.oneroadmap.Utils.WebViewHelper.openUrlInApp(this, url);
-                }
+                coinAccessController.requestPdfAccess(url, null);
             });
         } else {
             container.setVisibility(View.GONE);
@@ -342,30 +332,4 @@ public class JobUpdateDetails extends Fragment {
             recyclerView.setAdapter(null);   // clear any previous adapter
         }
     }
-    
-    private void showCoinAnimationDialog(int start, int end) {
-        View view = LayoutInflater.from(requireContext())
-                .inflate(R.layout.coin_dialog_layout, null);
-        TextView count = view.findViewById(R.id.coin_count);
-        CardView ok = view.findViewById(R.id.btn_close);
-        count.setText("Coins: " + start);
-        AlertDialog dialog = new AlertDialog.Builder(requireContext())
-                .setView(view).create();
-        if (dialog.getWindow() != null)
-            dialog.getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
-        ok.setOnClickListener(v -> dialog.dismiss());
-        dialog.show();
-
-        displayedCoins = start;
-        handler.post(new Runnable() {
-            @Override public void run() {
-                if (displayedCoins < end) {
-                    displayedCoins++;
-                    count.setText("Coins: " + displayedCoins);
-                    handler.postDelayed(this, 20);
-                }
-            }
-        });
-    }
-    
 }

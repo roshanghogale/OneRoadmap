@@ -67,7 +67,9 @@ import com.newsproject.oneroadmap.Models.StudyMaterial;
 import com.newsproject.oneroadmap.R;
 import com.newsproject.oneroadmap.Utils.BuildConfig;
 import com.newsproject.oneroadmap.Models.JobViewModel;
+import com.newsproject.oneroadmap.Utils.CoinAccessController;
 import com.newsproject.oneroadmap.Utils.NewsUtils;
+import com.newsproject.oneroadmap.Utils.ShareHelper;
 import com.newsproject.oneroadmap.database.RecentlyOpenedDatabaseHelper;
 
 import org.imaginativeworld.whynotimagecarousel.ImageCarousel;
@@ -93,6 +95,10 @@ import okhttp3.Request;
 import okhttp3.Response;
 
 public class HomeFragment extends Fragment {
+    private CoinAccessController coinAccessController;
+    private ShareHelper shareHelper;
+    private ActivityResultLauncher<Intent> shareLauncher;
+    private String userId;
     private LinearLayout saveButton;
     private RecyclerView storyRecycler;
     private RecyclerView currentAffairsRecycler;
@@ -106,7 +112,6 @@ public class HomeFragment extends Fragment {
     private StoryAdapter storyAdapter;
     private CurrentAffairsAdapter currentAffairsAdapter;
     private NewsAdapter newsAdapter;
-    private RecentlyOpenedAdapter recentlyOpenedAdapter;
     private StudentUpdateAdapter studentAdapter1, studentAdapter2, studentAdapter3, studentAdapter4, studentAdapter5;
     private StudyMaterialAdapter studyMaterialAdapter;
     private List<Story> storyList = new ArrayList<>();
@@ -128,20 +133,16 @@ public class HomeFragment extends Fragment {
     private ExecutorService executorService;
     private final Handler mainHandler = new Handler(Looper.getMainLooper());
     private static final String TAG = "HomeFragmentRunning";
-    private boolean hasShownStoriesErrorToast = false;
     private boolean hasShownCurrentAffairsErrorToast = false;
     private boolean hasShownJobUpdatesErrorToast = false;
     private boolean hasShownStudentUpdatesErrorToast = false;
-    private boolean hasShownRecentlyOpenedErrorToast = false;
     private boolean hasShownNewsErrorToast = false;
     private boolean hasShownCarouselItemsErrorToast = false;
     private boolean hasShownStudyMaterialsErrorToast = false;
-    private boolean hasShownTop5JobsErrorToast = false;
     private JobViewModel jobViewModel;
     private OkHttpClient client;
     private LinearLayout govLinear, policeLinear, bankLinear;
     private Map<String, News> newsCache = new HashMap<>(); // Cache for news items
-    private String top5PdfUrl = "";
     private RecentlyOpenedDatabaseHelper recentDb;
     private static ActivityResultLauncher<Intent> storyShareLauncher;
     private TextView tagCareerRoadmap, tagResultHallTicket, tagGovtJobs;
@@ -180,6 +181,26 @@ public class HomeFragment extends Fragment {
 
         // Initialize JobViewModel
         jobViewModel = new ViewModelProvider(this).get(JobViewModel.class);
+        SharedPreferences prefs = requireContext().getSharedPreferences("UserPrefs", Context.MODE_PRIVATE);
+        userId = prefs.getString("userId", "");
+
+        shareHelper = new ShareHelper(requireContext());
+
+        coinAccessController = new CoinAccessController(
+                this,
+                userId,
+                shareHelper
+        );
+
+        shareLauncher = registerForActivityResult(
+                new ActivityResultContracts.StartActivityForResult(),
+                result -> {
+                    if (coinAccessController != null) {
+                        coinAccessController.onShareCompleted();
+                    }
+                });
+
+        shareHelper.setShareLauncher(shareLauncher);
     }
 
 // =====================
@@ -442,7 +463,7 @@ public class HomeFragment extends Fragment {
         LinearLayoutManager currentAffairsLayoutManager = new LinearLayoutManager(getContext(), LinearLayoutManager.HORIZONTAL, false);
         currentAffairsRecycler.setLayoutManager(currentAffairsLayoutManager);
         currentAffairsAdapter = new CurrentAffairsAdapter(currentAffairsList, getContext(), pdfUrl -> {
-            openPdfViewer(pdfUrl);
+            coinAccessController.requestPdfAccess(pdfUrl, null);
         });
         currentAffairsRecycler.setAdapter(currentAffairsAdapter);
         Log.d(TAG, "Set up currentAffairsRecycler");
@@ -461,7 +482,7 @@ public class HomeFragment extends Fragment {
 
         recyclerStudyMaterial.setLayoutManager(new LinearLayoutManager(getContext(), LinearLayoutManager.HORIZONTAL, false));
         studyMaterialAdapter = new StudyMaterialAdapter(currentStudyMaterials, getContext(), pdfUrl -> {
-            openPdfViewer(pdfUrl);
+            coinAccessController.requestPdfAccess(pdfUrl, null);
         });
         recyclerStudyMaterial.setAdapter(studyMaterialAdapter);
         Log.d(TAG, "Set up recyclerStudyMaterial");
@@ -911,20 +932,7 @@ public class HomeFragment extends Fragment {
         });
     }
 
-    private void openPdfViewer(String pdfUrl) {
-        PDFViewerFragment pdfFragment = PDFViewerFragment.newInstance(pdfUrl);
-        getParentFragmentManager()
-                .beginTransaction()
-                .setCustomAnimations(
-                        R.anim.slide_in_up,      // enter
-                        R.anim.fade_out,         // exit
-                        R.anim.fade_in,          // popEnter
-                        R.anim.slide_out_down    // popExit
-                )
-                .replace(R.id.fragment_container, pdfFragment)  // your container ID
-                .addToBackStack("pdf_viewer")
-                .commit();
-    }
+
 
     private String buildFullUrl(String filePath) {
         if (filePath == null || filePath.isEmpty()) return null;
@@ -1342,8 +1350,12 @@ public class HomeFragment extends Fragment {
         selectionPdfButton.setOnClickListener(v -> {
             String pdfUrl = item.getSelectionPdfUrl();
             if (pdfUrl != null && !pdfUrl.isEmpty()) {
-                dialog.dismiss(); // Close dialog before opening PDF viewer
-                com.newsproject.oneroadmap.Utils.PdfViewerHelper.openPdfInApp(this, pdfUrl);
+
+                coinAccessController.requestPdfAccess(
+                        pdfUrl,
+                        () -> dialog.dismiss()   // 🔥 Close ONLY after Open pressed
+                );
+
             } else {
                 Toast.makeText(context, "सिलेक्शन PDF उपलब्ध नाही", Toast.LENGTH_SHORT).show();
             }

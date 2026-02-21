@@ -13,8 +13,10 @@ import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.bumptech.glide.Glide;
+import com.newsproject.oneroadmap.Fragments.MainFragment;
 import com.newsproject.oneroadmap.Models.CareerRoadmaps;
 import com.newsproject.oneroadmap.R;
+import com.newsproject.oneroadmap.Utils.CoinAccessController;
 
 import java.util.List;
 
@@ -22,10 +24,20 @@ public class CareerRoadmapsAdapter extends RecyclerView.Adapter<CareerRoadmapsAd
     private final List<CareerRoadmaps> careerRoadmapsList;
     private final Context context;
     private static final String TAG = "CareerRoadmapsAdapter";
+    private final MainFragment fragment;
 
-    public CareerRoadmapsAdapter(List<CareerRoadmaps> careerRoadmapsList, Context context) {
-        this.careerRoadmapsList = careerRoadmapsList;
+    private final CoinAccessController coinAccessController;
+
+    public CareerRoadmapsAdapter(
+            List<CareerRoadmaps> list,
+            Context context,
+            MainFragment fragment,
+            CoinAccessController coinAccessController
+    ) {
+        this.careerRoadmapsList = list;
         this.context = context;
+        this.fragment = fragment;
+        this.coinAccessController = coinAccessController;
     }
 
     @NonNull
@@ -68,7 +80,7 @@ public class CareerRoadmapsAdapter extends RecyclerView.Adapter<CareerRoadmapsAd
                     pdfUrl = pdfUrl.replace("http://", "https://");
                 }
                 Log.d(TAG, "Opening PDF: " + pdfUrl);
-                com.newsproject.oneroadmap.Utils.PdfViewerHelper.openPdfInApp(context, pdfUrl);
+                coinAccessController.requestPdfAccess(pdfUrl, null);
             } else {
                 Log.w(TAG, "PDF URL is null or empty for item: " + item.getTitle());
             }
