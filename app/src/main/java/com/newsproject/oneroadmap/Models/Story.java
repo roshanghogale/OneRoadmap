@@ -1,181 +1,152 @@
 package com.newsproject.oneroadmap.Models;
 
 import com.google.firebase.Timestamp;
+import com.google.gson.JsonElement;
+import com.google.gson.annotations.SerializedName;
+import java.util.ArrayList;
+import java.util.List;
 
 public class Story {
-    private String documentId; // New field for Firestore document ID
+    @SerializedName("id")
+    private String documentId;
+
+    @SerializedName("title")
     private String title;
+
+    @SerializedName("image_url")
     private String imageUrl;
+
+    @SerializedName("upload_time")
     private Timestamp uploadTime;
+
+    @SerializedName("icon_url")
     private String iconUrl;
+
+    @SerializedName("is_main_story")
     private boolean isMainStory;
+
+    @SerializedName("relative_time")
     private String relativeTime;
+
     private boolean viewed;
-    private String type; // e.g., post, promotion
-    private String postDocumentId; // backend job update id
-    private String webUrl; // for promotion/external links
-    private String videoUrl; // video URL for video stories
-    private String bannerUrl; // banner URL (alternative to imageUrl)
-    private String mediaType; // "video" or "image"
-    private long createdAtTimestamp; // timestamp for sorting
+
+    @SerializedName("type")
+    private String type;
+
+    @SerializedName("post_document_id")
+    private String postDocumentId;
+
+    @SerializedName("web_url")
+    private String webUrl;
+
+    @SerializedName("video_url")
+    private String videoUrl;
+
+    @SerializedName("banner_url")
+    private String bannerUrl;
+
+    @SerializedName("media_type")
+    private String mediaType;
+
+    @SerializedName("created_at_timestamp")
+    private long createdAtTimestamp;
+
+    @SerializedName("other_type")
+    private String otherType;
+
+    @SerializedName("education_categories")
+    private JsonElement educationCategories;
+
+    @SerializedName("bachelor_degrees")
+    private JsonElement bachelorDegrees;
+
+    @SerializedName("masters_degrees")
+    private JsonElement mastersDegrees;
+
+    @SerializedName("district")
+    private JsonElement district;
+
+    @SerializedName("taluka")
+    private JsonElement taluka;
+
+    @SerializedName("age_groups")
+    private JsonElement ageGroups;
+
+    @SerializedName("bharty_types")
+    private JsonElement bhartyTypes;
 
     public Story() {}
 
-    public Story(String documentId, String title, Timestamp uploadTime, String imageUrl, String iconUrl, boolean isMainStory, boolean viewed) {
-        this.documentId = documentId;
-        this.title = title;
-        this.uploadTime = uploadTime;
-        this.imageUrl = imageUrl;
-        this.iconUrl = iconUrl;
-        this.isMainStory = isMainStory;
-        this.viewed = viewed;
-        this.relativeTime = calculateRelativeTime(uploadTime);
-    }
+    /* ---------------- SAFE GETTERS ---------------- */
 
-    public String getDocumentId() {
-        return documentId;
-    }
+    public List<String> getEducationCategoriesSafe() { return jsonToList(educationCategories); }
+    public List<String> getBachelorDegreesSafe() { return jsonToList(bachelorDegrees); }
+    public List<String> getMastersDegreesSafe() { return jsonToList(mastersDegrees); }
+    public List<String> getDistrictSafe() { return jsonToList(district); }
+    public List<String> getTalukaSafe() { return jsonToList(taluka); }
+    public List<String> getAgeGroupsSafe() { return jsonToList(ageGroups); }
+    public List<String> getBhartyTypesSafe() { return jsonToList(bhartyTypes); }
 
-    public void setDocumentId(String documentId) {
-        this.documentId = documentId;
-    }
-
-    public String getImageUrl() {
-        return imageUrl;
-    }
-
-    public void setImageUrl(String imageUrl) {
-        this.imageUrl = imageUrl;
-    }
-
-    public boolean isViewed() {
-        return viewed;
-    }
-
-    public void setViewed(boolean viewed) {
-        this.viewed = viewed;
-    }
-
-    private String calculateRelativeTime(Timestamp timestamp) {
-        if (timestamp == null) {
-            return "";
+    private List<String> jsonToList(JsonElement element) {
+        List<String> list = new ArrayList<>();
+        if (element == null || element.isJsonNull()) return list;
+        if (element.isJsonArray()) {
+            element.getAsJsonArray().forEach(e -> {
+                if (!e.isJsonNull()) list.add(e.getAsString());
+            });
+        } else if (element.isJsonPrimitive()) {
+            list.add(element.getAsString());
         }
-        long now = System.currentTimeMillis();
-        long timeMillis = timestamp.toDate().getTime();
-        long diffMillis = now - timeMillis;
-
-        long seconds = diffMillis / 1000;
-        long minutes = seconds / 60;
-        long hours = minutes / 60;
-        long days = hours / 24;
-
-        if (seconds < 60) {
-            return seconds + "s ago";
-        } else if (minutes < 60) {
-            return minutes + "m ago";
-        } else if (hours < 24) {
-            return hours + "h ago";
-        } else if (days < 7) {
-            return days + "d ago";
-        } else {
-            return days / 7 + "w ago";
-        }
+        return list;
     }
 
-    public String getTitle() {
-        return title;
-    }
+    /* ---------------- NORMAL GETTERS & SETTERS ---------------- */
 
-    public void setTitle(String title) {
-        this.title = title;
-    }
+    public String getDocumentId() { return documentId; }
+    public void setDocumentId(String documentId) { this.documentId = documentId; }
 
-    public Timestamp getUploadTime() {
-        return uploadTime;
-    }
+    public String getImageUrl() { return imageUrl; }
+    public void setImageUrl(String imageUrl) { this.imageUrl = imageUrl; }
 
-    public void setUploadTime(Timestamp uploadTime) {
-        this.uploadTime = uploadTime;
-        this.relativeTime = calculateRelativeTime(uploadTime);
-    }
+    public boolean isViewed() { return viewed; }
+    public void setViewed(boolean viewed) { this.viewed = viewed; }
 
-    public String getIconUrl() {
-        return iconUrl;
-    }
+    public String getTitle() { return title; }
+    public void setTitle(String title) { this.title = title; }
 
-    public void setIconUrl(String iconUrl) {
-        this.iconUrl = iconUrl;
-    }
+    public Timestamp getUploadTime() { return uploadTime; }
+    public void setUploadTime(Timestamp uploadTime) { this.uploadTime = uploadTime; }
 
-    public boolean isMainStory() {
-        return isMainStory;
-    }
+    public String getIconUrl() { return iconUrl; }
+    public void setIconUrl(String iconUrl) { this.iconUrl = iconUrl; }
 
-    public void setMainStory(boolean mainStory) {
-        isMainStory = mainStory;
-    }
+    public boolean isMainStory() { return isMainStory; }
+    public void setMainStory(boolean mainStory) { isMainStory = mainStory; }
 
-    public String getRelativeTime() {
-        return relativeTime;
-    }
+    public String getRelativeTime() { return relativeTime; }
+    public void setRelativeTime(String relativeTime) { this.relativeTime = relativeTime; }
 
-    public void setRelativeTime(String relativeTime) {
-        this.relativeTime = relativeTime;
-    }
+    public String getType() { return type; }
+    public void setType(String type) { this.type = type; }
 
-    public String getType() {
-        return type;
-    }
+    public String getPostDocumentId() { return postDocumentId; }
+    public void setPostDocumentId(String postDocumentId) { this.postDocumentId = postDocumentId; }
 
-    public void setType(String type) {
-        this.type = type;
-    }
+    public String getWebUrl() { return webUrl; }
+    public void setWebUrl(String webUrl) { this.webUrl = webUrl; }
 
-    public String getPostDocumentId() {
-        return postDocumentId;
-    }
+    public String getVideoUrl() { return videoUrl; }
+    public void setVideoUrl(String videoUrl) { this.videoUrl = videoUrl; }
 
-    public void setPostDocumentId(String postDocumentId) {
-        this.postDocumentId = postDocumentId;
-    }
+    public String getBannerUrl() { return bannerUrl; }
+    public void setBannerUrl(String bannerUrl) { this.bannerUrl = bannerUrl; }
 
-    public String getWebUrl() {
-        return webUrl;
-    }
+    public String getMediaType() { return mediaType; }
+    public void setMediaType(String mediaType) { this.mediaType = mediaType; }
 
-    public void setWebUrl(String webUrl) {
-        this.webUrl = webUrl;
-    }
+    public long getCreatedAtTimestamp() { return createdAtTimestamp; }
+    public void setCreatedAtTimestamp(long createdAtTimestamp) { this.createdAtTimestamp = createdAtTimestamp; }
 
-    public String getVideoUrl() {
-        return videoUrl;
-    }
-
-    public void setVideoUrl(String videoUrl) {
-        this.videoUrl = videoUrl;
-    }
-
-    public String getBannerUrl() {
-        return bannerUrl;
-    }
-
-    public void setBannerUrl(String bannerUrl) {
-        this.bannerUrl = bannerUrl;
-    }
-
-    public String getMediaType() {
-        return mediaType;
-    }
-
-    public void setMediaType(String mediaType) {
-        this.mediaType = mediaType;
-    }
-
-    public long getCreatedAtTimestamp() {
-        return createdAtTimestamp;
-    }
-
-    public void setCreatedAtTimestamp(long createdAtTimestamp) {
-        this.createdAtTimestamp = createdAtTimestamp;
-    }
+    public String getOtherType() { return otherType; }
+    public void setOtherType(String otherType) { this.otherType = otherType; }
 }

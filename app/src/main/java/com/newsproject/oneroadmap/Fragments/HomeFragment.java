@@ -681,41 +681,18 @@ public class HomeFragment extends Fragment {
         Log.d(TAG, "loadStories started (API)");
 
         if (!isNetworkAvailable()) {
-            Log.w(TAG, "No network available, loading dummy stories");
-            List<Story> dummyStories = new ArrayList<>();
-            dummyStories.add(new Story(
-                    "dummy1",
-                    "Dummy Story",
-                    null,
-                    "https://example.com/dummy.jpg",
-                    "https://example.com/icon.jpg",
-                    false,
-                    false
-            ));
-
-            mainHandler.post(() -> {
-                storyList.clear();
-                storyList.addAll(dummyStories);
-                storyAdapter.notifyDataSetChanged();
-
-                for (Story s : storyList) {
-                    Log.d("STORY_FINAL_DUMMY",
-                            "id=" + s.getDocumentId()
-                                    + ", type=" + s.getType()
-                                    + ", webUrl=" + s.getWebUrl()
-                                    + ", isMain=" + s.isMainStory()
-                    );
-                }
-            });
             return;
         }
 
         SharedPreferences prefs = requireContext().getSharedPreferences("UserPrefs", Context.MODE_PRIVATE);
-        String userEducation = prefs.getString("education", "");
         String userDegree = prefs.getString("degree", "");
         String userPostGrad = prefs.getString("postGraduation", "");
-        String userDistrict = prefs.getString("district", "");
         String userTaluka = prefs.getString("taluka", "");
+        String userAgeGroup = prefs.getString("ageGroup", "");
+        
+        boolean studyGov = prefs.getBoolean("study_Government", false);
+        boolean studyPolice = prefs.getBoolean("study_Police_Defence", false);
+        boolean studyBank = prefs.getBoolean("study_Banking", false);
 
         String url = BuildConfig.BASE_URL + BuildConfig.STORIES;
         Request request = new Request.Builder().url(url).build();
@@ -730,10 +707,7 @@ public class HomeFragment extends Fragment {
             @RequiresApi(api = Build.VERSION_CODES.O)
             @Override
             public void onResponse(Call call, Response response) throws IOException {
-                if (!response.isSuccessful()) {
-                    Log.e(TAG, "Stories API failed: " + response.code());
-                    return;
-                }
+                if (!response.isSuccessful()) return;
 
                 String body = response.body().string();
                 JsonObject root = new Gson().fromJson(body, JsonObject.class);
@@ -746,109 +720,75 @@ public class HomeFragment extends Fragment {
 
                     for (int i = 0; i < arr.size(); i++) {
                         JsonObject o = arr.get(i).getAsJsonObject();
+                        Story story = new Gson().fromJson(o, Story.class);
 
-                        String id = getString(o, "id");
-                        String title = getString(o, "title");
-                        String iconUrlRaw = getString(o, "icon_url");
-                        String bannerUrlRaw = getString(o, "banner_url");
-                        String videoUrlRaw = getString(o, "video_url");
-                        String mediaType = getString(o, "media_type", "image");
-                        String type = getString(o, "type");
-                        String postDocumentId = getString(o, "post_document_id");
-                        String webUrl = getString(o, "web_url");
-                        String createdAt = getString(o, "created_at");
-                        boolean isMain = o.has("is_main_story") && o.get("is_main_story").getAsBoolean();
+                        // Build full URLs
+                        story.setIconUrl(buildFullUrl(story.getIconUrl()));
+                        story.setBannerUrl(buildFullUrl(story.getBannerUrl()));
+                        story.setVideoUrl(buildFullUrl(story.getVideoUrl()));
+                        story.setImageUrl("video".equalsIgnoreCase(story.getMediaType()) ? story.getVideoUrl() : story.getBannerUrl());
 
-                        // 🔴 LOG RAW API DATA
-                        Log.d("STORY_RAW_API",
-                                "id=" + id
-                                        + ", type=" + type
-                                        + ", web_url=" + webUrl
-                                        + ", banner_url=" + bannerUrlRaw
-                                        + ", video_url=" + videoUrlRaw
-                        );
+                        if (story.getIconUrl() == null || story.getImageUrl() == null) continue;
 
-                        String iconUrl = buildFullUrl(iconUrlRaw);
-                        String bannerUrl = buildFullUrl(bannerUrlRaw);
-                        String videoUrl = buildFullUrl(videoUrlRaw);
+                        boolean viewed = story.getDocumentId() != null && storyPrefs.getBoolean("viewed_" + story.getDocumentId(), false);
+                        story.setViewed(viewed);
 
-                        // 🟡 LOG AFTER URL BUILDING
-                        Log.d("STORY_URL_BUILT",
-                                "id=" + id
-                                        + ", icon=" + iconUrl
-                                        + ", banner=" + bannerUrl
-                                        + ", video=" + videoUrl
-                        );
+                        // Filtering Logic
+                        boolean shouldShow = true;
+                        if (story.isMainStory()) {
+                            boolean hasSpecificCriteria = (story.getOtherType() != null && !story.getOtherType().isEmpty()) ||
+                                    !story.getBachelorDegreesSafe().isEmpty() ||
+                                    !story.getMastersDegreesSafe().isEmpty() ||
+                                    !story.getTalukaSafe().isEmpty() ||
+                                    !story.getAgeGroupsSafe().isEmpty() ||
+                                    !story.getBhartyTypesSafe().isEmpty();
 
-                        if (iconUrl == null || (bannerUrl == null && videoUrl == null)) continue;
+                            if (hasSpecificCriteria) {
+                                shouldShow = false;
 
-                        boolean viewed = id != null && storyPrefs.getBoolean("viewed_" + id, false);
-                        String imageUrlForStory =
-                                "video".equalsIgnoreCase(mediaType) && videoUrl != null
-                                        ? videoUrl
-                                        : bannerUrl;
+                                // 1. Degree Match
+                                List<String> bDegrees = story.getBachelorDegreesSafe();
+                                List<String> mDegrees = story.getMastersDegreesSafe();
+                                if (!userDegree.isEmpty() && bDegrees.contains(userDegree)) shouldShow = true;
+                                if (!userPostGrad.isEmpty() && mDegrees.contains(userPostGrad)) shouldShow = true;
 
-                        Story story = new Story(id, title, null, imageUrlForStory, iconUrl, isMain, viewed);
-                        story.setType(type);
-                        story.setPostDocumentId(postDocumentId);
-                        story.setWebUrl(webUrl);
-                        story.setBannerUrl(bannerUrl);
-                        story.setVideoUrl(videoUrl);
-                        story.setMediaType(mediaType);
+                                // 2. Taluka Match
+                                if (!shouldShow && !userTaluka.isEmpty() && story.getTalukaSafe().contains(userTaluka)) shouldShow = true;
 
-                        if (createdAt != null) {
-                            story.setRelativeTime(computeRelativeFromString(createdAt));
+                                // 3. Age Group Match
+                                if (!shouldShow && !userAgeGroup.isEmpty() && story.getAgeGroupsSafe().contains(userAgeGroup)) shouldShow = true;
+
+                                // 4. Bharty Types Match
+                                if (!shouldShow) {
+                                    List<String> bTypes = story.getBhartyTypesSafe();
+                                    for (String type : bTypes) {
+                                        if (type.equalsIgnoreCase("Government") && studyGov) { shouldShow = true; break; }
+                                        if (type.equalsIgnoreCase("Police & Defence") && studyPolice) { shouldShow = true; break; }
+                                        if (type.equalsIgnoreCase("Banking") && studyBank) { shouldShow = true; break; }
+                                    }
+                                }
+                            }
+                        } else {
+                            // If isMainStory is false, it's for all
+                            shouldShow = true;
                         }
 
-                        // 🟢 LOG FINAL STORY OBJECT
-                        Log.d("STORY_FINAL_OBJ",
-                                "id=" + story.getDocumentId()
-                                        + ", type=" + story.getType()
-                                        + ", webUrl=" + story.getWebUrl()
-                                        + ", image=" + story.getImageUrl()
-                        );
-
-                        boolean eduOk = true;
-                        boolean districtOk = true;
-                        boolean talukaOk = true;
-
-                        if (eduOk && districtOk && talukaOk) {
-                            if (isMain) mains.add(story);
+                        if (shouldShow) {
+                            if (story.isMainStory()) mains.add(story);
                             else others.add(story);
                         }
                     }
                 }
-
-                Collections.sort(mains, (a, b) -> Long.compare(b.getCreatedAtTimestamp(), a.getCreatedAtTimestamp()));
-                Collections.sort(others, (a, b) -> Long.compare(b.getCreatedAtTimestamp(), a.getCreatedAtTimestamp()));
 
                 mainHandler.post(() -> {
                     storyList.clear();
                     storyList.addAll(mains);
                     storyList.addAll(others);
                     storyAdapter.notifyDataSetChanged();
-
-                    Log.d(TAG,
-                            "Stories loaded → total="
-                                    + storyList.size()
-                                    + ", mains=" + mains.size()
-                                    + ", others=" + others.size()
-                    );
                 });
             }
         });
     }
-
-    /** Helper */
-    private String getString(JsonObject o, String key) {
-        return o.has(key) && !o.get(key).isJsonNull() ? o.get(key).getAsString() : null;
-    }
-
-    private String getString(JsonObject o, String key, String def) {
-        String v = getString(o, key);
-        return v != null ? v : def;
-    }
-
 
     private void loadCurrentAffairsData() {
         Log.d(TAG, "loadCurrentAffairsData started (API)");
@@ -1686,44 +1626,23 @@ public class HomeFragment extends Fragment {
         Log.d(TAG, "loadCarouselItems started (Home API)");
 
         if (carousel == null) {
-            Log.e(TAG, "ImageCarousel is null, check layout or initialization");
-            mainHandler.post(() -> {
-                if (!hasShownCarouselItemsErrorToast) {
-                    Toast.makeText(getContext(), "Carousel not initialized", Toast.LENGTH_SHORT).show();
-                    hasShownCarouselItemsErrorToast = true;
-                }
-            });
             return;
         }
 
         if (!isNetworkAvailable()) {
-            Log.w(TAG, "No network available, loading dummy carousel items");
-            mainHandler.post(() -> {
-                if (!hasShownCarouselItemsErrorToast) {
-                    Toast.makeText(getContext(), "No network, cannot load carousel items", Toast.LENGTH_SHORT).show();
-                    hasShownCarouselItemsErrorToast = true;
-                }
-                List<CarouselItem> dummyCarouselItems = new ArrayList<>();
-                dummyCarouselItems.add(new CarouselItem("https://picsum.photos/200/300", "Test Image 1"));
-                dummyCarouselItems.add(new CarouselItem("https://picsum.photos/200/301", "Test Image 2"));
-                dummyCarouselItems.add(new CarouselItem("https://picsum.photos/200/302", "Test Image 3"));
-                final List<CarouselItem> finalDummyCarouselItems = dummyCarouselItems;
-                carouselItemsList.clear();
-                carouselItemsList.addAll(finalDummyCarouselItems);
-                carousel.addData(carouselItemsList);
-                carousel.invalidate();
-            });
             return;
         }
 
         final Map<String, JobUpdate> jobUpdateCache = new HashMap<>();
-        SharedPreferences sharedPreferences = requireContext().getSharedPreferences("UserPrefs", Context.MODE_PRIVATE);
-        String userEducation = sharedPreferences.getString("education", "");
-        String userDegree = sharedPreferences.getString("degree", "");
-        String userTwelfth = sharedPreferences.getString("twelfth", "");
-        String userPostGraduation = sharedPreferences.getString("postGraduation", "");
-        String userDistrict = sharedPreferences.getString("district", "");
-        String userTaluka = sharedPreferences.getString("taluka", "");
+        SharedPreferences prefs = requireContext().getSharedPreferences("UserPrefs", Context.MODE_PRIVATE);
+        String userDegree = prefs.getString("degree", "");
+        String userPostGrad = prefs.getString("postGraduation", "");
+        String userTaluka = prefs.getString("taluka", "");
+        String userAgeGroup = prefs.getString("ageGroup", "");
+        
+        boolean studyGov = prefs.getBoolean("study_Government", false);
+        boolean studyPolice = prefs.getBoolean("study_Police_Defence", false);
+        boolean studyBank = prefs.getBoolean("study_Banking", false);
 
         String url = BuildConfig.BASE_URL + BuildConfig.SLIDERS_HOME;
         Request request = new Request.Builder().url(url).build();
@@ -1731,31 +1650,16 @@ public class HomeFragment extends Fragment {
             @Override
             public void onFailure(Call call, IOException e) {
                 Log.e(TAG, "Failed to fetch home carousel items: " + e.getMessage());
-                mainHandler.post(() -> {
-                    if (!hasShownCarouselItemsErrorToast) {
-                        Toast.makeText(getContext(), "Failed to load home carousel items", Toast.LENGTH_SHORT).show();
-                        hasShownCarouselItemsErrorToast = true;
-                    }
-                });
             }
 
             @Override
             public void onResponse(Call call, Response response) throws IOException {
-                if (!response.isSuccessful()) {
-                    Log.e(TAG, "Unexpected response: " + response.code());
-                    mainHandler.post(() -> {
-                        if (!hasShownCarouselItemsErrorToast) {
-                            Toast.makeText(getContext(), "Failed to load home carousel items: " + response.code(), Toast.LENGTH_SHORT).show();
-                            hasShownCarouselItemsErrorToast = true;
-                        }
-                    });
-                    return;
-                }
+                if (!response.isSuccessful()) return;
 
                 String body = response.body().string();
                 try {
                     JsonObject root = new Gson().fromJson(body, JsonObject.class);
-                    List<Slider> sliders = new ArrayList<>();
+                    List<Slider> finalSliders = new ArrayList<>();
                     if (root != null && root.has("sliders")) {
                         JsonArray arr = root.getAsJsonArray("sliders");
                         for (int i = 0; i < arr.size(); i++) {
@@ -1763,39 +1667,48 @@ public class HomeFragment extends Fragment {
                             Slider slider = new Gson().fromJson(o, Slider.class);
                             if (slider.getImageUrl() == null || slider.getImageUrl().isEmpty()) continue;
 
-                            boolean isUniversal = false, educationMatch = false, locationMatch = false;
-                            List<String> sliderEducationCategories = slider.getEducationCategoriesSafe();
-                            List<String> sliderBachelorDegrees = slider.getBachelorDegreesSafe();
-                            List<String> sliderMastersDegrees = slider.getMastersDegreesSafe();
-                            String sliderDistrict = slider.getDistrictSafe();
-                            String sliderTaluka = slider.getTalukaSafe();
+                            boolean shouldShow = true;
+                            if (slider.isSpecific()) {
+                                boolean hasSpecificCriteria = (slider.getOtherType() != null && !slider.getOtherType().isEmpty()) ||
+                                        !slider.getBachelorDegreesSafe().isEmpty() ||
+                                        !slider.getMastersDegreesSafe().isEmpty() ||
+                                        !slider.getTalukaSafe().isEmpty() ||
+                                        !slider.getAgeGroupsSafe().isEmpty() ||
+                                        !slider.getBhartyTypesSafe().isEmpty();
 
+                                if (hasSpecificCriteria) {
+                                    shouldShow = false;
 
-                            if (!slider.isSpecific()) {
-                                isUniversal = true;
+                                    // 1. Degree Match
+                                    List<String> bDegrees = slider.getBachelorDegreesSafe();
+                                    List<String> mDegrees = slider.getMastersDegreesSafe();
+                                    if (!userDegree.isEmpty() && bDegrees.contains(userDegree)) shouldShow = true;
+                                    if (!userPostGrad.isEmpty() && mDegrees.contains(userPostGrad)) shouldShow = true;
+
+                                    // 2. Taluka Match
+                                    if (!shouldShow && !userTaluka.isEmpty() && slider.getTalukaSafe().contains(userTaluka)) shouldShow = true;
+
+                                    // 3. Age Group Match
+                                    if (!shouldShow && !userAgeGroup.isEmpty() && slider.getAgeGroupsSafe().contains(userAgeGroup)) shouldShow = true;
+
+                                    // 4. Bharty Types Match
+                                    if (!shouldShow) {
+                                        List<String> bTypes = slider.getBhartyTypesSafe();
+                                        for (String type : bTypes) {
+                                            if (type.equalsIgnoreCase("Government") && studyGov) { shouldShow = true; break; }
+                                            if (type.equalsIgnoreCase("Police & Defence") && studyPolice) { shouldShow = true; break; }
+                                            if (type.equalsIgnoreCase("Banking") && studyBank) { shouldShow = true; break; }
+                                        }
+                                    }
+                                }
                             } else {
-                                if (sliderEducationCategories != null &&
-                                        (sliderEducationCategories.contains("All") || sliderEducationCategories.contains("10th_12th"))) {
-                                    isUniversal = true;
-                                } else {
-                                    if (!userEducation.isEmpty() && sliderEducationCategories != null &&
-                                            sliderEducationCategories.contains(userEducation)) educationMatch = true;
-                                    if (!userDegree.isEmpty() && sliderBachelorDegrees != null &&
-                                            sliderBachelorDegrees.contains(userDegree)) educationMatch = true;
-                                    if (!userPostGraduation.isEmpty() && sliderMastersDegrees != null &&
-                                            sliderMastersDegrees.contains(userPostGraduation)) educationMatch = true;
-                                    if (!userTwelfth.isEmpty() && sliderEducationCategories != null &&
-                                            sliderEducationCategories.contains("10th_12th")) educationMatch = true;
-                                }
-
-                                if (slider.isSpecific() && !userDistrict.isEmpty() && userDistrict.equals(sliderDistrict) &&
-                                        !userTaluka.isEmpty() && userTaluka.equals(sliderTaluka)) {
-                                    locationMatch = true;
-                                }
+                                // If isSpecific is false, it's for all
+                                shouldShow = true;
                             }
 
-                            if (isUniversal || educationMatch || locationMatch) {
-                                sliders.add(slider);
+                            if (shouldShow) {
+                                slider.setImageUrl(buildFullUrl(slider.getImageUrl()));
+                                finalSliders.add(slider);
                                 if ("post".equalsIgnoreCase(slider.getType())) {
                                     String id = slider.getPostDocumentId();
                                     if (id != null && !id.trim().isEmpty()) {
@@ -1807,17 +1720,13 @@ public class HomeFragment extends Fragment {
                     }
 
                     List<CarouselItem> carouselItems = new ArrayList<>();
-                    for (Slider slider : sliders) {
-                        String imageUrl = slider.getImageUrl().replace("http://", "https://");
-                        carouselItems.add(new CarouselItem(imageUrl, slider.getTitle()));
+                    for (Slider slider : finalSliders) {
+                        carouselItems.add(new CarouselItem(slider.getImageUrl(), slider.getTitle()));
                     }
 
-                    final List<CarouselItem> finalCarouselItems = carouselItems;
-                    final List<Slider> finalSliders = sliders;
-                    final Map<String, JobUpdate> finalJobUpdateCache = jobUpdateCache;
                     mainHandler.post(() -> {
                         carouselItemsList.clear();
-                        carouselItemsList.addAll(finalCarouselItems);
+                        carouselItemsList.addAll(carouselItems);
                         carousel.addData(carouselItemsList);
                         carousel.invalidate();
 
@@ -1851,27 +1760,25 @@ public class HomeFragment extends Fragment {
                                 progressDialog.setCancelable(false);
                                 progressDialog.show();
 
-                                final String finalId = id;
-                                final Slider finalSelectedSlider = selectedSlider;
-                                if ("post".equalsIgnoreCase(finalSelectedSlider.getType())) {
-                                    JobUpdate job = finalJobUpdateCache.get(finalId);
+                                if ("post".equalsIgnoreCase(selectedSlider.getType())) {
+                                    JobUpdate job = jobUpdateCache.get(id);
                                     if (job != null) {
                                         JobViewModel.navigateToJobDetails(job, getContext(), progressDialog);
                                     } else {
-                                        JobViewModel.fetchJobUpdate(finalId, finalJobUpdateCache, getContext(), () -> {
-                                            JobUpdate fetchedJob = finalJobUpdateCache.get(finalId);
+                                        JobViewModel.fetchJobUpdate(id, jobUpdateCache, getContext(), () -> {
+                                            JobUpdate fetchedJob = jobUpdateCache.get(id);
                                             if (fetchedJob != null) {
                                                 JobViewModel.navigateToJobDetails(fetchedJob, getContext(), progressDialog);
                                             }
                                         });
                                     }
-                                } else if ("news".equalsIgnoreCase(finalSelectedSlider.getType())) {
-                                    News news = newsCache.get(finalId);
+                                } else if ("news".equalsIgnoreCase(selectedSlider.getType())) {
+                                    News news = newsCache.get(id);
                                     if (news != null) {
                                         NewsUtils.showNewsDialog(news, getContext(), progressDialog);
                                     } else {
-                                        NewsUtils.fetchNews(finalId, newsCache, getContext(), () -> {
-                                            News fetchedNews = newsCache.get(finalId);
+                                        NewsUtils.fetchNews(id, newsCache, getContext(), () -> {
+                                            News fetchedNews = newsCache.get(id);
                                             if (fetchedNews != null) {
                                                 NewsUtils.showNewsDialog(fetchedNews, getContext(), progressDialog);
                                             }
@@ -1883,12 +1790,6 @@ public class HomeFragment extends Fragment {
                     });
                 } catch (Exception e) {
                     Log.e(TAG, "Failed to parse home carousel items: " + e.getMessage(), e);
-                    mainHandler.post(() -> {
-                        if (!hasShownCarouselItemsErrorToast) {
-                            Toast.makeText(getContext(), "Failed to parse home carousel items", Toast.LENGTH_SHORT).show();
-                            hasShownCarouselItemsErrorToast = true;
-                        }
-                    });
                 }
             }
         });

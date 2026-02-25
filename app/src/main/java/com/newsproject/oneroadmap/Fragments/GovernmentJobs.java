@@ -297,6 +297,11 @@ public class GovernmentJobs extends Fragment {
                 String userPostGraduation = sharedPreferences.getString("postGraduation", "");
                 String userDistrict = sharedPreferences.getString("district", "");
                 String userTaluka = sharedPreferences.getString("taluka", "");
+                String userAgeGroup = sharedPreferences.getString("ageGroup", "");
+
+                boolean studyGov = sharedPreferences.getBoolean("study_Government", false);
+                boolean studyPolice = sharedPreferences.getBoolean("study_Police_Defence", false);
+                boolean studyBank = sharedPreferences.getBoolean("study_Banking", false);
 
                 String url = BuildConfig.BASE_URL + BuildConfig.SLIDERS_GOVT;
                 Request request = new Request.Builder().url(url).build();
@@ -353,38 +358,49 @@ public class GovernmentJobs extends Fragment {
                                         continue;
                                     }
 
-                                    boolean isUniversal = false, educationMatch = false, locationMatch = false;
-                                    List<String> sliderEducationCategories = slider.getEducationCategoriesSafe();
-                                    List<String> sliderBachelorDegrees = slider.getBachelorDegreesSafe();
-                                    List<String> sliderMastersDegrees = slider.getMastersDegreesSafe();
-                                    String sliderDistrict = slider.getDistrictSafe();
-                                    String sliderTaluka = slider.getTalukaSafe();
+                                    boolean shouldShow = true;
+                                    if (slider.isSpecific()) {
+                                        boolean hasSpecificCriteria = (slider.getOtherType() != null && !slider.getOtherType().isEmpty()) ||
+                                                !slider.getEducationCategoriesSafe().isEmpty() ||
+                                                !slider.getBachelorDegreesSafe().isEmpty() ||
+                                                !slider.getMastersDegreesSafe().isEmpty() ||
+                                                !slider.getTalukaSafe().isEmpty() ||
+                                                !slider.getAgeGroupsSafe().isEmpty() ||
+                                                !slider.getBhartyTypesSafe().isEmpty();
 
+                                        if (hasSpecificCriteria) {
+                                            shouldShow = false;
 
-                                    if (!slider.isSpecific()) {
-                                        isUniversal = true;
-                                    } else {
-                                        if (sliderEducationCategories != null &&
-                                                (sliderEducationCategories.contains("All") || sliderEducationCategories.contains("10th_12th"))) {
-                                            isUniversal = true;
-                                        } else {
-                                            if (!userEducation.isEmpty() && sliderEducationCategories != null &&
-                                                    sliderEducationCategories.contains(userEducation)) educationMatch = true;
-                                            if (!userDegree.isEmpty() && sliderBachelorDegrees != null &&
-                                                    sliderBachelorDegrees.contains(userDegree)) educationMatch = true;
-                                            if (!userPostGraduation.isEmpty() && sliderMastersDegrees != null &&
-                                                    sliderMastersDegrees.contains(userPostGraduation)) educationMatch = true;
-                                            if (!userTwelfth.isEmpty() && sliderEducationCategories != null &&
-                                                    sliderEducationCategories.contains("10th_12th")) educationMatch = true;
-                                        }
+                                            // 1. Degree/Education Match
+                                            List<String> bDegrees = slider.getBachelorDegreesSafe();
+                                            List<String> mDegrees = slider.getMastersDegreesSafe();
+                                            List<String> eCats = slider.getEducationCategoriesSafe();
+                                            
+                                            if (!userDegree.isEmpty() && bDegrees.contains(userDegree)) shouldShow = true;
+                                            if (!userPostGraduation.isEmpty() && mDegrees.contains(userPostGraduation)) shouldShow = true;
+                                            if (!userEducation.isEmpty() && eCats.contains(userEducation)) shouldShow = true;
+                                            if (!userTwelfth.isEmpty() && eCats.contains("10th_12th")) shouldShow = true;
 
-                                        if (slider.isSpecific() && !userDistrict.isEmpty() && userDistrict.equals(sliderDistrict) &&
-                                                !userTaluka.isEmpty() && userTaluka.equals(sliderTaluka)) {
-                                            locationMatch = true;
+                                            // 2. Taluka/District Match
+                                            if (!shouldShow && !userTaluka.isEmpty() && slider.getTalukaSafe().contains(userTaluka)) shouldShow = true;
+                                            if (!shouldShow && !userDistrict.isEmpty() && slider.getDistrictSafe().contains(userDistrict)) shouldShow = true;
+
+                                            // 3. Age Group Match
+                                            if (!shouldShow && !userAgeGroup.isEmpty() && slider.getAgeGroupsSafe().contains(userAgeGroup)) shouldShow = true;
+
+                                            // 4. Bharty Types Match
+                                            if (!shouldShow) {
+                                                List<String> bTypes = slider.getBhartyTypesSafe();
+                                                for (String type : bTypes) {
+                                                    if (type.equalsIgnoreCase("Government") && studyGov) { shouldShow = true; break; }
+                                                    if (type.equalsIgnoreCase("Police & Defence") && studyPolice) { shouldShow = true; break; }
+                                                    if (type.equalsIgnoreCase("Banking") && studyBank) { shouldShow = true; break; }
+                                                }
+                                            }
                                         }
                                     }
 
-                                    if (isUniversal || educationMatch || locationMatch) {
+                                    if (shouldShow) {
                                         sliders.add(slider);
                                         if ("post".equalsIgnoreCase(slider.getType())) {
                                             String id = slider.getPostDocumentId();

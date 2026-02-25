@@ -31,7 +31,6 @@ public class Slider {
     @SerializedName("other_type")
     private String otherType;
 
-    // ⚠️ Changed to JsonElement
     @SerializedName("education_categories")
     private JsonElement educationCategories;
 
@@ -41,12 +40,17 @@ public class Slider {
     @SerializedName("masters_degrees")
     private JsonElement mastersDegrees;
 
-    // ⚠️ Changed to JsonElement (API sends [])
     @SerializedName("district")
     private JsonElement district;
 
     @SerializedName("taluka")
     private JsonElement taluka;
+
+    @SerializedName("age_groups")
+    private JsonElement ageGroups;
+
+    @SerializedName("bharty_types")
+    private JsonElement bhartyTypes;
 
     @SerializedName("image_url")
     private String imageUrl;
@@ -71,12 +75,20 @@ public class Slider {
         return jsonToList(mastersDegrees);
     }
 
-    public String getDistrictSafe() {
-        return jsonToString(district);
+    public List<String> getDistrictSafe() {
+        return jsonToList(district);
     }
 
-    public String getTalukaSafe() {
-        return jsonToString(taluka);
+    public List<String> getTalukaSafe() {
+        return jsonToList(taluka);
+    }
+
+    public List<String> getAgeGroupsSafe() {
+        return jsonToList(ageGroups);
+    }
+
+    public List<String> getBhartyTypesSafe() {
+        return jsonToList(bhartyTypes);
     }
 
     /* ---------------- HELPERS ---------------- */
@@ -89,17 +101,13 @@ public class Slider {
             element.getAsJsonArray().forEach(e -> {
                 if (!e.isJsonNull()) list.add(e.getAsString());
             });
+        } else if (element.isJsonPrimitive()) {
+            list.add(element.getAsString());
         }
         return list;
     }
 
-    private String jsonToString(JsonElement element) {
-        if (element == null || element.isJsonNull()) return "";
-        if (element.isJsonPrimitive()) return element.getAsString();
-        return "";
-    }
-
-    /* ---------------- NORMAL GETTERS ---------------- */
+    /* ---------------- NORMAL GETTERS & SETTERS ---------------- */
 
     public int getId() { return id; }
     public String getTitle() { return title; }
@@ -110,4 +118,5 @@ public class Slider {
     public boolean isSpecific() { return isSpecific; }
     public String getOtherType() { return otherType; }
     public String getImageUrl() { return imageUrl; }
+    public void setImageUrl(String imageUrl) { this.imageUrl = imageUrl; }
 }
