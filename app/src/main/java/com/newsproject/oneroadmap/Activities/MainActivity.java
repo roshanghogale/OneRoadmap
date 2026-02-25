@@ -33,8 +33,10 @@ import com.newsproject.oneroadmap.Utils.DatabaseHelper;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -271,56 +273,61 @@ public class MainActivity extends AppCompatActivity {
             return;
         }
 
-        List<String> topics = new ArrayList<>();
+        Set<String> topics = new HashSet<>();
         FirebaseMessaging fm = FirebaseMessaging.getInstance();
 
-        // 1. Twelfth-based topics
+        // 1. Age Group topics
+        String ageGroup = user.getAgeGroup();
+        if (ageGroup != null) {
+            if (ageGroup.equals("14 ते 18")) topics.add("14to18");
+            else if (ageGroup.equals("19 ते 25")) topics.add("19to25");
+            else if (ageGroup.equals("26 ते 31")) topics.add("26to31");
+            else if (ageGroup.equals("32 पेक्षा जास्त")) topics.add("32above");
+        }
+
+        // 2. Education-based topics
         String twelfth = user.getTwelfth();
-        int twelfthIndex = DataConstants.TWELFTH_OPTIONS.indexOf(twelfth);
-
-        if (twelfthIndex == 1) {
-            topics.add("10th");
-        } else if (twelfthIndex == 2) {
-            topics.add("12th");
-        } else if (twelfthIndex == 3) {
-            String degree = user.getDegree();
-            if (degree != null && !degree.equals("Select Degree") && !degree.isEmpty()) {
-                String clean = degree.replaceAll("[^A-Za-z0-9]", "").toLowerCase();
-                if (!clean.isEmpty()) topics.add(clean);
+        if (twelfth != null) {
+            if (twelfth.equals("सध्या दहावीला आहे")) {
+                topics.add("10th");
+            } else if (twelfth.equals("सध्या बारावीला आहे")) {
+                topics.add("12th");
+            } else if (twelfth.equals("माझ या पुढील शिक्षण आहे")) {
+                String degree = user.getDegree();
+                if (degree != null && !degree.equals("Select Degree") && !degree.isEmpty()) {
+                    topics.add(sanitizeTopic(degree));
+                }
             }
-        } else if (twelfthIndex == 4) {
-            topics.add("10th");
-            topics.add("12th");
         }
 
-        // 2. Taluka
-        String taluka = user.getTaluka();
-        if (taluka != null && !taluka.equals("Select Taluka") && !taluka.isEmpty()) {
-            String clean = taluka.replaceAll("[^A-Za-z0-9]", "").toLowerCase();
-            if (!clean.isEmpty()) topics.add(clean);
-        }
-
-        // 3. Free Study Materials
-        if (user.isStudyGovernment()) topics.add("governmentfree");
-        if (user.isStudyPoliceDefence()) topics.add("policefree");
-        if (user.isStudyBanking()) topics.add("bankingfree");
-        if (user.isStudySelfImprovement()) topics.add("selfimprovementfree");
-
-        // 4. Job by Stream
-        if (user.isJobs()) {
-            topics.add("jobsteam");
-        }
-
-        // 5. Current Affairs
+        // 3. Current Affairs PDF
         if (user.isCurrentAffairs()) {
             topics.add("currentaffairs");
         }
 
-        topics.add("all");
-        topics.add("d_paper");
-        topics.add("news");
+        // 4. Job by Stream
+        if (user.isJobs()) {
+            topics.add("10th");
+            topics.add("12th");
+        }
 
-        // Subscribe to all
+        // 5. Free Study Materials
+        if (user.isStudyGovernment()) topics.add("governmentfree");
+        if (user.isStudyPoliceDefence()) topics.add("policefree");
+        if (user.isStudyBanking()) topics.add("bankingfree");
+
+        // 6. Taluka topic
+        String taluka = user.getTaluka();
+        if (taluka != null && !taluka.equals("Select Taluka") && !taluka.isEmpty()) {
+            topics.add(sanitizeTopic(taluka));
+        }
+
+        // 7. Universal topics
+        topics.add("all");
+        topics.add("news");
+        topics.add("dpaper");
+
+        // Subscribe to all collected topics
         for (String topic : topics) {
             fm.subscribeToTopic(topic).addOnCompleteListener(task -> {
                 if (task.isSuccessful()) {
@@ -333,5 +340,11 @@ public class MainActivity extends AppCompatActivity {
 
         hasSubscribedToTopics = true;
         Log.d("FCM", "User-specific topics subscribed: " + topics);
+    }
+
+    private String sanitizeTopic(String input) {
+        if (input == null) return "";
+        return input.replace("&", "and")
+                .replaceAll("[^A-Za-z0-9]", "");
     }
 }
