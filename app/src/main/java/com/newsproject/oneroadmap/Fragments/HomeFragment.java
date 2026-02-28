@@ -710,6 +710,7 @@ public class HomeFragment extends Fragment {
                 if (!response.isSuccessful()) return;
 
                 String body = response.body().string();
+                Log.d("storyloader", "Raw Story Response: " + body);
                 JsonObject root = new Gson().fromJson(body, JsonObject.class);
 
                 List<Story> mains = new ArrayList<>();
@@ -721,6 +722,11 @@ public class HomeFragment extends Fragment {
                     for (int i = 0; i < arr.size(); i++) {
                         JsonObject o = arr.get(i).getAsJsonObject();
                         Story story = new Gson().fromJson(o, Story.class);
+                        
+                        Log.d("storyloader", "Parsed Story: ID=" + story.getDocumentId() + 
+                              ", Title=" + story.getTitle() + 
+                              ", upload_time=" + story.getUploadTime() + 
+                              ", relative_time=" + story.getRelativeTime());
 
                         // Build full URLs
                         story.setIconUrl(buildFullUrl(story.getIconUrl()));
@@ -784,6 +790,7 @@ public class HomeFragment extends Fragment {
                     storyList.clear();
                     storyList.addAll(mains);
                     storyList.addAll(others);
+                    Log.d("storyloader", "storyList updated, size=" + storyList.size());
                     storyAdapter.notifyDataSetChanged();
                 });
             }

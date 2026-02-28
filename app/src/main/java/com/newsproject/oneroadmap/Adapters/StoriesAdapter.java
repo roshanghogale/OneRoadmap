@@ -31,6 +31,7 @@ import com.newsproject.oneroadmap.Fragments.HomeFragment;
 import com.newsproject.oneroadmap.Models.Story;
 import com.newsproject.oneroadmap.R;
 import com.newsproject.oneroadmap.Utils.ShareHelper;
+import com.newsproject.oneroadmap.Utils.TimeAgoUtil;
 import com.newsproject.oneroadmap.Utils.WebViewHelper;
 
 import java.util.List;
@@ -189,7 +190,15 @@ public class StoriesAdapter
             story = s;
 
             storyTitle.setText(s.getTitle());
-            storyTime.setText(s.getRelativeTime());
+            
+            // ✅ Fix: Use TimeAgoUtil to calculate relative time from uploadTime string
+            if (s.getUploadTime() != null && !s.getUploadTime().isEmpty()) {
+                storyTime.setText(TimeAgoUtil.getTimeAgo(s.getUploadTime()));
+            } else if (s.getRelativeTime() != null && !s.getRelativeTime().isEmpty()) {
+                storyTime.setText(s.getRelativeTime());
+            } else {
+                storyTime.setText("");
+            }
 
             Glide.with(itemView)
                     .load(s.getIconUrl())

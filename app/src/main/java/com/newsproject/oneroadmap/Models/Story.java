@@ -1,6 +1,5 @@
 package com.newsproject.oneroadmap.Models;
 
-import com.google.firebase.Timestamp;
 import com.google.gson.JsonElement;
 import com.google.gson.annotations.SerializedName;
 import java.util.ArrayList;
@@ -16,8 +15,8 @@ public class Story {
     @SerializedName("image_url")
     private String imageUrl;
 
-    @SerializedName("upload_time")
-    private Timestamp uploadTime;
+    @SerializedName("created_at") // ✅ Fixed: Match server's field name
+    private String uploadTime;
 
     @SerializedName("icon_url")
     private String iconUrl;
@@ -114,8 +113,8 @@ public class Story {
     public String getTitle() { return title; }
     public void setTitle(String title) { this.title = title; }
 
-    public Timestamp getUploadTime() { return uploadTime; }
-    public void setUploadTime(Timestamp uploadTime) { this.uploadTime = uploadTime; }
+    public String getUploadTime() { return uploadTime; }
+    public void setUploadTime(String uploadTime) { this.uploadTime = uploadTime; }
 
     public String getIconUrl() { return iconUrl; }
     public void setIconUrl(String iconUrl) { this.iconUrl = iconUrl; }

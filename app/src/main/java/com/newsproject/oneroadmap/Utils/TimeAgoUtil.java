@@ -22,30 +22,34 @@ public class TimeAgoUtil {
     public static String getTimeAgo(String dateString) {
         if (dateString == null || dateString.isEmpty()) return "Unknown";
 
-        try {
-            SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy, h:mm:ss a", Locale.US);
-            sdf.setTimeZone(TimeZone.getTimeZone("Asia/Kolkata"));
-            Date date = sdf.parse(dateString);
-            if (date != null) {
-                return calculateTimeAgo(date);
-            }
-        } catch (Exception e) {
-            // Try fallback ISO format just in case
+        // List of common formats including the one from your server
+        String[] formats = {
+                "yyyy-MM-dd HH:mm:ss.SSSSSS",
+                "yyyy-MM-dd HH:mm:ss",
+                "dd/MM/yyyy, h:mm:ss a",
+                "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'",
+                "yyyy-MM-dd"
+        };
+
+        for (String format : formats) {
             try {
-                SimpleDateFormat iso = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.US);
-                iso.setTimeZone(TimeZone.getTimeZone("UTC"));
-                Date date = iso.parse(dateString);
-                if (date != null) return calculateTimeAgo(date);
+                SimpleDateFormat sdf = new SimpleDateFormat(format, Locale.US);
+                // Set timezone based on format hints
+                if (format.contains("Z") || format.startsWith("yyyy-MM-dd")) {
+                    sdf.setTimeZone(TimeZone.getTimeZone("UTC"));
+                } else {
+                    sdf.setTimeZone(TimeZone.getTimeZone("Asia/Kolkata"));
+                }
+                
+                Date date = sdf.parse(dateString);
+                if (date != null) {
+                    return calculateTimeAgo(date);
+                }
             } catch (Exception ignored) {
-                // Try yyyy-MM-dd format (date only)
-                try {
-                    SimpleDateFormat dateOnly = new SimpleDateFormat("yyyy-MM-dd", Locale.US);
-                    dateOnly.setTimeZone(TimeZone.getTimeZone("UTC"));
-                    Date date = dateOnly.parse(dateString);
-                    if (date != null) return calculateTimeAgo(date);
-                } catch (Exception ignored2) {}
+                // Try next format
             }
         }
+        
         return "Unknown";
     }
 
@@ -53,7 +57,7 @@ public class TimeAgoUtil {
         long now = System.currentTimeMillis();
         long diffInMillis = now - date.getTime();
 
-        if (diffInMillis < 0) return "Just now"; // future date?
+        if (diffInMillis < 0) return "Just now";
 
         long seconds = diffInMillis / 1000;
         long minutes = seconds / 60;

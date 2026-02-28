@@ -1,7 +1,6 @@
 package com.newsproject.oneroadmap.Adapters;
 
 import android.content.Context;
-import android.text.format.DateUtils;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -17,6 +16,7 @@ import com.devlomi.circularstatusview.CircularStatusView;
 import com.newsproject.oneroadmap.Fragments.HomeFragment;
 import com.newsproject.oneroadmap.Models.Story;
 import com.newsproject.oneroadmap.R;
+import com.newsproject.oneroadmap.Utils.TimeAgoUtil;
 
 import java.util.List;
 
@@ -43,35 +43,30 @@ public class StoryAdapter extends RecyclerView.Adapter<StoryAdapter.StoryViewHol
         Story story = storyList.get(position);
         holder.titleTextView.setText(story.getTitle());
 
-        // Prefer server-provided relative time; fallback to uploadTime if present
-        if (story.getRelativeTime() != null && !story.getRelativeTime().isEmpty()) {
-            holder.uploadTimeTextView.setText(story.getRelativeTime());
-        } else if (story.getUploadTime() != null) {
-            long timeInMillis = story.getUploadTime().getSeconds() * 1000;  // Convert to milliseconds
-            String relativeTime = DateUtils.getRelativeTimeSpanString(
-                    timeInMillis, System.currentTimeMillis(), DateUtils.MINUTE_IN_MILLIS
-            ).toString();
+        // Use TimeAgoUtil to calculate relative time from uploadTime string
+        if (story.getUploadTime() != null && !story.getUploadTime().isEmpty()) {
+            String relativeTime = TimeAgoUtil.getTimeAgo(story.getUploadTime());
             holder.uploadTimeTextView.setText(relativeTime);
+        } else if (story.getRelativeTime() != null && !story.getRelativeTime().isEmpty()) {
+            holder.uploadTimeTextView.setText(story.getRelativeTime());
         } else {
             holder.uploadTimeTextView.setText("");
         }
 
         // Check if the story has been viewed or not and set the status color accordingly
-
         if (!story.isViewed()) {
             if (story.isMainStory()){
                 holder.statusView.setPortionsColor(
-                        ContextCompat.getColor(context, R.color.green) // Use ContextCompat to get the color value
+                        ContextCompat.getColor(context, R.color.green)
                 );
-            }else{
+            } else {
                 holder.statusView.setPortionsColor(
-                        ContextCompat.getColor(context, R.color.purple) // Use ContextCompat to get the color value
+                        ContextCompat.getColor(context, R.color.purple)
                 );
             }
-
         } else {
             holder.statusView.setPortionsColor(
-                    ContextCompat.getColor(context, R.color.gray) // Use ContextCompat to get the color value
+                    ContextCompat.getColor(context, R.color.gray)
             );
         }
 
@@ -81,7 +76,6 @@ public class StoryAdapter extends RecyclerView.Adapter<StoryAdapter.StoryViewHol
                 .into(holder.imageView);
 
         holder.itemView.setOnClickListener(v -> {
-            // Call the method to play the story
             HomeFragment.playStory(context, position, storyList, this);
         });
     }
@@ -108,4 +102,3 @@ public class StoryAdapter extends RecyclerView.Adapter<StoryAdapter.StoryViewHol
         }
     }
 }
-
