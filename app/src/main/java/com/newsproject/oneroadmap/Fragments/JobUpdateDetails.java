@@ -10,6 +10,7 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
@@ -21,6 +22,12 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.bumptech.glide.Glide;
+import com.google.android.gms.ads.AdListener;
+import com.google.android.gms.ads.AdLoader;
+import com.google.android.gms.ads.AdRequest;
+import com.google.android.gms.ads.LoadAdError;
+import com.google.android.gms.ads.nativead.NativeAd;
+import com.google.android.gms.ads.nativead.NativeAdView;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.newsproject.oneroadmap.Adapters.RecentlyOpenedAdapter;
@@ -39,7 +46,6 @@ import android.content.SharedPreferences;
 import android.app.AlertDialog;
 import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
-import android.widget.Button;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -56,6 +62,7 @@ public class JobUpdateDetails extends Fragment {
     private ActivityResultLauncher<Intent> shareLauncher;
     private CoinAccessController coinAccessController;
     private String userId;
+    private NativeAd mNativeAd;
 
     public JobUpdateDetails() {
         // Required empty public constructor
@@ -98,23 +105,17 @@ public class JobUpdateDetails extends Fragment {
             Log.w(TAG, "No JobUpdate object provided, fragment may fail to load");
         }
         
-        // Get userId for coin management
         SharedPreferences prefs = requireContext().getSharedPreferences("UserPrefs", Context.MODE_PRIVATE);
         userId = prefs.getString("userId", "");
         
-        // Initialize ShareHelper
         shareHelper = new ShareHelper(requireContext());
 
-
-        // ✅ NOW create controller (after userId is ready)
         coinAccessController = new CoinAccessController(
                 this,
                 userId,
                 shareHelper
         );
 
-
-        // Initialize share launcher
         shareLauncher = registerForActivityResult(
                 new ActivityResultContracts.StartActivityForResult(),
                 result -> {
@@ -135,6 +136,9 @@ public class JobUpdateDetails extends Fragment {
         recentDb = new RecentlyOpenedDatabaseHelper(requireContext());
         saveButton = view.findViewById(R.id.imageView3); // Save icon
         fabShare = view.findViewById(R.id.fab_share); // Share FAB
+
+        // Load Native Ad
+        loadNativeAd(view);
 
         // Set initial icon
         updateSaveButtonIcon();
@@ -180,6 +184,65 @@ public class JobUpdateDetails extends Fragment {
         return view;
     }
 
+    private void loadNativeAd(View rootView) {
+        AdLoader adLoader = new AdLoader.Builder(requireContext(), "ca-app-pub-3940256099942544/2247696110") // Test ID
+                .forNativeAd(nativeAd -> {
+                    if (isAdded()) {
+                        if (mNativeAd != null) {
+                            mNativeAd.destroy();
+                        }
+                        mNativeAd = nativeAd;
+                        ViewGroup adContainer = rootView.findViewById(R.id.native_ad_container);
+                        NativeAdView adView = (NativeAdView) getLayoutInflater().inflate(R.layout.layout_native_ad, null);
+                        populateNativeAdView(nativeAd, adView);
+                        adContainer.removeAllViews();
+                        adContainer.addView(adView);
+                        adContainer.setVisibility(View.VISIBLE);
+                    }
+                })
+                .withAdListener(new AdListener() {
+                    @Override
+                    public void onAdFailedToLoad(LoadAdError adError) {
+                        Log.e(TAG, "Native ad failed to load: " + adError.getMessage());
+                    }
+                })
+                .build();
+
+        adLoader.loadAd(new AdRequest.Builder().build());
+    }
+
+    private void populateNativeAdView(NativeAd nativeAd, NativeAdView adView) {
+        adView.setHeadlineView(adView.findViewById(R.id.ad_headline));
+        adView.setBodyView(adView.findViewById(R.id.ad_body));
+        adView.setCallToActionView(adView.findViewById(R.id.ad_call_to_action));
+        adView.setIconView(adView.findViewById(R.id.ad_app_icon));
+
+        ((TextView) adView.getHeadlineView()).setText(nativeAd.getHeadline());
+
+        if (nativeAd.getBody() == null) {
+            adView.getBodyView().setVisibility(View.INVISIBLE);
+        } else {
+            adView.getBodyView().setVisibility(View.VISIBLE);
+            ((TextView) adView.getBodyView()).setText(nativeAd.getBody());
+        }
+
+        if (nativeAd.getCallToAction() == null) {
+            adView.getCallToActionView().setVisibility(View.INVISIBLE);
+        } else {
+            adView.getCallToActionView().setVisibility(View.VISIBLE);
+            ((Button) adView.getCallToActionView()).setText(nativeAd.getCallToAction());
+        }
+
+        if (nativeAd.getIcon() == null) {
+            adView.getIconView().setVisibility(View.GONE);
+        } else {
+            ((ImageView) adView.getIconView()).setImageDrawable(nativeAd.getIcon().getDrawable());
+            adView.getIconView().setVisibility(View.VISIBLE);
+        }
+
+        adView.setNativeAd(nativeAd);
+    }
+
     private void updateSaveButtonIcon() {
         if (jobUpdate != null && dbHelper.isJobSaved(jobUpdate.getDocumentId())) {
             saveButton.setImageResource(R.drawable.save_filled);
@@ -219,7 +282,6 @@ public class JobUpdateDetails extends Fragment {
         if (note != null && !note.isEmpty()) {
             noteContainer.setVisibility(View.VISIBLE);
             noteValue.setText(note);
-            // Note text should be black (default), only "Note" label is blue
             noteValue.setTextColor(Color.parseColor("#000000"));
         } else {
             noteContainer.setVisibility(View.GONE);
@@ -247,6 +309,8 @@ public class JobUpdateDetails extends Fragment {
             textView.setText(defaultText);
             textView.setOnClickListener(v -> {
                 coinAccessController.requestPdfAccess(url, null);
+
+
             });
         } else {
             container.setVisibility(View.GONE);
@@ -290,9 +354,7 @@ public class JobUpdateDetails extends Fragment {
     private void loadRecentlyOpened(View view) {
         RecyclerView recyclerView = view.findViewById(R.id.recent_post_recyler);
 
-        // ---- 1. find the views that belong to the block -----------------
-        TextView tvTitle   = view.findViewById(R.id.textView38);   // "Recent Result"
-        // (optional) you could also hide the whole container if you wrap them
+        TextView tvTitle   = view.findViewById(R.id.textView38);
 
         recyclerView.setLayoutManager(
                 new LinearLayoutManager(getContext(), LinearLayoutManager.HORIZONTAL, false));
@@ -300,7 +362,6 @@ public class JobUpdateDetails extends Fragment {
         List<JobUpdate> allRecent = recentDb.getAllRecent();
         List<JobUpdate> filtered = new ArrayList<>();
 
-        // Exclude current job
         if (jobUpdate != null) {
             for (JobUpdate j : allRecent) {
                 if (!j.getDocumentId().equals(jobUpdate.getDocumentId())) {
@@ -311,14 +372,12 @@ public class JobUpdateDetails extends Fragment {
             filtered.addAll(allRecent);
         }
 
-        // ---- 2. decide visibility ---------------------------------------
         int itemCount = filtered.size();
         boolean hasItems = itemCount > 0;
 
         tvTitle.setVisibility(hasItems ? View.VISIBLE : View.GONE);
         recyclerView.setVisibility(hasItems ? View.VISIBLE : View.GONE);
 
-        // ---- 3. set adapter (only when there are items) -----------------
         if (hasItems) {
             RecentlyOpenedAdapter adapter = new RecentlyOpenedAdapter(filtered, job -> {
                 requireActivity().getSupportFragmentManager()
@@ -329,7 +388,15 @@ public class JobUpdateDetails extends Fragment {
             });
             recyclerView.setAdapter(adapter);
         } else {
-            recyclerView.setAdapter(null);   // clear any previous adapter
+            recyclerView.setAdapter(null);
         }
+    }
+
+    @Override
+    public void onDestroy() {
+        if (mNativeAd != null) {
+            mNativeAd.destroy();
+        }
+        super.onDestroy();
     }
 }

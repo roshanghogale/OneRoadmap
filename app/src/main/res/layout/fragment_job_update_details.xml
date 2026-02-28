@@ -72,6 +72,19 @@
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toTopOf="parent">
 
+                <!-- Native Ad Container -->
+                <FrameLayout
+                    android:id="@+id/native_ad_container"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="16dp"
+                    android:layout_marginTop="24dp"
+                    android:layout_marginEnd="16dp"
+                    android:layout_marginBottom="8dp"
+                    android:visibility="gone"
+                    tools:layout_height="100dp"
+                    tools:visibility="visible" />
+
                 <androidx.constraintlayout.widget.ConstraintLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
@@ -84,7 +97,7 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginStart="16dp"
-                        android:layout_marginTop="32dp"
+                        android:layout_marginTop="16dp"
                         android:layout_marginEnd="16dp"
                         android:layout_marginBottom="16dp"
                         android:clipChildren="false"
@@ -316,7 +329,7 @@
                                         android:layout_marginBottom="4dp"
                                         android:layout_weight="1"
                                         android:fontFamily="@font/yantramanav_regular"
-                                        android:text="कंपनीचा इंटरव्यू जे आहे ते मालक हरिओम भाऊ घेतील इंटरव्यूवर तुला टाईम वर हजर राहणे आवश्यक आहे"
+                                        android:text="कंपनीचा इंटरव्यू जे आहे ते malak hariom bhau ghetil interview var tula time var hajar rahane avashyak ahe"
                                         android:textColor="#000000"
                                         android:textSize="16sp" />
                                 </LinearLayout>
@@ -543,7 +556,7 @@
                 android:layout_marginStart="10dp"
                 android:layout_marginTop="8dp"
                 android:layout_marginEnd="10dp"
-                android:layout_marginBottom="16dp"
+                android:layout_marginBottom="24dp"
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
@@ -551,7 +564,7 @@
         </androidx.constraintlayout.widget.ConstraintLayout>
 
     </androidx.constraintlayout.widget.ConstraintLayout>
-    </ScrollView>
+</ScrollView>
 
     <com.google.android.material.floatingactionbutton.FloatingActionButton
         android:id="@+id/fab_share"
