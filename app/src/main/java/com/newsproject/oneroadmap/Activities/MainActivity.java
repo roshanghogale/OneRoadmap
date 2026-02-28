@@ -22,6 +22,7 @@ import android.content.pm.PackageManager;
 import android.view.View;
 import android.widget.Toast;
 
+import com.google.android.gms.ads.MobileAds;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.firebase.messaging.FirebaseMessaging;
 import com.newsproject.oneroadmap.Adapters.StoriesAdapter;
@@ -55,6 +56,11 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        // Initialize Mobile Ads SDK
+        MobileAds.initialize(this, initializationStatus -> {
+            Log.d(TAG, "Mobile Ads SDK initialized");
+        });
 
         databaseHelper = new DatabaseHelper(this);
 

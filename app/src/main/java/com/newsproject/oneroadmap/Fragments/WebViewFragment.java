@@ -6,6 +6,8 @@ import android.content.Context;
 import android.graphics.Bitmap;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -21,6 +23,7 @@ import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.activity.OnBackPressedCallback;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.constraintlayout.widget.ConstraintLayout;
@@ -28,11 +31,17 @@ import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.fragment.app.Fragment;
 
+import com.google.android.gms.ads.AdRequest;
+import com.google.android.gms.ads.FullScreenContentCallback;
+import com.google.android.gms.ads.LoadAdError;
+import com.google.android.gms.ads.interstitial.InterstitialAd;
+import com.google.android.gms.ads.interstitial.InterstitialAdLoadCallback;
 import com.newsproject.oneroadmap.R;
 
 public class WebViewFragment extends Fragment {
     private static final String ARG_URL = "url";
     private static final String TAG = "WebViewFragment";
+    private static final String AD_UNIT_ID = "ca-app-pub-3940256099942544/1033173712"; // Test ID
 
     private String url;
     private WebView webView;
@@ -40,6 +49,9 @@ public class WebViewFragment extends Fragment {
     private TextView tvError;
     private TextView urlText;
     private ImageButton copyUrlButton;
+    private InterstitialAd mInterstitialAd;
+    private OnBackPressedCallback onBackPressedCallback;
+    private final Handler mainHandler = new Handler(Looper.getMainLooper());
 
     public static WebViewFragment newInstance(String url) {
         WebViewFragment fragment = new WebViewFragment();
@@ -75,6 +87,8 @@ public class WebViewFragment extends Fragment {
 
         setupEdgeToEdge(view);
         setupWebView();
+        loadInterstitialAd();
+        setupBackPressHandler();
 
         if (url == null || url.isEmpty()) {
             showError("Invalid URL");
@@ -82,76 +96,109 @@ public class WebViewFragment extends Fragment {
         }
 
         if (isPdfUrl(url)) {
-
             View urlBar = view.findViewById(R.id.url_bar);
             if (urlBar != null) {
                 urlBar.setVisibility(View.GONE);
             }
-
-            loadUrl(url);   // 🔥 THIS WAS MISSING
-
+            loadUrl(url);
         } else {
-
             setupUrlBar();
             urlText.setText(url);
             loadUrl(url);
         }
     }
 
+    private void loadInterstitialAd() {
+        AdRequest adRequest = new AdRequest.Builder().build();
+        InterstitialAd.load(requireContext(), AD_UNIT_ID, adRequest,
+                new InterstitialAdLoadCallback() {
+                    @Override
+                    public void onAdLoaded(@NonNull InterstitialAd interstitialAd) {
+                        mInterstitialAd = interstitialAd;
+                        Log.d(TAG, "Ad loaded");
+                    }
+
+                    @Override
+                    public void onAdFailedToLoad(@NonNull LoadAdError loadAdError) {
+                        Log.d(TAG, "Ad failed to load: " + loadAdError.getMessage());
+                        mInterstitialAd = null;
+                    }
+                });
+    }
+
+    private void setupBackPressHandler() {
+        onBackPressedCallback = new OnBackPressedCallback(true) {
+            @Override
+            public void handleOnBackPressed() {
+                if (webView != null && webView.canGoBack()) {
+                    webView.goBack();
+                } else {
+                    if (isPdfUrl(url) && mInterstitialAd != null) {
+                        showAdAndExit();
+                    } else {
+                        exitFragment();
+                    }
+                }
+            }
+        };
+        requireActivity().getOnBackPressedDispatcher().addCallback(getViewLifecycleOwner(), onBackPressedCallback);
+    }
+
+    private void showAdAndExit() {
+        mInterstitialAd.setFullScreenContentCallback(new FullScreenContentCallback() {
+            @Override
+            public void onAdDismissedFullScreenContent() {
+                Log.d(TAG, "Ad dismissed");
+                mInterstitialAd = null;
+                // Use mainHandler to ensure popBackStack runs instantly on the UI thread
+                mainHandler.post(() -> exitFragment());
+            }
+
+            @Override
+            public void onAdFailedToShowFullScreenContent(@NonNull com.google.android.gms.ads.AdError adError) {
+                Log.d(TAG, "Ad failed to show: " + adError.getMessage());
+                mInterstitialAd = null;
+                mainHandler.post(() -> exitFragment());
+            }
+        });
+        mInterstitialAd.show(requireActivity());
+    }
+
+    private void exitFragment() {
+        if (isAdded() && getParentFragmentManager() != null) {
+            onBackPressedCallback.setEnabled(false);
+            getParentFragmentManager().popBackStack();
+        }
+    }
+
     private boolean isPdfUrl(String url) {
         if (url == null) return false;
-
         url = url.toLowerCase();
-
         return url.endsWith(".pdf")
                 || url.contains(".pdf?")
                 || url.contains("application/pdf");
     }
 
     private void setupEdgeToEdge(View rootView) {
-
-        // ❌ If PDF → DO NOT apply edge-to-edge
         if (isPdfUrl(url)) {
             rootView.setFitsSystemWindows(true);
-
             if (webView != null) {
                 webView.setPadding(0, 0, 0, 0);
             }
-
             return;
         }
 
-        // ✅ Normal websites → enable edge-to-edge
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-
             ViewCompat.setOnApplyWindowInsetsListener(rootView, (v, insets) -> {
-
-                int topInset = insets.getInsets(
-                        WindowInsetsCompat.Type.statusBars()).top;
-
-                int bottomInset = insets.getInsets(
-                        WindowInsetsCompat.Type.navigationBars()).bottom;
-
+                int topInset = insets.getInsets(WindowInsetsCompat.Type.statusBars()).top;
+                int bottomInset = insets.getInsets(WindowInsetsCompat.Type.navigationBars()).bottom;
                 View urlBar = v.findViewById(R.id.url_bar);
-
                 if (urlBar != null) {
-                    urlBar.setPadding(
-                            urlBar.getPaddingLeft(),
-                            topInset,
-                            urlBar.getPaddingRight(),
-                            urlBar.getPaddingBottom()
-                    );
+                    urlBar.setPadding(urlBar.getPaddingLeft(), topInset, urlBar.getPaddingRight(), urlBar.getPaddingBottom());
                 }
-
                 if (webView != null) {
-                    webView.setPadding(
-                            webView.getPaddingLeft(),
-                            webView.getPaddingTop(),
-                            webView.getPaddingRight(),
-                            bottomInset
-                    );
+                    webView.setPadding(webView.getPaddingLeft(), webView.getPaddingTop(), webView.getPaddingRight(), bottomInset);
                 }
-
                 return WindowInsetsCompat.CONSUMED;
             });
         }
@@ -169,7 +216,6 @@ public class WebViewFragment extends Fragment {
         webSettings.setDefaultTextEncodingName("utf-8");
         webSettings.setCacheMode(WebSettings.LOAD_DEFAULT);
 
-        // Enable mixed content for HTTPS pages with HTTP resources
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.LOLLIPOP) {
             webSettings.setMixedContentMode(WebSettings.MIXED_CONTENT_COMPATIBILITY_MODE);
         }
@@ -204,7 +250,6 @@ public class WebViewFragment extends Fragment {
 
             @Override
             public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
-                // Load all URLs in the same WebView
                 return false;
             }
         });
@@ -244,7 +289,6 @@ public class WebViewFragment extends Fragment {
     }
 
     private void loadUrl(String urlString) {
-
         if (urlString == null || urlString.isEmpty()) {
             showError("Invalid URL");
             return;
@@ -255,16 +299,12 @@ public class WebViewFragment extends Fragment {
         }
 
         try {
-
-            // 🔥 If PDF → open with Google Docs Viewer (BEST METHOD)
             if (isPdfUrl(urlString)) {
-                String googleDocsUrl =
-                        "https://docs.google.com/gview?embedded=true&url=" + urlString;
+                String googleDocsUrl = "https://docs.google.com/gview?embedded=true&url=" + urlString;
                 webView.loadUrl(googleDocsUrl);
             } else {
                 webView.loadUrl(urlString);
             }
-
         } catch (Exception e) {
             Log.e(TAG, "Error loading URL: " + urlString, e);
             showError("Error loading page");
@@ -303,6 +343,7 @@ public class WebViewFragment extends Fragment {
     @Override
     public void onDestroyView() {
         super.onDestroyView();
+        mainHandler.removeCallbacksAndMessages(null);
         if (webView != null) {
             webView.destroy();
             webView = null;
@@ -319,4 +360,3 @@ public class WebViewFragment extends Fragment {
         }
     }
 }
-

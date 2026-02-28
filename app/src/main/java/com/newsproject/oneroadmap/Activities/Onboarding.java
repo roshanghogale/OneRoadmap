@@ -1,6 +1,9 @@
 package com.newsproject.oneroadmap.Activities;
 
 import android.annotation.SuppressLint;
+import android.content.Context;
+import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.viewpager2.widget.ViewPager2;
@@ -18,6 +21,18 @@ public class Onboarding extends AppCompatActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        // Check if user is already logged in BEFORE calling super.onCreate or setting content view
+        SharedPreferences sp = getSharedPreferences("UserPrefs", Context.MODE_PRIVATE);
+        boolean isLoggedIn = sp.getBoolean("isLoggedIn", false);
+        String userId = sp.getString("userId", null);
+
+        if (isLoggedIn && userId != null && !userId.isEmpty()) {
+            startActivity(new Intent(Onboarding.this, MainActivity.class));
+            finish();
+            super.onCreate(savedInstanceState); // Still need to call this before return
+            return;
+        }
+
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_onboarding);
 

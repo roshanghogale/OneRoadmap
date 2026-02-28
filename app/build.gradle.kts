@@ -74,4 +74,5 @@ dependencies {
     implementation("com.squareup.okhttp3:okhttp:5.2.1")
     implementation("com.google.code.gson:gson:2.11.0")
     implementation("com.mikhaellopez:circularprogressbar:3.1.0")
+    implementation("com.google.android.gms:play-services-ads:23.6.0")
 }

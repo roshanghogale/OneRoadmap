@@ -178,9 +178,10 @@ public class OnboardingAdapter
         }
 
         void goNextScreen() {
+            // Unified SharedPreferences keys
             boolean loggedIn =
-                    context.getSharedPreferences("user_prefs", Context.MODE_PRIVATE)
-                            .getBoolean("is_logged_in", false);
+                    context.getSharedPreferences("UserPrefs", Context.MODE_PRIVATE)
+                            .getBoolean("isLoggedIn", false);
 
             context.startActivity(
                     new Intent(context,
