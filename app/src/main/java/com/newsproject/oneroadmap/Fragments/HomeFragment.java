@@ -158,6 +158,7 @@ public class HomeFragment extends Fragment {
         storyShareLauncher = registerForActivityResult(
                 new ActivityResultContracts.StartActivityForResult(),
                 result -> {
+                    if (!isAdded()) return;
                     // When user returns from sharing, add coins
                     SharedPreferences prefs = requireContext().getSharedPreferences("UserPrefs", Context.MODE_PRIVATE);
                     String userId = prefs.getString("userId", "");
@@ -167,7 +168,6 @@ public class HomeFragment extends Fragment {
                         com.newsproject.oneroadmap.Utils.CoinManager coinManager = new com.newsproject.oneroadmap.Utils.CoinManager(requireContext(), userId);
                         coinManager.addCoinsForShare(newCoins -> {
                             // Coins added successfully
-                            //Toast.makeText(requireContext(), "You earned 100 coins!", Toast.LENGTH_SHORT).show();
                         });
                     }
                 });
@@ -203,22 +203,9 @@ public class HomeFragment extends Fragment {
         shareHelper.setShareLauncher(shareLauncher);
     }
 
-// =====================
-// STORY PLAYER HELPERS
-// =====================
-
-// =====================
-// STORY PLAYER HELPERS
-// =====================
-
     public static boolean isStoriesPlayerVisible() {
         return storiesPlayer != null && storiesPlayer.getVisibility() == View.VISIBLE;
     }
-
-// =========================
-// ONLY STORY-RELATED PARTS SHOWN FULLY
-// REST OF YOUR FILE REMAINS EXACTLY SAME
-// =========================
 
     public static void playStory(
             Context context,
@@ -243,7 +230,6 @@ public class HomeFragment extends Fragment {
             lm.scrollToPosition(startPosition);
         }
 
-        // 🔥 FORCE FIRST STORY TO START (CRITICAL FIX)
         storiesPlayer.post(() -> {
             RecyclerView.ViewHolder vh =
                     storiesPlayer.findViewHolderForAdapterPosition(startPosition);
@@ -267,7 +253,6 @@ public class HomeFragment extends Fragment {
                     int newState
             ) {
 
-                // 🔥 STOP ALL WHEN SWIPE STARTS
                 if (newState == RecyclerView.SCROLL_STATE_DRAGGING) {
                     for (int i = 0; i < rv.getChildCount(); i++) {
                         RecyclerView.ViewHolder vh =
@@ -289,7 +274,6 @@ public class HomeFragment extends Fragment {
 
                 storiesAdapter.setCurrentVisiblePosition(snappedPos);
 
-                // ▶️ START ONLY SNAPPED STORY
                 for (int i = 0; i < rv.getChildCount(); i++) {
                     RecyclerView.ViewHolder vh =
                             rv.getChildViewHolder(rv.getChildAt(i));
@@ -308,7 +292,6 @@ public class HomeFragment extends Fragment {
             }
         });
 
-        // Hide bottom navigation
         if (context instanceof FragmentActivity) {
             View bottom =
                     ((FragmentActivity) context)
@@ -380,7 +363,6 @@ public class HomeFragment extends Fragment {
         initViews(view);
         loadData();
 
-        // Set bottom margins based on Android version
         setBottomMarginsBasedOnAndroidVersion();
 
         BottomNavigationView bottomNavigationView = requireActivity().findViewById(R.id.bottom_navigation);
@@ -416,49 +398,42 @@ public class HomeFragment extends Fragment {
         allStudentUpdates = view.findViewById(R.id.all_student_updates);
         userName = view.findViewById(R.id.user_name);
 
-        // Locate the four category linears
         LinearLayout studyCards = view.findViewById(R.id.study_material_cards_linear);
-        LinearLayout row1 = (LinearLayout) studyCards.getChildAt(1); // Index 0 is header, 1 is first row
+        LinearLayout row1 = (LinearLayout) studyCards.getChildAt(1);
         govLinear = (LinearLayout) row1.getChildAt(0);
         policeLinear = (LinearLayout) row1.getChildAt(1);
-        LinearLayout row2 = (LinearLayout) studyCards.getChildAt(2); // Second row
+        LinearLayout row2 = (LinearLayout) studyCards.getChildAt(2);
         bankLinear = (LinearLayout) row2.getChildAt(0);
 
-        // Load user data from SharedPreferences
         SharedPreferences sharedPreferences = requireContext().getSharedPreferences("UserPrefs", Context.MODE_PRIVATE);
         String userNameText = sharedPreferences.getString("name", "Guest");
         String[] userNames = userNameText.split(" ");
         userName.setText(userNames[0]);
         Log.d(TAG, "Set userName text: " + userNames[0]);
 
-        // Load avatar from SharedPreferences
         String avatarName = sharedPreferences.getString("avatar", "");
         if (!avatarName.isEmpty()) {
             int avatarResId = getResources().getIdentifier(avatarName, "drawable", requireContext().getPackageName());
-            if (avatarResId != 0) { // Check if the resource ID is valid
+            if (avatarResId != 0) {
                 Glide.with(requireContext())
                         .load(avatarResId)
-                        .placeholder(R.mipmap.ic_launcher_round) // Default placeholder
-                        .error(R.mipmap.ic_launcher_round) // Fallback if loading fails
+                        .placeholder(R.mipmap.ic_launcher_round)
+                        .error(R.mipmap.ic_launcher_round)
                         .into(profileIcon);
                 Log.d(TAG, "Loaded avatar from SharedPreferences: " + avatarName + " (ID: " + avatarResId + ")");
             } else {
-                // Resource not found, use default image
                 profileIcon.setImageResource(R.mipmap.ic_launcher_round);
                 Log.e(TAG, "Avatar resource not found for name: " + avatarName);
             }
         } else {
-            // No avatar name in SharedPreferences, use default image
             profileIcon.setImageResource(R.mipmap.ic_launcher_round);
             Log.d(TAG, "No avatar found in SharedPreferences, using default image");
         }
 
-        // Setup RecyclerViews
         LinearLayoutManager storyLayoutManager = new LinearLayoutManager(getContext(), LinearLayoutManager.HORIZONTAL, false);
         storyRecycler.setLayoutManager(storyLayoutManager);
         storyAdapter = new StoryAdapter(getContext(), storyList);
         storyRecycler.setAdapter(storyAdapter);
-        Log.d(TAG, "Set up storyRecycler");
 
         LinearLayoutManager currentAffairsLayoutManager = new LinearLayoutManager(getContext(), LinearLayoutManager.HORIZONTAL, false);
         currentAffairsRecycler.setLayoutManager(currentAffairsLayoutManager);
@@ -466,41 +441,32 @@ public class HomeFragment extends Fragment {
             coinAccessController.requestPdfAccess(pdfUrl, null);
         });
         currentAffairsRecycler.setAdapter(currentAffairsAdapter);
-        Log.d(TAG, "Set up currentAffairsRecycler");
 
         LinearLayoutManager recentlyOpenedLayoutManager = new LinearLayoutManager(getContext(), LinearLayoutManager.HORIZONTAL, false);
         recentlyOpenedRecycler.setLayoutManager(recentlyOpenedLayoutManager);
         newsAdapter = new NewsAdapter(newsList, getContext());
         recentlyOpenedRecycler.setAdapter(newsAdapter);
-        Log.d(TAG, "Set up recentlyOpenedRecycler with NewsAdapter");
 
         LinearLayoutManager studentUpdatesLayoutManager = new LinearLayoutManager(getContext(), LinearLayoutManager.HORIZONTAL, false);
         studentUpdatesRecycler.setLayoutManager(studentUpdatesLayoutManager);
         studentAdapter1 = new StudentUpdateAdapter(studentUpdatesList, getContext());
         studentUpdatesRecycler.setAdapter(studentAdapter1);
-        Log.d(TAG, "Set up studentUpdatesRecycler");
 
         recyclerStudyMaterial.setLayoutManager(new LinearLayoutManager(getContext(), LinearLayoutManager.HORIZONTAL, false));
         studyMaterialAdapter = new StudyMaterialAdapter(currentStudyMaterials, getContext(), pdfUrl -> {
             coinAccessController.requestPdfAccess(pdfUrl, null);
         });
         recyclerStudyMaterial.setAdapter(studyMaterialAdapter);
-        Log.d(TAG, "Set up recyclerStudyMaterial");
 
         LinearLayoutManager storiesPlayerLayoutManager = new LinearLayoutManager(getContext(), LinearLayoutManager.HORIZONTAL, false);
         storiesPlayer.setLayoutManager(storiesPlayerLayoutManager);
         PagerSnapHelper snapHelper = new PagerSnapHelper();
         snapHelper.attachToRecyclerView(storiesPlayer);
-        Log.d(TAG, "Set up storiesPlayer");
 
         setupClickListeners();
-        Log.d(TAG, "Click listeners set up");
     }
 
     private void setupClickListeners() {
-        Log.d(TAG, "setupClickListeners called");
-
-        // Career Roadmap → MainFragment (or CareerRoadmapFragment)
         tagCareerRoadmap.setOnClickListener(v -> {
             getParentFragmentManager()
                     .beginTransaction()
@@ -509,7 +475,6 @@ public class HomeFragment extends Fragment {
                     .commit();
         });
 
-// Result & Hall Ticket
         tagResultHallTicket.setOnClickListener(v -> {
             getParentFragmentManager()
                     .beginTransaction()
@@ -518,7 +483,6 @@ public class HomeFragment extends Fragment {
                     .commit();
         });
 
-// Government Jobs
         tagGovtJobs.setOnClickListener(v -> {
             getParentFragmentManager()
                     .beginTransaction()
@@ -527,7 +491,6 @@ public class HomeFragment extends Fragment {
                     .commit();
         });
 
-// Banking Jobs
         tagBankingJobs.setOnClickListener(v -> {
             getParentFragmentManager()
                     .beginTransaction()
@@ -536,7 +499,6 @@ public class HomeFragment extends Fragment {
                     .commit();
         });
 
-// All Jobs
         tagAllJobs.setOnClickListener(v -> {
             getParentFragmentManager()
                     .beginTransaction()
@@ -545,7 +507,6 @@ public class HomeFragment extends Fragment {
                     .commit();
         });
 
-// Private Jobs
         tagPrivateJobs.setOnClickListener(v -> {
             getParentFragmentManager()
                     .beginTransaction()
@@ -555,12 +516,11 @@ public class HomeFragment extends Fragment {
         });
 
         saveButton.setOnClickListener(v -> {
-            // No JobUpdate or DBHelper needed here – we just open the list
             requireActivity()
                     .getSupportFragmentManager()
                     .beginTransaction()
                     .replace(R.id.fragment_container, new SavedJobsFragment())
-                    .addToBackStack(null)          // optional – lets user press Back
+                    .addToBackStack(null)
                     .commit();
         });
 
@@ -569,10 +529,8 @@ public class HomeFragment extends Fragment {
             transaction.replace(R.id.fragment_container, new AllBannersList());
             transaction.addToBackStack(null);
             transaction.commit();
-            Log.d(TAG, "Navigated to AllBannersList");
         });
 
-        // Add click listener for student updates
         studentAdapter1.setOnItemClickListener(item -> {
             showStudentUpdateDialog(item);
         });
@@ -582,7 +540,6 @@ public class HomeFragment extends Fragment {
             transaction.replace(R.id.fragment_container, new Result_HallTitcket());
             transaction.addToBackStack(null);
             transaction.commit();
-            Log.d(TAG, "Navigated to Result_HallTitcket");
         });
 
         bankJobs.setOnClickListener(v -> {
@@ -590,7 +547,6 @@ public class HomeFragment extends Fragment {
             transaction.replace(R.id.fragment_container, new BankingJobs());
             transaction.addToBackStack(null);
             transaction.commit();
-            Log.d(TAG, "Navigated to BankingJobs");
         });
 
         privateJobs.setOnClickListener(v -> {
@@ -598,7 +554,6 @@ public class HomeFragment extends Fragment {
             transaction.replace(R.id.fragment_container, new PrivateJobs());
             transaction.addToBackStack(null);
             transaction.commit();
-            Log.d(TAG, "Navigated to PrivateJobs");
         });
 
         governmentJobs.setOnClickListener(v -> {
@@ -606,7 +561,6 @@ public class HomeFragment extends Fragment {
             transaction.replace(R.id.fragment_container, new GovernmentJobs());
             transaction.addToBackStack(null);
             transaction.commit();
-            Log.d(TAG, "Navigated to GovernmentJobs");
         });
 
         profileIcon.setOnClickListener(v -> {
@@ -614,42 +568,30 @@ public class HomeFragment extends Fragment {
             transaction.replace(R.id.fragment_container, new ProfileFragment());
             transaction.addToBackStack(null);
             transaction.commit();
-            Log.d(TAG, "Navigated to ProfileFragment");
         });
 
-        // Category click listeners with consistent type strings
-        govLinear.setOnClickListener(v -> {
-            Log.d(TAG, "Category clicked: government");
-            filterAndDisplay("government");
-        });
-        policeLinear.setOnClickListener(v -> {
-            Log.d(TAG, "Category clicked: police_defence");
-            filterAndDisplay("police_defence");
-        });
-        bankLinear.setOnClickListener(v -> {
-            Log.d(TAG, "Category clicked: banking");
-            filterAndDisplay("banking");
-        });
+        govLinear.setOnClickListener(v -> filterAndDisplay("government"));
+        policeLinear.setOnClickListener(v -> filterAndDisplay("police_defence"));
+        bankLinear.setOnClickListener(v -> filterAndDisplay("banking"));
     }
 
     private boolean isNetworkAvailable() {
-        Log.d(TAG, "Checking network availability");
-        ConnectivityManager cm = (ConnectivityManager) requireContext().getSystemService(Context.CONNECTIVITY_SERVICE);
+        Context context = getContext();
+        if (context == null) return false;
+        ConnectivityManager cm = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
+        if (cm == null) return false;
         NetworkInfo activeNetwork = cm.getActiveNetworkInfo();
-        boolean isAvailable = activeNetwork != null && activeNetwork.isConnectedOrConnecting();
-        Log.d(TAG, "Network available: " + isAvailable);
-        return isAvailable;
+        return activeNetwork != null && activeNetwork.isConnectedOrConnecting();
     }
 
     @RequiresApi(api = Build.VERSION_CODES.O)
     private void loadData() {
-        Log.d(TAG, "loadData called");
         if (executorService == null || executorService.isShutdown() || executorService.isTerminated()) {
-            Log.w(TAG, "ExecutorService is shutdown or terminated, creating new one");
             executorService = Executors.newSingleThreadExecutor();
         }
         try {
             executorService.execute(() -> {
+                if (!isAdded()) return;
                 loadStories();
                 loadCurrentAffairsData();
                 loadStudentUpdates();
@@ -657,32 +599,26 @@ public class HomeFragment extends Fragment {
                 loadCarouselItems();
                 loadStudyMaterials();
             });
-            // Load jobs on the main thread and initialize observer
             if (isNetworkAvailable()) {
                 jobViewModel.loadJobs(client, BuildConfig.JOB_UPDATES, requireContext());
-                loadJobUpdates(); // Ensure observer is set up
+                loadJobUpdates();
             } else {
                 mainHandler.post(() -> {
-                    if (!hasShownJobUpdatesErrorToast) {
+                    if (isAdded() && !hasShownJobUpdatesErrorToast) {
                         Toast.makeText(getContext(), "No network, cannot load job updates", Toast.LENGTH_SHORT).show();
                         hasShownJobUpdatesErrorToast = true;
                     }
                 });
             }
         } catch (Exception e) {
-            Log.e(TAG, "Error submitting task to ExecutorService", e);
             mainHandler.post(() -> {
-                Toast.makeText(getContext(), "Failed to load data due to internal error", Toast.LENGTH_SHORT).show();
+                if (isAdded()) Toast.makeText(getContext(), "Failed to load data", Toast.LENGTH_SHORT).show();
             });
         }
     }
 
     private void loadStories() {
-        Log.d(TAG, "loadStories started (API)");
-
-        if (!isNetworkAvailable()) {
-            return;
-        }
+        if (!isNetworkAvailable()) return;
 
         SharedPreferences prefs = requireContext().getSharedPreferences("UserPrefs", Context.MODE_PRIVATE);
         String userDegree = prefs.getString("degree", "");
@@ -707,10 +643,9 @@ public class HomeFragment extends Fragment {
             @RequiresApi(api = Build.VERSION_CODES.O)
             @Override
             public void onResponse(Call call, Response response) throws IOException {
-                if (!response.isSuccessful()) return;
+                if (!response.isSuccessful() || !isAdded()) return;
 
                 String body = response.body().string();
-                Log.d("storyloader", "Raw Story Response: " + body);
                 JsonObject root = new Gson().fromJson(body, JsonObject.class);
 
                 List<Story> mains = new ArrayList<>();
@@ -723,12 +658,6 @@ public class HomeFragment extends Fragment {
                         JsonObject o = arr.get(i).getAsJsonObject();
                         Story story = new Gson().fromJson(o, Story.class);
                         
-                        Log.d("storyloader", "Parsed Story: ID=" + story.getDocumentId() + 
-                              ", Title=" + story.getTitle() + 
-                              ", upload_time=" + story.getUploadTime() + 
-                              ", relative_time=" + story.getRelativeTime());
-
-                        // Build full URLs
                         story.setIconUrl(buildFullUrl(story.getIconUrl()));
                         story.setBannerUrl(buildFullUrl(story.getBannerUrl()));
                         story.setVideoUrl(buildFullUrl(story.getVideoUrl()));
@@ -739,7 +668,6 @@ public class HomeFragment extends Fragment {
                         boolean viewed = story.getDocumentId() != null && storyPrefs.getBoolean("viewed_" + story.getDocumentId(), false);
                         story.setViewed(viewed);
 
-                        // Filtering Logic
                         boolean shouldShow = true;
                         if (story.isMainStory()) {
                             boolean hasSpecificCriteria = (story.getOtherType() != null && !story.getOtherType().isEmpty()) ||
@@ -751,20 +679,12 @@ public class HomeFragment extends Fragment {
 
                             if (hasSpecificCriteria) {
                                 shouldShow = false;
-
-                                // 1. Degree Match
                                 List<String> bDegrees = story.getBachelorDegreesSafe();
                                 List<String> mDegrees = story.getMastersDegreesSafe();
                                 if (!userDegree.isEmpty() && bDegrees.contains(userDegree)) shouldShow = true;
                                 if (!userPostGrad.isEmpty() && mDegrees.contains(userPostGrad)) shouldShow = true;
-
-                                // 2. Taluka Match
                                 if (!shouldShow && !userTaluka.isEmpty() && story.getTalukaSafe().contains(userTaluka)) shouldShow = true;
-
-                                // 3. Age Group Match
                                 if (!shouldShow && !userAgeGroup.isEmpty() && story.getAgeGroupsSafe().contains(userAgeGroup)) shouldShow = true;
-
-                                // 4. Bharty Types Match
                                 if (!shouldShow) {
                                     List<String> bTypes = story.getBhartyTypesSafe();
                                     for (String type : bTypes) {
@@ -775,7 +695,6 @@ public class HomeFragment extends Fragment {
                                 }
                             }
                         } else {
-                            // If isMainStory is false, it's for all
                             shouldShow = true;
                         }
 
@@ -787,10 +706,10 @@ public class HomeFragment extends Fragment {
                 }
 
                 mainHandler.post(() -> {
+                    if (!isAdded()) return;
                     storyList.clear();
                     storyList.addAll(mains);
                     storyList.addAll(others);
-                    Log.d("storyloader", "storyList updated, size=" + storyList.size());
                     storyAdapter.notifyDataSetChanged();
                 });
             }
@@ -798,12 +717,10 @@ public class HomeFragment extends Fragment {
     }
 
     private void loadCurrentAffairsData() {
-        Log.d(TAG, "loadCurrentAffairsData started (API)");
         if (!isNetworkAvailable()) {
-            Log.w(TAG, "No network available, skipping current affairs load");
             mainHandler.post(() -> {
-                if (!hasShownCurrentAffairsErrorToast) {
-                    Toast.makeText(getContext(), "No network, cannot load current affairs", Toast.LENGTH_SHORT).show();
+                if (isAdded() && !hasShownCurrentAffairsErrorToast) {
+                    Toast.makeText(getContext(), "No network", Toast.LENGTH_SHORT).show();
                     hasShownCurrentAffairsErrorToast = true;
                 }
             });
@@ -815,9 +732,8 @@ public class HomeFragment extends Fragment {
         client.newCall(request).enqueue(new Callback() {
             @Override
             public void onFailure(Call call, IOException e) {
-                Log.e(TAG, "Failed to fetch current affairs: " + e.getMessage());
                 mainHandler.post(() -> {
-                    if (!hasShownCurrentAffairsErrorToast) {
+                    if (isAdded() && !hasShownCurrentAffairsErrorToast) {
                         Toast.makeText(getContext(), "Failed to load current affairs", Toast.LENGTH_SHORT).show();
                         hasShownCurrentAffairsErrorToast = true;
                     }
@@ -826,19 +742,9 @@ public class HomeFragment extends Fragment {
 
             @Override
             public void onResponse(Call call, Response response) throws IOException {
-                if (!response.isSuccessful()) {
-                    Log.e(TAG, "Unexpected response: " + response.code());
-                    mainHandler.post(() -> {
-                        if (!hasShownCurrentAffairsErrorToast) {
-                            Toast.makeText(getContext(), "Failed to load current affairs", Toast.LENGTH_SHORT).show();
-                            hasShownCurrentAffairsErrorToast = true;
-                        }
-                    });
-                    return;
-                }
+                if (!response.isSuccessful() || !isAdded()) return;
 
                 String body = response.body().string();
-                Log.d(TAG, "Current affairs API response length: " + body.length());
                 try {
                     JsonObject root = new Gson().fromJson(body, JsonObject.class);
                     List<CurrentAffairs> fetched = new ArrayList<>();
@@ -847,7 +753,7 @@ public class HomeFragment extends Fragment {
                         for (int i = 0; i < arr.size(); i++) {
                             JsonObject o = arr.get(i).getAsJsonObject();
                             String dateRaw = o.has("date") && !o.get("date").isJsonNull() ? o.get("date").getAsString() : null;
-                            String date = dateRaw != null && dateRaw.length() >= 10 ? dateRaw.substring(0, 10) : dateRaw; // yyyy-MM-dd
+                            String date = dateRaw != null && dateRaw.length() >= 10 ? dateRaw.substring(0, 10) : dateRaw;
                             String imageUrl = o.has("image_url") && !o.get("image_url").isJsonNull() ? o.get("image_url").getAsString() : null;
                             String pdfUrl = o.has("pdf_url") && !o.get("pdf_url").isJsonNull() ? o.get("pdf_url").getAsString() : null;
                             imageUrl = buildFullUrl(imageUrl);
@@ -861,15 +767,14 @@ public class HomeFragment extends Fragment {
 
                     final List<CurrentAffairs> finalFetched = fetched;
                     mainHandler.post(() -> {
+                        if (!isAdded()) return;
                         currentAffairsList.clear();
                         currentAffairsList.addAll(finalFetched);
                         currentAffairsAdapter.notifyDataSetChanged();
-                        Log.d(TAG, "Current affairs loaded (API), count: " + currentAffairsList.size());
                     });
                 } catch (Exception e) {
-                    Log.e(TAG, "Failed to parse current affairs API response: " + e.getMessage());
                     mainHandler.post(() -> {
-                        if (!hasShownCurrentAffairsErrorToast) {
+                        if (isAdded() && !hasShownCurrentAffairsErrorToast) {
                             Toast.makeText(getContext(), "Failed to parse current affairs", Toast.LENGTH_SHORT).show();
                             hasShownCurrentAffairsErrorToast = true;
                         }
@@ -893,43 +798,18 @@ public class HomeFragment extends Fragment {
     @RequiresApi(api = Build.VERSION_CODES.O)
     private long parseCreatedAtTimestamp(String createdAt) {
         if (createdAt == null || createdAt.trim().isEmpty()) return 0;
-
         Long epochMillis = null;
-        // 1) Try ISO-8601 with offset or zone
-        try {
-            epochMillis = java.time.OffsetDateTime.parse(createdAt).toInstant().toEpochMilli();
-        } catch (Exception ignored) {}
-
-        if (epochMillis == null) {
-            try {
-                epochMillis = java.time.ZonedDateTime.parse(createdAt).toInstant().toEpochMilli();
-            } catch (Exception ignored) {}
-        }
-
-        // 2) Try Instant
-        if (epochMillis == null) {
-            try {
-                epochMillis = java.time.Instant.parse(createdAt).toEpochMilli();
-            } catch (Exception ignored) {}
-        }
-
-        // 3) Try local datetime without zone, assume UTC
+        try { epochMillis = java.time.OffsetDateTime.parse(createdAt).toInstant().toEpochMilli(); } catch (Exception ignored) {}
+        if (epochMillis == null) { try { epochMillis = java.time.ZonedDateTime.parse(createdAt).toInstant().toEpochMilli(); } catch (Exception ignored) {} }
+        if (epochMillis == null) { try { epochMillis = java.time.Instant.parse(createdAt).toEpochMilli(); } catch (Exception ignored) {} }
         if (epochMillis == null) {
             try {
                 java.time.LocalDateTime ldt = java.time.LocalDateTime.parse(createdAt, java.time.format.DateTimeFormatter.ISO_DATE_TIME);
                 epochMillis = ldt.toInstant(java.time.ZoneOffset.UTC).toEpochMilli();
             } catch (Exception ignored) {}
         }
-
-        // 4) Try common custom patterns
         if (epochMillis == null) {
-            String[] patterns = new String[] {
-                    "yyyy-MM-dd'T'HH:mm:ss'Z'",
-                    "yyyy-MM-dd HH:mm:ss",
-                    "yyyy/MM/dd HH:mm:ss",
-                    "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'",
-                    "yyyy-MM-dd'T'HH:mm:ss.SSSXXX"
-            };
+            String[] patterns = new String[] { "yyyy-MM-dd'T'HH:mm:ss'Z'", "yyyy-MM-dd HH:mm:ss", "yyyy/MM/dd HH:mm:ss", "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", "yyyy-MM-dd'T'HH:mm:ss.SSSXXX" };
             for (String p : patterns) {
                 try {
                     java.time.format.DateTimeFormatter f = java.time.format.DateTimeFormatter.ofPattern(p).withZone(java.time.ZoneOffset.UTC);
@@ -938,155 +818,38 @@ public class HomeFragment extends Fragment {
                 } catch (Exception ignored) {}
             }
         }
-
-        // 5) If it's just a number, treat as epoch seconds or millis
         if (epochMillis == null) {
             try {
                 long numeric = Long.parseLong(createdAt.trim());
-                if (createdAt.trim().length() <= 10) {
-                    epochMillis = numeric * 1000L;
-                } else {
-                    epochMillis = numeric;
-                }
+                if (createdAt.trim().length() <= 10) epochMillis = numeric * 1000L;
+                else epochMillis = numeric;
             } catch (Exception ignored) {}
         }
-
         return epochMillis != null ? epochMillis : 0;
     }
 
-    @RequiresApi(api = Build.VERSION_CODES.O)
-    private String computeRelativeFromString(String createdAt) {
-        if (createdAt == null || createdAt.trim().isEmpty()) return "";
-
-        Long epochMillis = null;
-        // 1) Try ISO-8601 with offset or zone
-        try {
-            epochMillis = java.time.OffsetDateTime.parse(createdAt).toInstant().toEpochMilli();
-        } catch (Exception ignored) {}
-
-        if (epochMillis == null) {
-            try {
-                epochMillis = java.time.ZonedDateTime.parse(createdAt).toInstant().toEpochMilli();
-            } catch (Exception ignored) {}
-        }
-
-        // 2) Try Instant
-        if (epochMillis == null) {
-            try {
-                epochMillis = java.time.Instant.parse(createdAt).toEpochMilli();
-            } catch (Exception ignored) {}
-        }
-
-        // 3) Try local datetime without zone, assume UTC
-        if (epochMillis == null) {
-            try {
-                java.time.LocalDateTime ldt = java.time.LocalDateTime.parse(createdAt, java.time.format.DateTimeFormatter.ISO_DATE_TIME);
-                epochMillis = ldt.toInstant(java.time.ZoneOffset.UTC).toEpochMilli();
-            } catch (Exception ignored) {}
-        }
-
-        // 4) Try common custom patterns
-        if (epochMillis == null) {
-            String[] patterns = new String[] {
-                    "yyyy-MM-dd'T'HH:mm:ss'Z'",
-                    "yyyy-MM-dd HH:mm:ss",
-                    "yyyy/MM/dd HH:mm:ss",
-                    "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'",
-                    "yyyy-MM-dd'T'HH:mm:ss.SSSXXX"
-            };
-            for (String p : patterns) {
-                try {
-                    java.time.format.DateTimeFormatter f = java.time.format.DateTimeFormatter.ofPattern(p).withZone(java.time.ZoneOffset.UTC);
-                    epochMillis = java.time.Instant.from(f.parse(createdAt)).toEpochMilli();
-                    break;
-                } catch (Exception ignored) {}
-            }
-        }
-
-        // 5) If it's just a number, treat as epoch seconds or millis
-        if (epochMillis == null) {
-            try {
-                long numeric = Long.parseLong(createdAt.trim());
-                if (createdAt.trim().length() <= 10) {
-                    epochMillis = numeric * 1000L;
-                } else {
-                    epochMillis = numeric;
-                }
-            } catch (Exception ignored) {}
-        }
-
-        if (epochMillis == null) return "";
-
-        long now = System.currentTimeMillis();
-        long diff = Math.max(0, now - epochMillis);
-        long seconds = diff / 1000;
-        long minutes = seconds / 60;
-        long hours = minutes / 60;
-        long days = hours / 24;
-        if (seconds < 60) return seconds + "s ago";
-        if (minutes < 60) return minutes + "m ago";
-        if (hours < 24) return hours + "h ago";
-        if (days < 7) return days + "d ago";
-        return (days / 7) + "w ago";
-    }
-
     private void loadJobUpdates() {
-        Log.d(TAG, "loadJobUpdates started");
-        if (!isNetworkAvailable()) {
-            Log.w(TAG, "No network available, skipping job updates load");
-            mainHandler.post(() -> {
-                if (!hasShownJobUpdatesErrorToast) {
-                    Toast.makeText(getContext(), "No network, cannot load job updates", Toast.LENGTH_SHORT).show();
-                    hasShownJobUpdatesErrorToast = true;
-                }
-            });
-            return;
-        }
-
-        // Observe job updates
+        if (!isNetworkAvailable()) return;
         jobViewModel.getJobs().observe(getViewLifecycleOwner(), jobs -> {
             if (jobs != null) {
-                Log.d(TAG, "Job updates observed, total count: " + jobs.size());
                 jobUpdatesList.clear();
-                // Take the 5 most recent jobs (assuming sorted by timestamp descending)
                 int limit = Math.min(5, jobs.size());
                 jobUpdatesList.addAll(jobs.subList(0, limit));
                 updateRecentRecycler();
-                Log.d(TAG, "Loaded " + jobUpdatesList.size() + " recent job updates");
-            } else {
-                Log.w(TAG, "No job updates available");
-                mainHandler.post(() -> {
-                    if (!hasShownJobUpdatesErrorToast) {
-                        Toast.makeText(getContext(), "No job updates available", Toast.LENGTH_SHORT).show();
-                        hasShownJobUpdatesErrorToast = true;
-                    }
-                });
             }
         });
-
         jobViewModel.getErrorMessage().observe(getViewLifecycleOwner(), message -> {
-            if (message != null) {
-                Log.e(TAG, "Error loading job updates: " + message);
-                mainHandler.post(() -> {
-                    if (!hasShownJobUpdatesErrorToast) {
-                        Toast.makeText(getContext(), "Failed to load job updates: " + message, Toast.LENGTH_SHORT).show();
-                        hasShownJobUpdatesErrorToast = true;
-                    }
-                });
+            if (message != null && isAdded() && !hasShownJobUpdatesErrorToast) {
+                Toast.makeText(getContext(), "Failed to load job updates", Toast.LENGTH_SHORT).show();
+                hasShownJobUpdatesErrorToast = true;
             }
         });
     }
 
     private void updateRecentRecycler() {
-        Log.d(TAG, "updateRecentRecycler called");
         final List<JobUpdate> finalJobUpdatesList = new ArrayList<>(jobUpdatesList);
         mainHandler.post(() -> {
-            // Check if fragment is still attached and views are available
-            if (!isAdded() || getContext() == null || recentRecycler == null) {
-                Log.w(TAG, "updateRecentRecycler: Fragment not attached or views null, skipping update");
-                return;
-            }
-            
+            if (!isAdded() || getContext() == null || recentRecycler == null) return;
             recentRecycler.removeAllViews();
             LayoutInflater inflater = LayoutInflater.from(getContext());
             for (JobUpdate item : finalJobUpdatesList) {
@@ -1095,51 +858,32 @@ public class HomeFragment extends Fragment {
                 TextView lastDate = itemView.findViewById(R.id.txt_lastDate);
                 TextView timeAgo = itemView.findViewById(R.id.txt_time_ago);
                 ImageView logo = itemView.findViewById(R.id.imageView18);
-
                 titleView.setText(item.getTitle());
                 lastDate.setText(item.getFormattedLastDateMarathi());
                 timeAgo.setText(item.getTimeAgo());
                 Glide.with(getContext()).load(item.getIconUrl()).into(logo);
-
                 itemView.setOnClickListener(v -> {
-                    if (!isAdded() || getContext() == null) {
-                        return;
-                    }
-                    JobUpdateDetails fragment = JobUpdateDetails.newInstance(item); // Pass full JobUpdate object
+                    if (!isAdded()) return;
+                    JobUpdateDetails fragment = JobUpdateDetails.newInstance(item);
                     FragmentTransaction transaction = getParentFragmentManager().beginTransaction();
                     transaction.replace(R.id.fragment_container, fragment);
                     transaction.addToBackStack(null);
                     transaction.commit();
-                    Log.d(TAG, "Navigated to JobUpdateDetails with job: " + item.getTitle());
                 });
-
                 recentRecycler.addView(itemView);
             }
-            Log.d(TAG, "Updated recentRecycler with " + finalJobUpdatesList.size() + " items");
         });
     }
 
     private void loadStudentUpdates() {
-        Log.d(TAG, "loadStudentUpdates started (API)");
-        if (!isNetworkAvailable()) {
-            Log.w(TAG, "No network available, skipping student updates load");
-            mainHandler.post(() -> {
-                if (!hasShownStudentUpdatesErrorToast) {
-                    Toast.makeText(getContext(), "No network, cannot load student updates", Toast.LENGTH_SHORT).show();
-                    hasShownStudentUpdatesErrorToast = true;
-                }
-            });
-            return;
-        }
-
+        if (!isNetworkAvailable()) return;
         String url = BuildConfig.BASE_URL + BuildConfig.STUDENT_UPDATES;
         Request request = new Request.Builder().url(url).build();
         client.newCall(request).enqueue(new Callback() {
             @Override
             public void onFailure(Call call, IOException e) {
-                Log.e(TAG, "Failed to fetch student updates: " + e.getMessage());
                 mainHandler.post(() -> {
-                    if (!hasShownStudentUpdatesErrorToast) {
+                    if (isAdded() && !hasShownStudentUpdatesErrorToast) {
                         Toast.makeText(getContext(), "Failed to load student updates", Toast.LENGTH_SHORT).show();
                         hasShownStudentUpdatesErrorToast = true;
                     }
@@ -1148,19 +892,8 @@ public class HomeFragment extends Fragment {
 
             @Override
             public void onResponse(Call call, Response response) throws IOException {
-                if (!response.isSuccessful()) {
-                    Log.e(TAG, "Unexpected response: " + response.code());
-                    mainHandler.post(() -> {
-                        if (!hasShownStudentUpdatesErrorToast) {
-                            Toast.makeText(getContext(), "Failed to load student updates", Toast.LENGTH_SHORT).show();
-                            hasShownStudentUpdatesErrorToast = true;
-                        }
-                    });
-                    return;
-                }
-
+                if (!response.isSuccessful() || !isAdded()) return;
                 String body = response.body().string();
-                Log.d(TAG, "Student updates API response length: " + body.length());
                 try {
                     JsonObject root = new Gson().fromJson(body, JsonObject.class);
                     List<StudentUpdateItem> fetched = new ArrayList<>();
@@ -1180,41 +913,25 @@ public class HomeFragment extends Fragment {
                             String notificationPdfUrl = o.has("notification_pdf_url") && !o.get("notification_pdf_url").isJsonNull() ? o.get("notification_pdf_url").getAsString() : "";
                             String selectionPdfUrl = o.has("selection_pdf_url") && !o.get("selection_pdf_url").isJsonNull() ? o.get("selection_pdf_url").getAsString() : "";
                             String createdAt = o.has("created_at") && !o.get("created_at").isJsonNull() ? o.get("created_at").getAsString() : "";
-
                             imageUrl = buildFullUrl(imageUrl);
                             iconUrl = buildFullUrl(iconUrl);
                             notificationPdfUrl = buildFullUrl(notificationPdfUrl);
                             selectionPdfUrl = buildFullUrl(selectionPdfUrl);
                             applicationLink = buildFullUrl(applicationLink);
-
                             if (imageUrl == null || imageUrl.isEmpty()) continue;
-
-                            fetched.add(new StudentUpdateItem(id, title, education, applicationMethod,
-                                    description, applicationLink, lastDate, imageUrl, iconUrl, notificationPdfUrl, selectionPdfUrl, createdAt));
-                            Log.d(TAG, "student update image url " + imageUrl);
+                            fetched.add(new StudentUpdateItem(id, title, education, applicationMethod, description, applicationLink, lastDate, imageUrl, iconUrl, notificationPdfUrl, selectionPdfUrl, createdAt));
                         }
                     }
-
                     final List<StudentUpdateItem> finalFetched = fetched;
-                    final StudentUpdateAdapter finalStudentAdapter1 = studentAdapter1;
-                    final StudentUpdateAdapter finalStudentAdapter2 = studentAdapter2;
-                    final StudentUpdateAdapter finalStudentAdapter3 = studentAdapter3;
-                    final StudentUpdateAdapter finalStudentAdapter4 = studentAdapter4;
-                    final StudentUpdateAdapter finalStudentAdapter5 = studentAdapter5;
                     mainHandler.post(() -> {
+                        if (!isAdded()) return;
                         studentUpdatesList.clear();
                         studentUpdatesList.addAll(finalFetched);
-                        if (finalStudentAdapter1 != null) finalStudentAdapter1.notifyDataSetChanged();
-                        if (finalStudentAdapter2 != null) finalStudentAdapter2.notifyDataSetChanged();
-                        if (finalStudentAdapter3 != null) finalStudentAdapter3.notifyDataSetChanged();
-                        if (finalStudentAdapter4 != null) finalStudentAdapter4.notifyDataSetChanged();
-                        if (finalStudentAdapter5 != null) finalStudentAdapter5.notifyDataSetChanged();
-                        Log.d(TAG, "Student updates loaded (API), count: " + studentUpdatesList.size());
+                        if (studentAdapter1 != null) studentAdapter1.notifyDataSetChanged();
                     });
                 } catch (Exception e) {
-                    Log.e(TAG, "Failed to parse student updates API response: " + e.getMessage());
                     mainHandler.post(() -> {
-                        if (!hasShownStudentUpdatesErrorToast) {
+                        if (isAdded() && !hasShownStudentUpdatesErrorToast) {
                             Toast.makeText(getContext(), "Failed to parse student updates", Toast.LENGTH_SHORT).show();
                             hasShownStudentUpdatesErrorToast = true;
                         }
@@ -1227,23 +944,18 @@ public class HomeFragment extends Fragment {
     @Override
     public void onPause() {
         super.onPause();
-        // When fragment is not in foreground, stop all story playback
         try {
             stopStory(requireContext());
         } catch (Exception e) {
-            Log.e(TAG, "Failed to stop stories in onPause: " + e.getMessage(), e);
+            Log.e(TAG, "Failed to stop stories in onPause");
         }
     }
 
     public void showStudentUpdateDialog(@NonNull StudentUpdateItem item) {
         Context context = this.getContext();
         if (context == null) return;
-
-        // Create Dialog with BlurDialogTheme
         Dialog dialog = new Dialog(context, R.style.BlurDialogTheme);
         dialog.setContentView(R.layout.student_update);
-
-        // Set window attributes to match news dialog
         WindowManager.LayoutParams lp = new WindowManager.LayoutParams();
         lp.copyFrom(dialog.getWindow().getAttributes());
         lp.width = WindowManager.LayoutParams.MATCH_PARENT;
@@ -1253,8 +965,6 @@ public class HomeFragment extends Fragment {
         dialog.getWindow().setAttributes(lp);
         dialog.getWindow().addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
         dialog.getWindow().setStatusBarColor(android.graphics.Color.TRANSPARENT);
-
-        // Initialize views
         CircleImageView iconImageView = dialog.findViewById(R.id.circleImageView2);
         ImageButton btnClose = dialog.findViewById(R.id.btn_close);
         TextView titleText = dialog.findViewById(R.id.title_text);
@@ -1262,78 +972,45 @@ public class HomeFragment extends Fragment {
         TextView descriptionText = dialog.findViewById(R.id.textView6);
         androidx.cardview.widget.CardView openLinkButton = dialog.findViewById(R.id.open_link_button);
         androidx.cardview.widget.CardView selectionPdfButton = dialog.findViewById(R.id.selection_pdf_button);
-        
-        // Close button click
         btnClose.setOnClickListener(v -> dialog.dismiss());
-
-        // Load icon image
         if (item.getIconUrl() != null && !item.getIconUrl().isEmpty()) {
-            Glide.with(context)
-                    .load(item.getIconUrl())
-                    .placeholder(R.drawable.app_logo)
-                    .error(R.drawable.app_logo)
-                    .into(iconImageView);
+            Glide.with(context).load(item.getIconUrl()).placeholder(R.drawable.app_logo).error(R.drawable.app_logo).into(iconImageView);
         } else {
             iconImageView.setImageResource(R.drawable.app_logo);
         }
-
-        // Set text data
         titleText.setText(item.getTitle() != null ? item.getTitle() : "N/A");
         educationValue.setText(item.getEducation() != null ? item.getEducation() : "N/A");
         descriptionText.setText(item.getDescription() != null ? item.getDescription() : "N/A");
-
-        // 🔗 Open Link Button Click
         openLinkButton.setOnClickListener(v -> {
             String link = item.getApplicationLink();
             if (link != null && !link.isEmpty()) {
-                dialog.dismiss(); // Close dialog before opening WebView
+                dialog.dismiss();
                 com.newsproject.oneroadmap.Utils.WebViewHelper.openUrlInApp(this, link);
             } else {
-                Toast.makeText(context, "अर्जाची लिंक उपलब्ध नाही", Toast.LENGTH_SHORT).show();
+                Toast.makeText(context, "link not available", Toast.LENGTH_SHORT).show();
             }
         });
-
-        // 📄 Selection PDF Button Click
         selectionPdfButton.setOnClickListener(v -> {
             String pdfUrl = item.getSelectionPdfUrl();
             if (pdfUrl != null && !pdfUrl.isEmpty()) {
-
-                coinAccessController.requestPdfAccess(
-                        pdfUrl,
-                        () -> dialog.dismiss()   // 🔥 Close ONLY after Open pressed
-                );
-
+                coinAccessController.requestPdfAccess(pdfUrl, () -> dialog.dismiss());
             } else {
-                Toast.makeText(context, "सिलेक्शन PDF उपलब्ध नाही", Toast.LENGTH_SHORT).show();
+                Toast.makeText(context, "PDF not available", Toast.LENGTH_SHORT).show();
             }
         });
-
-        // Show dialog
         dialog.setCancelable(true);
         dialog.show();
     }
 
     private void loadStudyMaterials() {
-        Log.d(TAG, "loadStudyMaterials started (API)");
-        if (!isNetworkAvailable()) {
-            Log.w(TAG, "No network available, skipping study materials load");
-            mainHandler.post(() -> {
-                if (!hasShownStudyMaterialsErrorToast) {
-                    Toast.makeText(getContext(), "No network, cannot load study materials", Toast.LENGTH_SHORT).show();
-                    hasShownStudyMaterialsErrorToast = true;
-                }
-            });
-            return;
-        }
-
+        if (!isNetworkAvailable()) return;
         String url = BuildConfig.BASE_URL + BuildConfig.STUDY_MATERIALS;
         Request request = new Request.Builder().url(url).build();
         client.newCall(request).enqueue(new Callback() {
             @Override
             public void onFailure(Call call, IOException e) {
-                Log.e(TAG, "Failed to fetch study materials: " + e.getMessage());
                 mainHandler.post(() -> {
-                    if (!hasShownStudyMaterialsErrorToast) {
+                    if (isAdded() && !hasShownStudyMaterialsErrorToast) {
                         Toast.makeText(getContext(), "Failed to load study materials", Toast.LENGTH_SHORT).show();
                         hasShownStudyMaterialsErrorToast = true;
                     }
@@ -1342,19 +1019,8 @@ public class HomeFragment extends Fragment {
 
             @Override
             public void onResponse(Call call, Response response) throws IOException {
-                if (!response.isSuccessful()) {
-                    Log.e(TAG, "Unexpected response: " + response.code());
-                    mainHandler.post(() -> {
-                        if (!hasShownStudyMaterialsErrorToast) {
-                            Toast.makeText(getContext(), "Failed to load study materials", Toast.LENGTH_SHORT).show();
-                            hasShownStudyMaterialsErrorToast = true;
-                        }
-                    });
-                    return;
-                }
-
+                if (!response.isSuccessful() || !isAdded()) return;
                 String body = response.body().string();
-                Log.d(TAG, "Study materials API response length: " + body.length());
                 try {
                     JsonObject root = new Gson().fromJson(body, JsonObject.class);
                     List<StudyMaterial> fetched = new ArrayList<>();
@@ -1369,28 +1035,20 @@ public class HomeFragment extends Fragment {
                             String pdfUrl = o.has("pdf_url") && !o.get("pdf_url").isJsonNull() ? o.get("pdf_url").getAsString() : null;
                             imageUrl = buildFullUrl(imageUrl);
                             pdfUrl = buildFullUrl(pdfUrl);
-                            if (id == null || title == null || type == null || imageUrl == null || imageUrl.isEmpty() || pdfUrl == null || pdfUrl.isEmpty()) {
-                                continue;
-                            }
+                            if (id == null || title == null || type == null || imageUrl == null || imageUrl.isEmpty() || pdfUrl == null || pdfUrl.isEmpty()) continue;
                             fetched.add(new StudyMaterial(id, title, type, imageUrl, pdfUrl));
                         }
                     }
-
                     final List<StudyMaterial> finalFetched = fetched;
                     mainHandler.post(() -> {
-                        if (!isAdded() || getContext() == null) {
-                            Log.w(TAG, "Fragment not attached, skipping filterAndDisplay");
-                            return;
-                        }
+                        if (!isAdded()) return;
                         studyMaterialsAll.clear();
                         studyMaterialsAll.addAll(finalFetched);
-                        filterAndDisplay("government"); // Default to government
-                        Log.d(TAG, "Study materials loaded (API), count: " + studyMaterialsAll.size());
+                        filterAndDisplay("government");
                     });
                 } catch (Exception e) {
-                    Log.e(TAG, "Failed to parse study materials API response: " + e.getMessage());
                     mainHandler.post(() -> {
-                        if (!hasShownStudyMaterialsErrorToast) {
+                        if (isAdded() && !hasShownStudyMaterialsErrorToast) {
                             Toast.makeText(getContext(), "Failed to parse study materials", Toast.LENGTH_SHORT).show();
                             hasShownStudyMaterialsErrorToast = true;
                         }
@@ -1401,227 +1059,93 @@ public class HomeFragment extends Fragment {
     }
 
     private void filterAndDisplay(String type) {
-        Log.d(TAG, "Filtering study materials for category: " + type);
         currentStudyMaterials.clear();
-        String normalizedType = type; // Normalize input type to match API data
-        switch (type) {
-            case "self_improvement":
-                normalizedType = "self improvement";
-                break;
-            case "police_defence":
-                normalizedType = "police & defence";
-                break;
-        }
+        String normalizedType = type;
+        if (type.equals("police_defence")) normalizedType = "police & defence";
         for (StudyMaterial material : studyMaterialsAll) {
-            if (material.getType().equals(normalizedType)) {
-                currentStudyMaterials.add(material);
-            }
+            if (material.getType().equals(normalizedType)) currentStudyMaterials.add(material);
         }
-        if (studyMaterialAdapter != null) {
-            studyMaterialAdapter.notifyDataSetChanged();
-        }
-        Log.d(TAG, "Data fetch status for " + type + ": " + (currentStudyMaterials.isEmpty() ? "No data fetched" : "Fetched " + currentStudyMaterials.size() + " items"));
+        if (studyMaterialAdapter != null) studyMaterialAdapter.notifyDataSetChanged();
         if (currentStudyMaterials.isEmpty()) {
             mainHandler.post(() -> {
-                if (isAdded() && getContext() != null) {
-                    Toast.makeText(getContext(), "No study materials available for " + type, Toast.LENGTH_SHORT).show();
-                }
+                if (isAdded()) Toast.makeText(getContext(), "No materials for " + type, Toast.LENGTH_SHORT).show();
             });
         }
         updateCategoryBackgrounds(type);
     }
 
     private void updateCategoryBackgrounds(String activeType) {
-        // Check if fragment is attached and views are available
-        if (!isAdded() || getContext() == null) {
-            Log.w(TAG, "updateCategoryBackgrounds: Fragment not attached or context null, skipping update");
-            return;
-        }
-        
-        if (govLinear == null || policeLinear == null || bankLinear == null) {
-            Log.w(TAG, "updateCategoryBackgrounds: Views are null, skipping update");
-            return;
-        }
-        
+        if (!isAdded() || getContext() == null || govLinear == null) return;
         Context context = getContext();
-        
-        // Update government category
         govLinear.setBackgroundResource(activeType.equals("government") ? R.drawable.study_material_active : R.drawable.study_material_inactive);
-        if (govLinear.getChildCount() > 1) {
-            TextView govText = (TextView) govLinear.getChildAt(1);
-            govText.setTextColor(ContextCompat.getColor(context, activeType.equals("government") ? R.color.white : R.color.black));
-        }
-
-        // Update police_defence category
+        if (govLinear.getChildCount() > 1) ((TextView) govLinear.getChildAt(1)).setTextColor(ContextCompat.getColor(context, activeType.equals("government") ? R.color.white : R.color.black));
         policeLinear.setBackgroundResource(activeType.equals("police_defence") ? R.drawable.study_material_active : R.drawable.study_material_inactive);
-        if (policeLinear.getChildCount() > 1) {
-            TextView policeText = (TextView) policeLinear.getChildAt(1);
-            policeText.setTextColor(ContextCompat.getColor(context, activeType.equals("police_defence") ? R.color.white : R.color.black));
-        }
-
-        // Update banking category
+        if (policeLinear.getChildCount() > 1) ((TextView) policeLinear.getChildAt(1)).setTextColor(ContextCompat.getColor(context, activeType.equals("police_defence") ? R.color.white : R.color.black));
         bankLinear.setBackgroundResource(activeType.equals("banking") ? R.drawable.study_material_active : R.drawable.study_material_inactive);
-        if (bankLinear.getChildCount() > 1) {
-            TextView bankText = (TextView) bankLinear.getChildAt(1);
-            bankText.setTextColor(ContextCompat.getColor(context, activeType.equals("banking") ? R.color.white : R.color.black));
-        }
-
-
+        if (bankLinear.getChildCount() > 1) ((TextView) bankLinear.getChildAt(1)).setTextColor(ContextCompat.getColor(context, activeType.equals("banking") ? R.color.white : R.color.black));
     }
 
     private void loadNews() {
-        Log.d(TAG, "loadNews started (API)");
         if (!isNetworkAvailable()) {
-            Log.w(TAG, "No network available, skipping news load");
             mainHandler.post(() -> {
-                if (!hasShownNewsErrorToast) {
-                    Toast.makeText(getContext(), "No network, cannot load news", Toast.LENGTH_SHORT).show();
+                if (isAdded() && !hasShownNewsErrorToast) {
+                    Toast.makeText(getContext(), "No network", Toast.LENGTH_SHORT).show();
                     hasShownNewsErrorToast = true;
-                }
-                // Hide the section if no network
-                View titleContainer = getView() != null ? getView().findViewById(R.id.all_linear5) : null;
-                if (titleContainer != null) {
-                    titleContainer.setVisibility(View.GONE);
-                    recentlyOpenedRecycler.setVisibility(View.GONE);
                 }
             });
             return;
         }
-
         String url = BuildConfig.BASE_URL + BuildConfig.NEWS;
         Request request = new Request.Builder().url(url).build();
         client.newCall(request).enqueue(new Callback() {
             @Override
             public void onFailure(Call call, IOException e) {
-                Log.e(TAG, "Failed to fetch news: " + e.getMessage());
                 mainHandler.post(() -> {
-                    if (!hasShownNewsErrorToast) {
+                    if (isAdded() && !hasShownNewsErrorToast) {
                         Toast.makeText(getContext(), "Failed to load news", Toast.LENGTH_SHORT).show();
                         hasShownNewsErrorToast = true;
-                    }
-                    // Hide the section on error
-                    View titleContainer = getView() != null ? getView().findViewById(R.id.all_linear5) : null;
-                    if (titleContainer != null) {
-                        titleContainer.setVisibility(View.GONE);
-                        recentlyOpenedRecycler.setVisibility(View.GONE);
                     }
                 });
             }
 
             @Override
             public void onResponse(Call call, Response response) throws IOException {
-                if (!response.isSuccessful()) {
-                    Log.e(TAG, "Unexpected response: " + response.code());
-                    mainHandler.post(() -> {
-                        if (!hasShownNewsErrorToast) {
-                            Toast.makeText(getContext(), "Failed to load news", Toast.LENGTH_SHORT).show();
-                            hasShownNewsErrorToast = true;
-                        }
-                        // Hide the section on error
-                        View titleContainer = getView() != null ? getView().findViewById(R.id.all_linear5) : null;
-                        if (titleContainer != null) {
-                            titleContainer.setVisibility(View.GONE);
-                            recentlyOpenedRecycler.setVisibility(View.GONE);
-                        }
-                    });
-                    return;
-                }
-
+                if (!response.isSuccessful() || !isAdded()) return;
                 String body = response.body().string();
-                Log.d(TAG, "News API response length: " + body.length());
                 try {
                     JsonObject root = new Gson().fromJson(body, JsonObject.class);
                     List<News> fetched = new ArrayList<>();
                     if (root != null) {
-                        // Handle different response formats
                         JsonArray newsArray = null;
-                        if (root.has("news") && root.get("news").isJsonArray()) {
-                            newsArray = root.getAsJsonArray("news");
-                        } else if (root.has("data") && root.get("data").isJsonArray()) {
-                            newsArray = root.getAsJsonArray("data");
-                        } else if (root.isJsonArray()) {
-                            newsArray = root.getAsJsonArray();
-                        }
-                        
+                        if (root.has("news") && root.get("news").isJsonArray()) newsArray = root.getAsJsonArray("news");
+                        else if (root.has("data") && root.get("data").isJsonArray()) newsArray = root.getAsJsonArray("data");
+                        else if (root.isJsonArray()) newsArray = root.getAsJsonArray();
                         if (newsArray != null) {
                             for (int i = 0; i < newsArray.size(); i++) {
                                 JsonObject newsObj = newsArray.get(i).getAsJsonObject();
                                 News news = new Gson().fromJson(newsObj, News.class);
-                                // Build full URL for image (same as JobUpdate)
-                                if (news.getImageUrl() != null) {
-                                    news.setImageUrl(buildFullUrl(news.getImageUrl()));
-                                }
+                                if (news.getImageUrl() != null) news.setImageUrl(buildFullUrl(news.getImageUrl()));
                                 fetched.add(news);
                             }
-                        } else if (root.has("news") && root.get("news").isJsonObject()) {
-                            // Single news item
-                            JsonObject newsObj = root.getAsJsonObject("news");
-                            News news = new Gson().fromJson(newsObj, News.class);
-                            // Build full URL for image (same as JobUpdate)
-                            if (news.getImageUrl() != null) {
-                                news.setImageUrl(buildFullUrl(news.getImageUrl()));
-                            }
-                            fetched.add(news);
                         }
                     }
-
-                    // Sort news by most recent first (by createdAt date, descending)
-                    fetched.sort((news1, news2) -> {
-                        Date date1 = news1.getCreatedAt();
-                        Date date2 = news2.getCreatedAt();
-                        
-                        // If both have createdAt dates, compare them
-                        if (date1 != null && date2 != null) {
-                            return date2.compareTo(date1); // Descending order (newest first)
-                        }
-                        
-                        // If only one has createdAt, prioritize it
-                        if (date1 != null) return -1;
-                        if (date2 != null) return 1;
-                        
-                        // If neither has createdAt, try date string
-                        String dateStr1 = news1.getDate();
-                        String dateStr2 = news2.getDate();
-                        if (dateStr1 != null && dateStr2 != null) {
-                            return dateStr2.compareTo(dateStr1); // Descending order
-                        }
-                        
+                    fetched.sort((n1, n2) -> {
+                        Date d1 = n1.getCreatedAt(); Date d2 = n2.getCreatedAt();
+                        if (d1 != null && d2 != null) return d2.compareTo(d1);
                         return 0;
                     });
-                    
                     final List<News> finalFetched = fetched;
                     mainHandler.post(() -> {
-                        View titleContainer = getView() != null ? getView().findViewById(R.id.all_linear5) : null;
-                        boolean hasItems = !finalFetched.isEmpty();
-                        
-                        if (titleContainer != null) {
-                            titleContainer.setVisibility(hasItems ? View.VISIBLE : View.GONE);
-                            recentlyOpenedRecycler.setVisibility(hasItems ? View.VISIBLE : View.GONE);
-                        }
-                        
-                        if (hasItems) {
-                            newsList.clear();
-                            newsList.addAll(finalFetched);
-                            if (newsAdapter != null) {
-                                newsAdapter.notifyDataSetChanged();
-                            }
-                            Log.d(TAG, "News loaded (API), count: " + newsList.size());
-                        } else {
-                            Log.d(TAG, "No news items found");
-                        }
+                        if (!isAdded()) return;
+                        newsList.clear();
+                        newsList.addAll(finalFetched);
+                        if (newsAdapter != null) newsAdapter.notifyDataSetChanged();
                     });
                 } catch (Exception e) {
-                    Log.e(TAG, "Failed to parse news API response: " + e.getMessage(), e);
                     mainHandler.post(() -> {
-                        if (!hasShownNewsErrorToast) {
+                        if (isAdded() && !hasShownNewsErrorToast) {
                             Toast.makeText(getContext(), "Failed to parse news", Toast.LENGTH_SHORT).show();
                             hasShownNewsErrorToast = true;
-                        }
-                        // Hide the section on parse error
-                        View titleContainer = getView() != null ? getView().findViewById(R.id.all_linear5) : null;
-                        if (titleContainer != null) {
-                            titleContainer.setVisibility(View.GONE);
-                            recentlyOpenedRecycler.setVisibility(View.GONE);
                         }
                     });
                 }
@@ -1630,39 +1154,17 @@ public class HomeFragment extends Fragment {
     }
 
     private void loadCarouselItems() {
-        Log.d(TAG, "loadCarouselItems started (Home API)");
-
-        if (carousel == null) {
-            return;
-        }
-
-        if (!isNetworkAvailable()) {
-            return;
-        }
-
+        if (!isNetworkAvailable()) return;
         final Map<String, JobUpdate> jobUpdateCache = new HashMap<>();
-        SharedPreferences prefs = requireContext().getSharedPreferences("UserPrefs", Context.MODE_PRIVATE);
-        String userDegree = prefs.getString("degree", "");
-        String userPostGrad = prefs.getString("postGraduation", "");
-        String userTaluka = prefs.getString("taluka", "");
-        String userAgeGroup = prefs.getString("ageGroup", "");
-        
-        boolean studyGov = prefs.getBoolean("study_Government", false);
-        boolean studyPolice = prefs.getBoolean("study_Police_Defence", false);
-        boolean studyBank = prefs.getBoolean("study_Banking", false);
-
         String url = BuildConfig.BASE_URL + BuildConfig.SLIDERS_HOME;
         Request request = new Request.Builder().url(url).build();
         client.newCall(request).enqueue(new Callback() {
             @Override
-            public void onFailure(Call call, IOException e) {
-                Log.e(TAG, "Failed to fetch home carousel items: " + e.getMessage());
-            }
+            public void onFailure(Call call, IOException e) { Log.e(TAG, "Failed to fetch carousel"); }
 
             @Override
             public void onResponse(Call call, Response response) throws IOException {
-                if (!response.isSuccessful()) return;
-
+                if (!response.isSuccessful() || !isAdded()) return;
                 String body = response.body().string();
                 try {
                     JsonObject root = new Gson().fromJson(body, JsonObject.class);
@@ -1672,132 +1174,37 @@ public class HomeFragment extends Fragment {
                         for (int i = 0; i < arr.size(); i++) {
                             JsonObject o = arr.get(i).getAsJsonObject();
                             Slider slider = new Gson().fromJson(o, Slider.class);
-                            if (slider.getImageUrl() == null || slider.getImageUrl().isEmpty()) continue;
-
-                            boolean shouldShow = true;
-                            if (slider.isSpecific()) {
-                                boolean hasSpecificCriteria = (slider.getOtherType() != null && !slider.getOtherType().isEmpty()) ||
-                                        !slider.getBachelorDegreesSafe().isEmpty() ||
-                                        !slider.getMastersDegreesSafe().isEmpty() ||
-                                        !slider.getTalukaSafe().isEmpty() ||
-                                        !slider.getAgeGroupsSafe().isEmpty() ||
-                                        !slider.getBhartyTypesSafe().isEmpty();
-
-                                if (hasSpecificCriteria) {
-                                    shouldShow = false;
-
-                                    // 1. Degree Match
-                                    List<String> bDegrees = slider.getBachelorDegreesSafe();
-                                    List<String> mDegrees = slider.getMastersDegreesSafe();
-                                    if (!userDegree.isEmpty() && bDegrees.contains(userDegree)) shouldShow = true;
-                                    if (!userPostGrad.isEmpty() && mDegrees.contains(userPostGrad)) shouldShow = true;
-
-                                    // 2. Taluka Match
-                                    if (!shouldShow && !userTaluka.isEmpty() && slider.getTalukaSafe().contains(userTaluka)) shouldShow = true;
-
-                                    // 3. Age Group Match
-                                    if (!shouldShow && !userAgeGroup.isEmpty() && slider.getAgeGroupsSafe().contains(userAgeGroup)) shouldShow = true;
-
-                                    // 4. Bharty Types Match
-                                    if (!shouldShow) {
-                                        List<String> bTypes = slider.getBhartyTypesSafe();
-                                        for (String type : bTypes) {
-                                            if (type.equalsIgnoreCase("Government") && studyGov) { shouldShow = true; break; }
-                                            if (type.equalsIgnoreCase("Police & Defence") && studyPolice) { shouldShow = true; break; }
-                                            if (type.equalsIgnoreCase("Banking") && studyBank) { shouldShow = true; break; }
-                                        }
-                                    }
-                                }
-                            } else {
-                                // If isSpecific is false, it's for all
-                                shouldShow = true;
-                            }
-
-                            if (shouldShow) {
-                                slider.setImageUrl(buildFullUrl(slider.getImageUrl()));
-                                finalSliders.add(slider);
-                                if ("post".equalsIgnoreCase(slider.getType())) {
-                                    String id = slider.getPostDocumentId();
-                                    if (id != null && !id.trim().isEmpty()) {
-                                        JobViewModel.fetchJobUpdate(id, jobUpdateCache, getContext(), null);
-                                    }
-                                }
-                            }
+                            slider.setImageUrl(buildFullUrl(slider.getImageUrl()));
+                            finalSliders.add(slider);
                         }
                     }
-
                     List<CarouselItem> carouselItems = new ArrayList<>();
-                    for (Slider slider : finalSliders) {
-                        carouselItems.add(new CarouselItem(slider.getImageUrl(), slider.getTitle()));
-                    }
-
+                    for (Slider slider : finalSliders) carouselItems.add(new CarouselItem(slider.getImageUrl(), slider.getTitle()));
                     mainHandler.post(() -> {
-                        carouselItemsList.clear();
-                        carouselItemsList.addAll(carouselItems);
-                        carousel.addData(carouselItemsList);
-                        carousel.invalidate();
-
+                        if (!isAdded() || carousel == null) return;
+                        carouselItemsList.clear(); carouselItemsList.addAll(carouselItems);
+                        carousel.setData(carouselItemsList);
                         carousel.setCarouselListener(new CarouselListener() {
-                            @Override
-                            public void onLongClick(int i, @NonNull CarouselItem carouselItem) {
-                            }
-
-                            @Override
-                            public void onBindViewHolder(@NonNull ViewBinding viewBinding, @NonNull CarouselItem carouselItem, int i) {
-                            }
-
-                            @Nullable
-                            @Override
-                            public ViewBinding onCreateViewHolder(@NonNull LayoutInflater layoutInflater, @NonNull ViewGroup viewGroup) {
-                                return null;
-                            }
-
-                            @Override
-                            public void onClick(int position, CarouselItem carouselItem) {
-                                if (position < 0 || position >= finalSliders.size()) return;
-                                Slider selectedSlider = finalSliders.get(position);
-                                String id = selectedSlider.getPostDocumentId();
-                                if (id == null || id.trim().isEmpty()) {
-                                    Toast.makeText(getContext(), "Content unavailable", Toast.LENGTH_SHORT).show();
-                                    return;
-                                }
-
-                                android.app.ProgressDialog progressDialog = new android.app.ProgressDialog(getContext());
-                                progressDialog.setMessage("Loading...");
-                                progressDialog.setCancelable(false);
-                                progressDialog.show();
-
-                                if ("post".equalsIgnoreCase(selectedSlider.getType())) {
-                                    JobUpdate job = jobUpdateCache.get(id);
-                                    if (job != null) {
-                                        JobViewModel.navigateToJobDetails(job, getContext(), progressDialog);
-                                    } else {
-                                        JobViewModel.fetchJobUpdate(id, jobUpdateCache, getContext(), () -> {
-                                            JobUpdate fetchedJob = jobUpdateCache.get(id);
-                                            if (fetchedJob != null) {
-                                                JobViewModel.navigateToJobDetails(fetchedJob, getContext(), progressDialog);
-                                            }
-                                        });
-                                    }
-                                } else if ("news".equalsIgnoreCase(selectedSlider.getType())) {
-                                    News news = newsCache.get(id);
-                                    if (news != null) {
-                                        NewsUtils.showNewsDialog(news, getContext(), progressDialog);
-                                    } else {
-                                        NewsUtils.fetchNews(id, newsCache, getContext(), () -> {
-                                            News fetchedNews = newsCache.get(id);
-                                            if (fetchedNews != null) {
-                                                NewsUtils.showNewsDialog(fetchedNews, getContext(), progressDialog);
-                                            }
-                                        });
-                                    }
+                            @Override public void onClick(int position, CarouselItem carouselItem) {
+                                if (!isAdded() || position < 0 || position >= finalSliders.size()) return;
+                                Slider s = finalSliders.get(position);
+                                if (s.getPostDocumentId() == null) return;
+                                android.app.ProgressDialog pd = new android.app.ProgressDialog(getContext());
+                                pd.setMessage("Loading..."); pd.show();
+                                if ("post".equalsIgnoreCase(s.getType())) {
+                                    JobViewModel.fetchJobUpdate(s.getPostDocumentId(), jobUpdateCache, getContext(), () -> {
+                                        JobUpdate j = jobUpdateCache.get(s.getPostDocumentId());
+                                        if (j != null) JobViewModel.navigateToJobDetails(j, getContext(), pd);
+                                        else pd.dismiss();
+                                    });
                                 }
                             }
+                            @Override public void onLongClick(int i, @NonNull CarouselItem carouselItem) {}
+                            @Override public void onBindViewHolder(@NonNull ViewBinding viewBinding, @NonNull CarouselItem carouselItem, int i) {}
+                            @Nullable @Override public ViewBinding onCreateViewHolder(@NonNull LayoutInflater layoutInflater, @NonNull ViewGroup viewGroup) { return null; }
                         });
                     });
-                } catch (Exception e) {
-                    Log.e(TAG, "Failed to parse home carousel items: " + e.getMessage(), e);
-                }
+                } catch (Exception e) { Log.e(TAG, "Failed to parse carousel"); }
             }
         });
     }
@@ -1806,32 +1213,23 @@ public class HomeFragment extends Fragment {
     public void onDestroyView() {
         super.onDestroyView();
         storiesPlayer = null;
-        Log.d(TAG, "onDestroyView called, storiesPlayer set to null");
     }
 
     @Override
     public void onDestroy() {
         super.onDestroy();
-        if (executorService != null && !executorService.isShutdown()) {
-            executorService.shutdown();
-            Log.d(TAG, "onDestroy called, executor service shut down");
-        }
+        if (executorService != null) executorService.shutdown();
     }
 
     private void setBottomMarginsBasedOnAndroidVersion() {
-        if (android.os.Build.VERSION.SDK_INT >= 34) { // Android 15 is API 34
-            // Set larger margins for Android 15+
-            if (mainScrollView != null) {
-                ViewGroup.MarginLayoutParams params = (ViewGroup.MarginLayoutParams) mainScrollView.getLayoutParams();
-                params.bottomMargin = dpToPx(48);
-                mainScrollView.setLayoutParams(params);
-                Log.d(TAG, "Set mainScrollView bottom margin to 48dp for Android 15+");
-            }
+        if (android.os.Build.VERSION.SDK_INT >= 34 && mainScrollView != null) {
+            ViewGroup.MarginLayoutParams params = (ViewGroup.MarginLayoutParams) mainScrollView.getLayoutParams();
+            params.bottomMargin = dpToPx(48);
+            mainScrollView.setLayoutParams(params);
         }
     }
 
     private int dpToPx(int dp) {
-        float density = getResources().getDisplayMetrics().density;
-        return Math.round(dp * density);
+        return Math.round(dp * getResources().getDisplayMetrics().density);
     }
 }

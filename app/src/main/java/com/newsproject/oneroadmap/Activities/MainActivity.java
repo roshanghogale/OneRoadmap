@@ -25,8 +25,10 @@ import android.widget.Toast;
 import com.google.android.gms.ads.MobileAds;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.firebase.messaging.FirebaseMessaging;
+import com.google.gson.Gson;
 import com.newsproject.oneroadmap.Adapters.StoriesAdapter;
 import com.newsproject.oneroadmap.Fragments.*;
+import com.newsproject.oneroadmap.Models.JobUpdate;
 import com.newsproject.oneroadmap.Models.User;
 import com.newsproject.oneroadmap.R;
 import com.newsproject.oneroadmap.Utils.DataConstants;
@@ -57,14 +59,12 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        // Initialize Mobile Ads SDK
         MobileAds.initialize(this, initializationStatus -> {
             Log.d(TAG, "Mobile Ads SDK initialized");
         });
 
         databaseHelper = new DatabaseHelper(this);
 
-        // Request notification permission (API 33+)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             if (ContextCompat.checkSelfPermission(this, android.Manifest.permission.POST_NOTIFICATIONS)
                     != PackageManager.PERMISSION_GRANTED) {
@@ -74,16 +74,7 @@ public class MainActivity extends AppCompatActivity {
             }
         }
 
-        // Handle deep link to profile
-        Intent intent = getIntent();
-        Uri data = intent.getData();
-        if (data != null && "myapp".equals(data.getScheme()) && "profile".equals(data.getHost())) {
-            replaceFragment(new ProfileFragment(), false);
-        }
-
         bottomNavigationView = findViewById(R.id.bottom_navigation);
-
-        // Map navigation items to fragment classes
         navItemToFragmentClassMap.put(R.id.nav_home, HomeFragment.class);
         navItemToFragmentClassMap.put(R.id.nav_chat, ChatFragment.class);
         navItemToFragmentClassMap.put(R.id.nav_main, MainFragment.class);
@@ -91,32 +82,21 @@ public class MainActivity extends AppCompatActivity {
         navItemToFragmentClassMap.put(R.id.nav_all_jobs, AllCategory.class);
 
         bottomNavigationView.setOnItemSelectedListener(item -> {
-            if (isProgrammaticNavigation) {
-                return true;
-            }
-
+            if (isProgrammaticNavigation) return true;
             Class<? extends Fragment> fragmentClass = navItemToFragmentClassMap.get(item.getItemId());
             if (fragmentClass != null) {
                 Fragment currentFragment = getCurrentFragment();
-                
-                // Check if we're already showing this fragment
-                if (currentFragment != null && currentFragment.getClass() == fragmentClass) {
-                    return true;
-                }
-
+                if (currentFragment != null && currentFragment.getClass() == fragmentClass) return true;
                 try {
                     Fragment fragment = fragmentClass.newInstance();
-                    
                     if (item.getItemId() == R.id.nav_home) {
-                        // Home fragment - clear back stack and replace
                         clearBackStack();
                         replaceFragment(fragment, false);
                     } else {
-                        // Other fragments - add to back stack
                         replaceFragment(fragment, true);
                     }
                 } catch (Exception e) {
-                    Log.e(TAG, "Error creating fragment: " + fragmentClass.getSimpleName(), e);
+                    Log.e(TAG, "Error creating fragment", e);
                 }
                 return true;
             }
@@ -134,27 +114,55 @@ public class MainActivity extends AppCompatActivity {
             public void handleOnBackPressed() {
                 Fragment currentFragment = getCurrentFragment();
                 FragmentManager fm = getSupportFragmentManager();
-
                 if (currentFragment instanceof HomeFragment) {
-                    if (HomeFragment.isStoriesPlayerVisible()) {
-                        HomeFragment.stopStory(MainActivity.this);
-                    } else {
-                        finishAffinity();
-                    }
-                } else if (fm.getBackStackEntryCount() > 0) {
-                    fm.popBackStack();
-                } else {
-                    finishAffinity();
-                }
+                    if (HomeFragment.isStoriesPlayerVisible()) HomeFragment.stopStory(MainActivity.this);
+                    else finishAffinity();
+                } else if (fm.getBackStackEntryCount() > 0) fm.popBackStack();
+                else finishAffinity();
             }
         });
 
         if (savedInstanceState == null) {
             replaceFragment(new HomeFragment(), false);
+            handleIntent(getIntent());
         }
 
-        // Subscribe to user-specific topics after login
         subscribeToUserSpecificTopics();
+    }
+
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        setIntent(intent);
+        handleIntent(intent);
+    }
+
+    private void handleIntent(Intent intent) {
+        if (intent == null) return;
+
+        // Handle Deep Link
+        Uri data = intent.getData();
+        if (data != null && "myapp".equals(data.getScheme()) && "profile".equals(data.getHost())) {
+            replaceFragment(new ProfileFragment(), false);
+            return;
+        }
+
+        // Handle Notification Navigation
+        String navigateTo = intent.getStringExtra("navigate_to");
+        if ("job_details".equals(navigateTo)) {
+            String jobJson = intent.getStringExtra("job_data");
+            if (jobJson != null) {
+                JobUpdate job = new Gson().fromJson(jobJson, JobUpdate.class);
+                // First ensure Home is there (base layer)
+                clearBackStack();
+                replaceFragment(new HomeFragment(), false);
+                // Then overlay Job Details
+                replaceFragment(JobUpdateDetails.newInstance(job), true);
+            }
+        } else if ("home".equals(navigateTo)) {
+            clearBackStack();
+            replaceFragment(new HomeFragment(), false);
+        }
     }
 
     private Fragment getCurrentFragment() {
@@ -162,21 +170,12 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void replaceFragment(Fragment fragment, boolean addToBackStack) {
-        if (fragment == null) {
-            return;
-        }
-
+        if (fragment == null) return;
         FragmentManager fm = getSupportFragmentManager();
         FragmentTransaction ft = fm.beginTransaction();
-
         ft.replace(R.id.fragment_container, fragment, fragment.getClass().getSimpleName());
-
-        if (addToBackStack) {
-            ft.addToBackStack(fragment.getClass().getSimpleName());
-        }
-
+        if (addToBackStack) ft.addToBackStack(fragment.getClass().getSimpleName());
         ft.commitAllowingStateLoss();
-
         updateBottomNavigationView(fragment);
         handleBottomNavigationVisibility(fragment);
     }
@@ -184,16 +183,11 @@ public class MainActivity extends AppCompatActivity {
     private void clearBackStack() {
         FragmentManager fm = getSupportFragmentManager();
         int backStackCount = fm.getBackStackEntryCount();
-        for (int i = 0; i < backStackCount; i++) {
-            fm.popBackStack();
-        }
+        for (int i = 0; i < backStackCount; i++) fm.popBackStack();
     }
 
     private void updateBottomNavigationView(Fragment fragment) {
-        if (fragment == null) {
-            return;
-        }
-
+        if (fragment == null) return;
         Integer navItemId = null;
         for (Map.Entry<Integer, Class<? extends Fragment>> entry : navItemToFragmentClassMap.entrySet()) {
             if (entry.getValue() == fragment.getClass()) {
@@ -201,7 +195,6 @@ public class MainActivity extends AppCompatActivity {
                 break;
             }
         }
-
         if (navItemId != null) {
             final Integer finalNavItemId = navItemId;
             uiHandler.post(() -> {
@@ -213,76 +206,42 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void handleBottomNavigationVisibility(Fragment fragment) {
-        boolean hide = fragment instanceof AllCategory
-                || fragment instanceof BankingJobs
-                || fragment instanceof PrivateJobs
-                || fragment instanceof GovernmentJobs
-                || fragment instanceof Result_HallTitcket
-                || fragment instanceof JobUpdateDetails
-                || fragment instanceof AllBannersList
-                || fragment instanceof VideoFragment
-                || fragment instanceof WebViewFragment
+        boolean hide = fragment instanceof AllCategory || fragment instanceof BankingJobs || fragment instanceof PrivateJobs
+                || fragment instanceof GovernmentJobs || fragment instanceof Result_HallTitcket || fragment instanceof JobUpdateDetails
+                || fragment instanceof AllBannersList || fragment instanceof VideoFragment || fragment instanceof WebViewFragment
                 || fragment instanceof NewsFragment;
 
-        if (hide) {
-            hideBottomNavigation();
-        } else {
-            showBottomNavigation();
-        }
+        if (hide) hideBottomNavigation();
+        else showBottomNavigation();
     }
 
     @Override
-    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions,
-                                           @NonNull int[] grantResults) {
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
         if (requestCode == NOTIFICATION_PERMISSION_REQUEST_CODE) {
-            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                Log.d("Permission", "POST_NOTIFICATIONS granted");
-            } else {
-                Log.w("Permission", "POST_NOTIFICATIONS denied");
-            }
+            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) Log.d("Permission", "POST_NOTIFICATIONS granted");
         }
     }
 
     public void hideBottomNavigation() {
-        if (bottomNavigationView != null) {
-            bottomNavigationView.animate()
-                    .translationY(bottomNavigationView.getHeight())
-                    .setDuration(500)
-                    .start();
-        }
+        if (bottomNavigationView != null) bottomNavigationView.animate().translationY(bottomNavigationView.getHeight()).setDuration(500).start();
     }
 
     public void showBottomNavigation() {
-        if (bottomNavigationView != null) {
-            bottomNavigationView.animate()
-                    .translationY(0)
-                    .setDuration(500)
-                    .start();
-        }
+        if (bottomNavigationView != null) bottomNavigationView.animate().translationY(0).setDuration(500).start();
     }
 
     private void subscribeToUserSpecificTopics() {
         if (hasSubscribedToTopics) return;
-
         SharedPreferences sp = getSharedPreferences("UserPrefs", MODE_PRIVATE);
         String userId = sp.getString("userId", null);
-
-        if (userId == null) {
-            Log.d("FCM", "No userId in SharedPreferences. Skipping topic subscription.");
-            return;
-        }
-
+        if (userId == null) return;
         User user = databaseHelper.getUser(userId);
-        if (user == null) {
-            Log.d("FCM", "No user in SQLite yet. Skipping topic subscription.");
-            return;
-        }
+        if (user == null) return;
 
         Set<String> topics = new HashSet<>();
         FirebaseMessaging fm = FirebaseMessaging.getInstance();
 
-        // 1. Age Group topics
         String ageGroup = user.getAgeGroup();
         if (ageGroup != null) {
             if (ageGroup.equals("14 ते 18")) topics.add("14to18");
@@ -291,66 +250,33 @@ public class MainActivity extends AppCompatActivity {
             else if (ageGroup.equals("32 पेक्षा जास्त")) topics.add("32above");
         }
 
-        // 2. Education-based topics
         String twelfth = user.getTwelfth();
         if (twelfth != null) {
-            if (twelfth.equals("सध्या दहावीला आहे")) {
-                topics.add("10th");
-            } else if (twelfth.equals("सध्या बारावीला आहे")) {
-                topics.add("12th");
-            } else if (twelfth.equals("माझ या पुढील शिक्षण आहे")) {
+            if (twelfth.equals("सध्या दहावीला आहे")) topics.add("10th");
+            else if (twelfth.equals("सध्या बारावीला आहे")) topics.add("12th");
+            else if (twelfth.equals("माझ या पुढील शिक्षण आहे")) {
                 String degree = user.getDegree();
-                if (degree != null && !degree.equals("Select Degree") && !degree.isEmpty()) {
-                    topics.add(sanitizeTopic(degree));
-                }
+                if (degree != null && !degree.equals("Select Degree") && !degree.isEmpty()) topics.add(sanitizeTopic(degree));
             }
         }
 
-        // 3. Current Affairs PDF
-        if (user.isCurrentAffairs()) {
-            topics.add("currentaffairs");
-        }
-
-        // 4. Job by Stream
-        if (user.isJobs()) {
-            topics.add("10th");
-            topics.add("12th");
-        }
-
-        // 5. Free Study Materials
+        if (user.isCurrentAffairs()) topics.add("currentaffairs");
+        if (user.isJobs()) { topics.add("10th"); topics.add("12th"); }
         if (user.isStudyGovernment()) topics.add("governmentfree");
         if (user.isStudyPoliceDefence()) topics.add("policefree");
         if (user.isStudyBanking()) topics.add("bankingfree");
 
-        // 6. Taluka topic
         String taluka = user.getTaluka();
-        if (taluka != null && !taluka.equals("Select Taluka") && !taluka.isEmpty()) {
-            topics.add(sanitizeTopic(taluka));
-        }
+        if (taluka != null && !taluka.equals("Select Taluka") && !taluka.isEmpty()) topics.add(sanitizeTopic(taluka));
 
-        // 7. Universal topics
-        topics.add("all");
-        topics.add("news");
-        topics.add("dpaper");
+        topics.add("all"); topics.add("news"); topics.add("dpaper");
 
-        // Subscribe to all collected topics
-        for (String topic : topics) {
-            fm.subscribeToTopic(topic).addOnCompleteListener(task -> {
-                if (task.isSuccessful()) {
-                    Log.d("FCM", "Subscribed to: " + topic);
-                } else {
-                    Log.e("FCM", "Failed to subscribe: " + topic);
-                }
-            });
-        }
-
+        for (String topic : topics) fm.subscribeToTopic(topic);
         hasSubscribedToTopics = true;
-        Log.d("FCM", "User-specific topics subscribed: " + topics);
     }
 
     private String sanitizeTopic(String input) {
         if (input == null) return "";
-        return input.replace("&", "and")
-                .replaceAll("[^A-Za-z0-9]", "");
+        return input.replace("&", "and").replaceAll("[^A-Za-z0-9]", "");
     }
 }

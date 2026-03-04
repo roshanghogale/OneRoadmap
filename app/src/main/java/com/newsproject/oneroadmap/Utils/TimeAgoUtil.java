@@ -26,7 +26,8 @@ public class TimeAgoUtil {
         String[] formats = {
                 "yyyy-MM-dd HH:mm:ss.SSSSSS",
                 "yyyy-MM-dd HH:mm:ss",
-                "dd/MM/yyyy, h:mm:ss a",
+                "dd/MM/yyyy, h:mm:ss a", // ✅ Matches your example: 28/12/2025, 5:47:52 am
+                "dd/MM/yyyy, HH:mm:ss",
                 "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'",
                 "yyyy-MM-dd"
         };
@@ -34,7 +35,6 @@ public class TimeAgoUtil {
         for (String format : formats) {
             try {
                 SimpleDateFormat sdf = new SimpleDateFormat(format, Locale.US);
-                // Set timezone based on format hints
                 if (format.contains("Z") || format.startsWith("yyyy-MM-dd")) {
                     sdf.setTimeZone(TimeZone.getTimeZone("UTC"));
                 } else {
@@ -46,7 +46,6 @@ public class TimeAgoUtil {
                     return calculateTimeAgo(date);
                 }
             } catch (Exception ignored) {
-                // Try next format
             }
         }
         
@@ -67,12 +66,12 @@ public class TimeAgoUtil {
         long months = days / 30;
         long years = days / 365;
 
-        if (years > 0) return years + "y ago";
-        if (months > 0) return months + "mo ago";
-        if (weeks > 0) return weeks + "w ago";
-        if (days > 0) return days + "d ago";
-        if (hours > 0) return hours + "h ago";
-        if (minutes > 0) return minutes + "m ago";
+        if (years > 0) return years + (years == 1 ? " year ago" : " years ago");
+        if (months > 0) return months + (months == 1 ? " month ago" : " months ago");
+        if (weeks > 0) return weeks + (weeks == 1 ? " week ago" : " weeks ago");
+        if (days > 0) return days + (days == 1 ? " day ago" : " days ago");
+        if (hours > 0) return hours + (hours == 1 ? " hour ago" : " hours ago");
+        if (minutes > 0) return minutes + (minutes == 1 ? " minute ago" : " minutes ago");
 
         return "Just now";
     }
