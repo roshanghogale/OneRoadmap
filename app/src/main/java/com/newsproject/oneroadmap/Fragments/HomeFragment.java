@@ -646,72 +646,76 @@ public class HomeFragment extends Fragment {
                 if (!response.isSuccessful() || !isAdded()) return;
 
                 String body = response.body().string();
-                JsonObject root = new Gson().fromJson(body, JsonObject.class);
+                try {
+                    JsonObject root = new Gson().fromJson(body, JsonObject.class);
 
-                List<Story> mains = new ArrayList<>();
-                List<Story> others = new ArrayList<>();
+                    List<Story> mains = new ArrayList<>();
+                    List<Story> others = new ArrayList<>();
 
-                if (root != null && root.has("stories")) {
-                    JsonArray arr = root.getAsJsonArray("stories");
+                    if (root != null && root.has("stories")) {
+                        JsonArray arr = root.getAsJsonArray("stories");
 
-                    for (int i = 0; i < arr.size(); i++) {
-                        JsonObject o = arr.get(i).getAsJsonObject();
-                        Story story = new Gson().fromJson(o, Story.class);
-                        
-                        story.setIconUrl(buildFullUrl(story.getIconUrl()));
-                        story.setBannerUrl(buildFullUrl(story.getBannerUrl()));
-                        story.setVideoUrl(buildFullUrl(story.getVideoUrl()));
-                        story.setImageUrl("video".equalsIgnoreCase(story.getMediaType()) ? story.getVideoUrl() : story.getBannerUrl());
+                        for (int i = 0; i < arr.size(); i++) {
+                            JsonObject o = arr.get(i).getAsJsonObject();
+                            Story story = new Gson().fromJson(o, Story.class);
+                            
+                            story.setIconUrl(buildFullUrl(story.getIconUrl()));
+                            story.setBannerUrl(buildFullUrl(story.getBannerUrl()));
+                            story.setVideoUrl(buildFullUrl(story.getVideoUrl()));
+                            story.setImageUrl("video".equalsIgnoreCase(story.getMediaType()) ? story.getVideoUrl() : story.getBannerUrl());
 
-                        if (story.getIconUrl() == null || story.getImageUrl() == null) continue;
+                            if (story.getIconUrl() == null || story.getImageUrl() == null) continue;
 
-                        boolean viewed = story.getDocumentId() != null && storyPrefs.getBoolean("viewed_" + story.getDocumentId(), false);
-                        story.setViewed(viewed);
+                            boolean viewed = story.getDocumentId() != null && storyPrefs.getBoolean("viewed_" + story.getDocumentId(), false);
+                            story.setViewed(viewed);
 
-                        boolean shouldShow = true;
-                        if (story.isMainStory()) {
-                            boolean hasSpecificCriteria = (story.getOtherType() != null && !story.getOtherType().isEmpty()) ||
-                                    !story.getBachelorDegreesSafe().isEmpty() ||
-                                    !story.getMastersDegreesSafe().isEmpty() ||
-                                    !story.getTalukaSafe().isEmpty() ||
-                                    !story.getAgeGroupsSafe().isEmpty() ||
-                                    !story.getBhartyTypesSafe().isEmpty();
+                            boolean shouldShow = true;
+                            if (story.isMainStory()) {
+                                boolean hasSpecificCriteria = (story.getOtherType() != null && !story.getOtherType().isEmpty()) ||
+                                        !story.getBachelorDegreesSafe().isEmpty() ||
+                                        !story.getMastersDegreesSafe().isEmpty() ||
+                                        !story.getTalukaSafe().isEmpty() ||
+                                        !story.getAgeGroupsSafe().isEmpty() ||
+                                        !story.getBhartyTypesSafe().isEmpty();
 
-                            if (hasSpecificCriteria) {
-                                shouldShow = false;
-                                List<String> bDegrees = story.getBachelorDegreesSafe();
-                                List<String> mDegrees = story.getMastersDegreesSafe();
-                                if (!userDegree.isEmpty() && bDegrees.contains(userDegree)) shouldShow = true;
-                                if (!userPostGrad.isEmpty() && mDegrees.contains(userPostGrad)) shouldShow = true;
-                                if (!shouldShow && !userTaluka.isEmpty() && story.getTalukaSafe().contains(userTaluka)) shouldShow = true;
-                                if (!shouldShow && !userAgeGroup.isEmpty() && story.getAgeGroupsSafe().contains(userAgeGroup)) shouldShow = true;
-                                if (!shouldShow) {
-                                    List<String> bTypes = story.getBhartyTypesSafe();
-                                    for (String type : bTypes) {
-                                        if (type.equalsIgnoreCase("Government") && studyGov) { shouldShow = true; break; }
-                                        if (type.equalsIgnoreCase("Police & Defence") && studyPolice) { shouldShow = true; break; }
-                                        if (type.equalsIgnoreCase("Banking") && studyBank) { shouldShow = true; break; }
+                                if (hasSpecificCriteria) {
+                                    shouldShow = false;
+                                    List<String> bDegrees = story.getBachelorDegreesSafe();
+                                    List<String> mDegrees = story.getMastersDegreesSafe();
+                                    if (!userDegree.isEmpty() && bDegrees.contains(userDegree)) shouldShow = true;
+                                    if (!userPostGrad.isEmpty() && mDegrees.contains(userPostGrad)) shouldShow = true;
+                                    if (!shouldShow && !userTaluka.isEmpty() && story.getTalukaSafe().contains(userTaluka)) shouldShow = true;
+                                    if (!shouldShow && !userAgeGroup.isEmpty() && story.getAgeGroupsSafe().contains(userAgeGroup)) shouldShow = true;
+                                    if (!shouldShow) {
+                                        List<String> bTypes = story.getBhartyTypesSafe();
+                                        for (String type : bTypes) {
+                                            if (type.equalsIgnoreCase("Government") && studyGov) { shouldShow = true; break; }
+                                            if (type.equalsIgnoreCase("Police & Defence") && studyPolice) { shouldShow = true; break; }
+                                            if (type.equalsIgnoreCase("Banking") && studyBank) { shouldShow = true; break; }
+                                        }
                                     }
                                 }
+                            } else {
+                                shouldShow = true;
                             }
-                        } else {
-                            shouldShow = true;
-                        }
 
-                        if (shouldShow) {
-                            if (story.isMainStory()) mains.add(story);
-                            else others.add(story);
+                            if (shouldShow) {
+                                if (story.isMainStory()) mains.add(story);
+                                else others.add(story);
+                            }
                         }
                     }
-                }
 
-                mainHandler.post(() -> {
-                    if (!isAdded()) return;
-                    storyList.clear();
-                    storyList.addAll(mains);
-                    storyList.addAll(others);
-                    storyAdapter.notifyDataSetChanged();
-                });
+                    mainHandler.post(() -> {
+                        if (!isAdded()) return;
+                        storyList.clear();
+                        storyList.addAll(mains);
+                        storyList.addAll(others);
+                        storyAdapter.notifyDataSetChanged();
+                    });
+                } catch (Exception e) {
+                    Log.e(TAG, "Failed to parse stories", e);
+                }
             }
         });
     }

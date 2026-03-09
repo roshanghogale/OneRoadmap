@@ -1,5 +1,6 @@
 package com.newsproject.oneroadmap.Activities;
 
+import android.app.ProgressDialog;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.net.Uri;
@@ -11,6 +12,7 @@ import android.util.Log;
 
 import androidx.activity.OnBackPressedCallback;
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
@@ -29,10 +31,12 @@ import com.google.gson.Gson;
 import com.newsproject.oneroadmap.Adapters.StoriesAdapter;
 import com.newsproject.oneroadmap.Fragments.*;
 import com.newsproject.oneroadmap.Models.JobUpdate;
+import com.newsproject.oneroadmap.Models.News;
 import com.newsproject.oneroadmap.Models.User;
 import com.newsproject.oneroadmap.R;
 import com.newsproject.oneroadmap.Utils.DataConstants;
 import com.newsproject.oneroadmap.Utils.DatabaseHelper;
+import com.newsproject.oneroadmap.Utils.NewsUtils;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -153,12 +157,34 @@ public class MainActivity extends AppCompatActivity {
             String jobJson = intent.getStringExtra("job_data");
             if (jobJson != null) {
                 JobUpdate job = new Gson().fromJson(jobJson, JobUpdate.class);
-                // First ensure Home is there (base layer)
                 clearBackStack();
                 replaceFragment(new HomeFragment(), false);
-                // Then overlay Job Details
                 replaceFragment(JobUpdateDetails.newInstance(job), true);
             }
+        } else if ("news_details".equals(navigateTo)) {
+            String newsId = intent.getStringExtra("news_id");
+            clearBackStack();
+            HomeFragment homeFragment = new HomeFragment();
+            Bundle args = new Bundle();
+            args.putString("target_news_id", newsId);
+            homeFragment.setArguments(args);
+            replaceFragment(homeFragment, false);
+        } else if ("pdf_navigation".equals(navigateTo)) {
+            String pdfUrl = intent.getStringExtra("pdf_url");
+            clearBackStack();
+            HomeFragment homeFragment = new HomeFragment();
+            Bundle args = new Bundle();
+            args.putString("target_pdf_url", pdfUrl);
+            homeFragment.setArguments(args);
+            replaceFragment(homeFragment, false);
+        } else if ("student_update_details".equals(navigateTo)) {
+            String studentData = intent.getStringExtra("student_data");
+            clearBackStack();
+            HomeFragment homeFragment = new HomeFragment();
+            Bundle args = new Bundle();
+            args.putString("target_student_data", studentData);
+            homeFragment.setArguments(args);
+            replaceFragment(homeFragment, false);
         } else if ("home".equals(navigateTo)) {
             clearBackStack();
             replaceFragment(new HomeFragment(), false);
