@@ -1,27 +1,37 @@
 package com.newsproject.oneroadmap.Utils;
 
 import android.app.AlertDialog;
-import android.content.Context;
 import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
 import android.os.Handler;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
-import android.widget.Button;
 import android.widget.TextView;
+import android.widget.Toast;
 
+import androidx.annotation.NonNull;
 import androidx.cardview.widget.CardView;
 import androidx.fragment.app.Fragment;
 
+import com.google.android.gms.ads.AdRequest;
+import com.google.android.gms.ads.LoadAdError;
+import com.google.android.gms.ads.OnUserEarnedRewardListener;
+import com.google.android.gms.ads.rewarded.RewardItem;
+import com.google.android.gms.ads.rewarded.RewardedAd;
+import com.google.android.gms.ads.rewarded.RewardedAdLoadCallback;
 import com.newsproject.oneroadmap.R;
 
 public class CoinAccessController {
+    private static final String TAG = "CoinAccessController";
     private AlertDialog confirmDialog;
     private final Fragment fragment;
     private final String userId;
     private final CoinManager coinManager;
     private String pendingUrl;
     private final ShareHelper shareHelper;
+    private RewardedAd rewardedAd;
+    private boolean isLoadingAd = false;
 
     public CoinAccessController(Fragment fragment,
                                 String userId,
@@ -30,21 +40,42 @@ public class CoinAccessController {
         this.userId = userId;
         this.shareHelper = shareHelper;
         this.coinManager = new CoinManager(fragment.requireContext(), userId);
+        loadRewardedAd();
+    }
+
+    private void loadRewardedAd() {
+        if (isLoadingAd || rewardedAd != null) return;
+
+        isLoadingAd = true;
+        AdRequest adRequest = new AdRequest.Builder().build();
+        // Use test ID for now: ca-app-pub-3940256099942544/5224354917
+        RewardedAd.load(fragment.requireContext(), "ca-app-pub-3940256099942544/5224354917",
+                adRequest, new RewardedAdLoadCallback() {
+                    @Override
+                    public void onAdFailedToLoad(@NonNull LoadAdError loadAdError) {
+                        Log.d(TAG, loadAdError.toString());
+                        rewardedAd = null;
+                        isLoadingAd = false;
+                    }
+
+                    @Override
+                    public void onAdLoaded(@NonNull RewardedAd ad) {
+                        rewardedAd = ad;
+                        isLoadingAd = false;
+                        Log.d(TAG, "Ad was loaded.");
+                    }
+                });
     }
 
     public void requestPdfAccess(String url, Runnable onAccessGranted) {
-
         int required = CoinManager.getCoinsPerDownload();
         int current = coinManager.getCoins();
 
         if (current >= required) {
-
             showConfirmDialog(url, required, onAccessGranted);
-
         } else {
-
             pendingUrl = url;
-            showNotEnoughDialog(required);
+            showNotEnoughDialog();
         }
     }
 
@@ -58,7 +89,7 @@ public class CoinAccessController {
                 .inflate(R.layout.dialog_confirm_pdf_coin, null);
 
         TextView message = view.findViewById(R.id.tv_message);
-        Button open = view.findViewById(R.id.btn_open);
+        View open = view.findViewById(R.id.btn_open);
         TextView cancel = view.findViewById(R.id.btn_cancel);
 
         message.setText(
@@ -77,31 +108,20 @@ public class CoinAccessController {
         );
 
         open.setOnClickListener(v -> {
-
             int before = coinManager.getCoins();
-
             if (before >= requiredCoins) {
-
-                // ✅ CLOSE CONFIRM DIALOG FIRST
                 confirmDialog.dismiss();
                 confirmDialog = null;
 
-                // Deduct coins in DB
                 coinManager.deductCoinsForDownload(newCoins -> {
-
-                    // Show animation
                     showCoinIncrementAnimation(
                             before,
                             newCoins,
                             true,
                             () -> {
-
-                                // 🔥 Close Student Dialog FIRST
                                 if (onAccessGranted != null) {
                                     onAccessGranted.run();
                                 }
-
-                                // Then open PDF
                                 WebViewHelper.openUrlInApp(fragment, url);
                             }
                     );
@@ -117,38 +137,65 @@ public class CoinAccessController {
         confirmDialog.show();
     }
 
-    private void showNotEnoughDialog(int requiredCoins) {
-
+    private void showNotEnoughDialog() {
         int currentCoins = coinManager.getCoins();
 
         View view = LayoutInflater.from(fragment.requireContext())
                 .inflate(R.layout.dialog_not_enough_coin, null);
 
-        TextView message = view.findViewById(R.id.tv_message);
-        Button share = view.findViewById(R.id.btn_share);
-        TextView cancel = view.findViewById(R.id.btn_cancel);
+        TextView tvCoin = view.findViewById(R.id.tv_coin);
+        View btnWatch = view.findViewById(R.id.btn_watch);
+        View btnShare = view.findViewById(R.id.btn_share);
 
-        message.setText(
-                "Required Coins: " + requiredCoins +
-                        "\nYour Coins: " + currentCoins +
-                        "\n\nYou don't have enough coins.\nShare & earn coins first."
-        );
+        tvCoin.setText(String.valueOf(currentCoins));
 
         AlertDialog dialog = new AlertDialog.Builder(fragment.requireContext())
                 .setView(view)
-                .setCancelable(false)
+                .setCancelable(true)
                 .create();
 
         dialog.getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
 
-        share.setOnClickListener(v -> {
+        btnWatch.setOnClickListener(v -> {
+            dialog.dismiss();
+            showVideoAd();
+        });
+
+        btnShare.setOnClickListener(v -> {
             dialog.dismiss();
             triggerShare();
         });
 
-        cancel.setOnClickListener(v -> dialog.dismiss());
-
         dialog.show();
+    }
+
+    private void showVideoAd() {
+        if (rewardedAd != null) {
+            rewardedAd.show(fragment.requireActivity(), new OnUserEarnedRewardListener() {
+                @Override
+                public void onUserEarnedReward(@NonNull RewardItem rewardItem) {
+                    Log.d(TAG, "The user earned the reward.");
+                    onVideoRewarded();
+                }
+            });
+            rewardedAd = null;
+            loadRewardedAd();
+        } else {
+            Toast.makeText(fragment.getContext(), "Ad is loading, please try again in a moment.", Toast.LENGTH_SHORT).show();
+            loadRewardedAd();
+        }
+    }
+
+    private void onVideoRewarded() {
+        int before = coinManager.getCoins();
+        coinManager.addCoinsForVideo(newCoins -> {
+            showCoinIncrementAnimation(
+                    before,
+                    newCoins,
+                    false,
+                    null
+            );
+        });
     }
 
     private void triggerShare() {
@@ -156,19 +203,14 @@ public class CoinAccessController {
     }
 
     public void onShareCompleted() {
-
         int before = coinManager.getCoins();
-
         coinManager.addCoinsForShare(newCoins -> {
-
-            // 🔹 Animation should STAY (no auto close)
             showCoinIncrementAnimation(
                     before,
                     newCoins,
-                    false,  // do NOT auto close
+                    false,
                     null
             );
-
             pendingUrl = null;
         });
     }
@@ -208,7 +250,6 @@ public class CoinAccessController {
         Runnable runnable = new Runnable() {
             @Override
             public void run() {
-
                 if (start < end) {
                     if (current[0] < end) {
                         current[0]++;

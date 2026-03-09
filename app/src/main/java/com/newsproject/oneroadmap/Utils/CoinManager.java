@@ -10,8 +10,9 @@ import okhttp3.Callback;
 import okhttp3.Response;
 
 public class CoinManager {
-    private static final int COINS_PER_SHARE = 100;
+    private static final int COINS_PER_SHARE = 50; // Updated to match dialog (+50 Coin)
     private static final int COINS_PER_DOWNLOAD = 25;
+    private static final int COINS_PER_VIDEO = 150;
     
     private final DatabaseHelper dbHelper;
     private final ApiClient apiClient;
@@ -34,6 +35,12 @@ public class CoinManager {
     public void addCoinsForShare(OnCoinsUpdatedListener listener) {
         int current = getCoins();
         int newCoins = current + COINS_PER_SHARE;
+        updateCoins(newCoins, listener);
+    }
+
+    public void addCoinsForVideo(OnCoinsUpdatedListener listener) {
+        int current = getCoins();
+        int newCoins = current + COINS_PER_VIDEO;
         updateCoins(newCoins, listener);
     }
     
@@ -96,5 +103,8 @@ public class CoinManager {
     public static int getCoinsPerDownload() {
         return COINS_PER_DOWNLOAD;
     }
-}
 
+    public static int getCoinsPerVideo() {
+        return COINS_PER_VIDEO;
+    }
+}
