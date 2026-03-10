@@ -20,6 +20,7 @@ import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.RadioGroup;
+import android.widget.RelativeLayout;
 import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -35,6 +36,7 @@ import com.google.gson.Gson;
 import com.newsproject.oneroadmap.Adapters.AvatarAdapter;
 import com.newsproject.oneroadmap.R;
 import com.newsproject.oneroadmap.Utils.ApiClient;
+import com.newsproject.oneroadmap.Utils.CoinAccessController;
 import com.newsproject.oneroadmap.Utils.CoinManager;
 import com.newsproject.oneroadmap.Utils.DataConstants;
 import com.newsproject.oneroadmap.Utils.DatabaseHelper;
@@ -42,10 +44,13 @@ import com.newsproject.oneroadmap.Utils.ShareHelper;
 import com.newsproject.oneroadmap.Activities.LoginActivity;
 import com.newsproject.oneroadmap.Models.User;
 
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 import okhttp3.Call;
@@ -72,6 +77,7 @@ public class ProfileFragment extends Fragment {
     private Handler handler = new Handler();
     private int displayedCoins = 0;
     private String tempSelectedAvatar = "";
+    private CoinAccessController coinAccessController;
 
     private final String[] studyMaterialOptions = {
             "Government", "Police & Defence", "Banking"
@@ -150,11 +156,90 @@ public class ProfileFragment extends Fragment {
         deleteAccountBtn.setOnClickListener(v -> showDeleteAccountDialog());
         profileImage.setOnClickListener(v -> showAvatarPickerDialog());
 
+        // Initialize CoinAccessController (after setupShareButton which creates profileShareHelper)
+        coinAccessController = new CoinAccessController(this, userId, profileShareHelper);
+
+        view.findViewById(R.id.fab_watch).setOnClickListener(v -> showDailyTasksDialog());
+
         // ----- LOAD DATA --------------------------------------------------------
         // Post to ensure spinners are fully initialized before loading data
         view.post(() -> loadProfileData());
 
         return view;
+    }
+
+    private void showDailyTasksDialog() {
+        checkAndResetDailyTasks();
+        
+        View view = LayoutInflater.from(requireContext()).inflate(R.layout.dialog_daily_tasks, null);
+        AlertDialog dialog = new AlertDialog.Builder(requireContext())
+                .setView(view)
+                .create();
+        
+        if (dialog.getWindow() != null) {
+            dialog.getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
+        }
+
+        setupTaskItem(view.findViewById(R.id.task1), 1, 150);
+        setupTaskItem(view.findViewById(R.id.task2), 2, 175);
+        setupTaskItem(view.findViewById(R.id.task3), 3, 200);
+
+        dialog.show();
+    }
+
+    private void setupTaskItem(View taskView, int taskNum, int reward) {
+        if (taskView == null) return;
+
+        // Since the <include> tag in dialog_daily_tasks.xml has an ID (e.g., task1),
+        // it overrides the root ID (task_root) of the included layout.
+        // Thus, taskView IS the RelativeLayout root of item_daily_task.xml.
+        RelativeLayout taskRoot = (RelativeLayout) taskView;
+        TextView taskText = taskView.findViewById(R.id.task_text);
+        ImageView rewardIcon = taskView.findViewById(R.id.task_reward_icon);
+        
+        boolean isCompleted = sharedPreferences.getBoolean("task_" + taskNum + "_completed", false);
+
+        if (isCompleted) {
+            taskRoot.setBackgroundResource(R.drawable.bg_task_completed);
+            taskText.setText("Your Task " + taskNum + " completed");
+            taskText.setTextColor(Color.parseColor("#2DBE6C"));
+            rewardIcon.setImageResource(R.drawable.green_tick);
+            taskRoot.setOnClickListener(null);
+        } else {
+            taskRoot.setBackgroundResource(R.drawable.bg_task_card);
+            taskText.setText("Task " + taskNum + " Earn +" + reward + " Coin");
+            taskText.setTextColor(Color.parseColor("#FFE600"));
+            rewardIcon.setImageResource(R.drawable.ic_coin);
+            
+            taskRoot.setOnClickListener(v -> {
+                coinAccessController.showVideoAd(reward, newTotalCoins -> {
+                    editor.putBoolean("task_" + taskNum + "_completed", true).apply();
+                    // Update UI
+                    taskRoot.setBackgroundResource(R.drawable.bg_task_completed);
+                    taskText.setText("Your Task " + taskNum + " completed");
+                    taskText.setTextColor(Color.parseColor("#2DBE6C"));
+                    rewardIcon.setImageResource(R.drawable.green_tick);
+                    taskRoot.setOnClickListener(null);
+                    // Update main coin display
+                    if (coinTextView != null) {
+                        coinTextView.setText(String.valueOf(newTotalCoins));
+                    }
+                });
+            });
+        }
+    }
+
+    private void checkAndResetDailyTasks() {
+        String lastDate = sharedPreferences.getString("last_task_date", "");
+        String currentDate = new SimpleDateFormat("yyyyMMdd", Locale.getDefault()).format(new Date());
+
+        if (!currentDate.equals(lastDate)) {
+            editor.putString("last_task_date", currentDate);
+            editor.putBoolean("task_1_completed", false);
+            editor.putBoolean("task_2_completed", false);
+            editor.putBoolean("task_3_completed", false);
+            editor.apply();
+        }
     }
 
     private void showAvatarPickerDialog() {

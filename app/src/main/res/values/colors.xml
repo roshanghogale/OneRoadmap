@@ -10,7 +10,7 @@
     <color name="headerSubtext">#E6E4FF</color>    <!-- soft white for subtitle -->
     <color name="segmentBlack">#111111</color>
     <color name="chipYellow">#FFD54F</color>
-    <color name="chipGreen">#2DBE6C</color>
+    <color name="chipGreen">#167F26</color>
     <color name="yellow">#FFEB3B</color>
     <color name="text_primary">#0C0F14</color>
     <color name="text_secondary">#7A7C7F</color>

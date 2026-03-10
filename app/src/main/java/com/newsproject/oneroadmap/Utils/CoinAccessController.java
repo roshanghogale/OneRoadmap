@@ -169,14 +169,27 @@ public class CoinAccessController {
         dialog.show();
     }
 
-    private void showVideoAd() {
+    public void showVideoAd() {
+        showVideoAd(CoinManager.getCoinsPerVideo(), null);
+    }
+
+    public void showVideoAd(int rewardAmount, OnRewardAppliedListener listener) {
         if (rewardedAd != null) {
-            rewardedAd.show(fragment.requireActivity(), new OnUserEarnedRewardListener() {
-                @Override
-                public void onUserEarnedReward(@NonNull RewardItem rewardItem) {
-                    Log.d(TAG, "The user earned the reward.");
-                    onVideoRewarded();
-                }
+            rewardedAd.show(fragment.requireActivity(), rewardItem -> {
+                Log.d(TAG, "The user earned the reward: " + rewardAmount);
+                int before = coinManager.getCoins();
+                coinManager.addCoins(rewardAmount, newCoins -> {
+                    showCoinIncrementAnimation(
+                            before,
+                            newCoins,
+                            false,
+                            () -> {
+                                if (listener != null) {
+                                    listener.onRewardApplied(newCoins);
+                                }
+                            }
+                    );
+                });
             });
             rewardedAd = null;
             loadRewardedAd();
@@ -186,16 +199,8 @@ public class CoinAccessController {
         }
     }
 
-    private void onVideoRewarded() {
-        int before = coinManager.getCoins();
-        coinManager.addCoinsForVideo(newCoins -> {
-            showCoinIncrementAnimation(
-                    before,
-                    newCoins,
-                    false,
-                    null
-            );
-        });
+    public interface OnRewardAppliedListener {
+        void onRewardApplied(int newTotalCoins);
     }
 
     private void triggerShare() {

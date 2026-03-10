@@ -10,7 +10,7 @@ import okhttp3.Callback;
 import okhttp3.Response;
 
 public class CoinManager {
-    private static final int COINS_PER_SHARE = 50; // Updated to match dialog (+50 Coin)
+    private static final int COINS_PER_SHARE = 50;
     private static final int COINS_PER_DOWNLOAD = 25;
     private static final int COINS_PER_VIDEO = 150;
     
@@ -32,16 +32,18 @@ public class CoinManager {
         return getCoins() >= required;
     }
     
-    public void addCoinsForShare(OnCoinsUpdatedListener listener) {
+    public void addCoins(int amount, OnCoinsUpdatedListener listener) {
         int current = getCoins();
-        int newCoins = current + COINS_PER_SHARE;
+        int newCoins = current + amount;
         updateCoins(newCoins, listener);
     }
 
+    public void addCoinsForShare(OnCoinsUpdatedListener listener) {
+        addCoins(COINS_PER_SHARE, listener);
+    }
+
     public void addCoinsForVideo(OnCoinsUpdatedListener listener) {
-        int current = getCoins();
-        int newCoins = current + COINS_PER_VIDEO;
-        updateCoins(newCoins, listener);
+        addCoins(COINS_PER_VIDEO, listener);
     }
     
     public boolean deductCoinsForDownload(OnCoinsUpdatedListener listener) {
@@ -55,13 +57,8 @@ public class CoinManager {
     }
     
     private void updateCoins(int newCoins, OnCoinsUpdatedListener listener) {
-        android.util.Log.d("CoinManager", "Updating coins for userId: " + userId + ", newCoins: " + newCoins);
-        // First save to local database
         dbHelper.updateUserCoins(userId, newCoins);
-        android.util.Log.d("CoinManager", "Coins saved to local database");
-        // Then sync to server
         saveCoinsToServer(newCoins);
-        // Notify listener
         if (listener != null) {
             listener.onCoinsUpdated(newCoins);
         }
@@ -74,21 +71,15 @@ public class CoinManager {
             map.put("coins", coins);
             String json = new Gson().toJson(map);
             
-            android.util.Log.d("CoinManager", "Saving coins to server: " + json);
             apiClient.saveUser(json, new Callback() {
                 @Override
-                public void onFailure(Call call, java.io.IOException e) {
-                    android.util.Log.e("CoinManager", "Failed to save coins to server: " + e.getMessage());
-                }
+                public void onFailure(Call call, java.io.IOException e) {}
                 
                 @Override
                 public void onResponse(Call call, Response response) throws java.io.IOException {
-                    android.util.Log.d("CoinManager", "Coins saved to server successfully, response code: " + response.code());
                     response.close();
                 }
             });
-        } else {
-            android.util.Log.w("CoinManager", "userId is null or empty, cannot save to server");
         }
     }
     
