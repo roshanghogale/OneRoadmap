@@ -31,6 +31,7 @@ import androidx.cardview.widget.CardView;
 import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+import androidx.transition.TransitionManager;
 
 import com.google.gson.Gson;
 import com.newsproject.oneroadmap.Adapters.AvatarAdapter;
@@ -66,9 +67,9 @@ public class ProfileFragment extends Fragment {
     private String userId;
     private boolean isInitializing = true;
     private TextView profileName, currentAffairsSelection, jobsSelection, coinTextView,
-            studyMaterialSelection, profileTxtJobByStream;
+            studyMaterialSelection, profileTxtJobByStream, watchEarnText;
     private ImageView profileNameEdit, currentAffairsEdit, jobsEdit, profileImage, studyMaterialEdit;
-    private LinearLayout shareButtonContainer;
+    private LinearLayout shareButtonContainer, watchEarnContainer;
     private RadioGroup radioGroupGender;
     private Spinner spinnerEducation, spinnerTwelfth, spinnerDegree, spinnerPostGrad,
             spinnerDistrict, spinnerTaluka, spinnerAgeGroup;
@@ -90,6 +91,23 @@ public class ProfileFragment extends Fragment {
             "32 पेक्षा जास्त"
     ));
     private String lastTwelfthValue = null;
+
+    private final Runnable watchEarnRunnable = new Runnable() {
+        @Override
+        public void run() {
+            if (watchEarnContainer != null && watchEarnText != null && isAdded()) {
+                TransitionManager.beginDelayedTransition(watchEarnContainer);
+                if (watchEarnText.getVisibility() == View.GONE) {
+                    watchEarnText.setVisibility(View.VISIBLE);
+                    handler.postDelayed(this, 3000); // Show for 3 seconds
+                } else {
+                    watchEarnText.setVisibility(View.GONE);
+                    handler.postDelayed(this, 5000); // Hide for 5 seconds
+                }
+            }
+        }
+    };
+
     private boolean shouldEnableAdvancedEducation(String twelfth) {
         return "माझ या पुढील शिक्षण आहे".equals(twelfth);
     }
@@ -145,6 +163,8 @@ public class ProfileFragment extends Fragment {
         studyMaterialEdit         = view.findViewById(R.id.profile_study_material_edit);
         coinTextView              = view.findViewById(R.id.textView25);
         shareButtonContainer      = view.findViewById(R.id.linearLayout_share_earn);
+        watchEarnContainer        = view.findViewById(R.id.fab_watch);
+        watchEarnText             = view.findViewById(R.id.watch_earn_text);
         profileTxtJobByStream     = view.findViewById(R.id.profileTxtJobByStream);
         TextView deleteAccountBtn = view.findViewById(R.id.textView43);
 
@@ -159,7 +179,7 @@ public class ProfileFragment extends Fragment {
         // Initialize CoinAccessController (after setupShareButton which creates profileShareHelper)
         coinAccessController = new CoinAccessController(this, userId, profileShareHelper);
 
-        view.findViewById(R.id.fab_watch).setOnClickListener(v -> showDailyTasksDialog());
+        watchEarnContainer.setOnClickListener(v -> showDailyTasksDialog());
 
         // ----- LOAD DATA --------------------------------------------------------
         // Post to ensure spinners are fully initialized before loading data
@@ -368,6 +388,16 @@ public class ProfileFragment extends Fragment {
         if (userId != null && !userId.isEmpty() && getView() != null) {
             getView().post(() -> loadProfileData());
         }
+        
+        // Start FAB animation
+        handler.postDelayed(watchEarnRunnable, 2000);
+    }
+
+    @Override
+    public void onPause() {
+        super.onPause();
+        // Stop FAB animation
+        handler.removeCallbacks(watchEarnRunnable);
     }
 
     /* --------------------------------------------------------------------- */

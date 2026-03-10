@@ -73,7 +73,7 @@
                     android:id="@+id/cardView13"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="72dp"
+                    android:layout_marginTop="76dp"
                     android:background="@drawable/gradient_progress"
                     app:layout_constraintEnd_toEndOf="parent"
                     app:layout_constraintStart_toStartOf="parent"
@@ -1011,16 +1011,37 @@
         </androidx.constraintlayout.widget.ConstraintLayout>
     </ScrollView>
 
-    <com.google.android.material.floatingactionbutton.FloatingActionButton
+    <LinearLayout
         android:id="@+id/fab_watch"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="46dp"
-        android:layout_marginEnd="24dp"
-        android:contentDescription="@string/watch"
-        android:src="@drawable/ic_watch"
-        app:backgroundTint="@color/white"
+        android:layout_marginEnd="18dp"
+        android:background="@drawable/rectangle_white"
+        android:elevation="6dp"
+        android:orientation="horizontal"
+        android:clickable="true"
+        android:focusable="true"
+        android:padding="6dp"
+        android:gravity="center_vertical"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintTop_toTopOf="parent">
+
+        <TextView
+            android:id="@+id/watch_earn_text"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:layout_marginEnd="4dp"
+            android:text="Watch &amp; Earn"
+            android:textColor="#000000"
+            android:visibility="gone" />
+
+        <ImageView
+            android:layout_width="30dp"
+            android:layout_height="30dp"
+            android:padding="4dp"
+            android:src="@drawable/ic_watch2" />
+    </LinearLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>
