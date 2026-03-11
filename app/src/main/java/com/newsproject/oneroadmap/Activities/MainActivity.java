@@ -80,7 +80,7 @@ public class MainActivity extends AppCompatActivity {
 
         bottomNavigationView = findViewById(R.id.bottom_navigation);
         navItemToFragmentClassMap.put(R.id.nav_home, HomeFragment.class);
-        navItemToFragmentClassMap.put(R.id.nav_chat, ChatFragment.class);
+        navItemToFragmentClassMap.put(R.id.nav_saved, SavedJobsFragment.class);
         navItemToFragmentClassMap.put(R.id.nav_main, MainFragment.class);
         navItemToFragmentClassMap.put(R.id.nav_profile, ProfileFragment.class);
         navItemToFragmentClassMap.put(R.id.nav_all_jobs, AllCategory.class);

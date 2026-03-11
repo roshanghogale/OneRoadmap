@@ -7,9 +7,9 @@
         android:title="Home" />
 
     <item
-        android:id="@+id/nav_chat"
-        android:icon="@drawable/chat_inactive"
-        android:title="Chat" />
+        android:id="@+id/nav_all_jobs"
+        android:icon="@drawable/list"
+        android:title="All Jobs" />
 
     <item
         android:id="@+id/nav_main"
@@ -17,10 +17,9 @@
         android:title="Career" />
 
     <item
-        android:id="@+id/nav_all_jobs"
-        android:icon="@drawable/list"
-        android:title="All Jobs" />
-
+        android:id="@+id/nav_saved"
+        android:icon="@drawable/save"
+        android:title="Saved Jobs" />
     <item
         android:id="@+id/nav_profile"
         android:icon="@drawable/profile_inactive"

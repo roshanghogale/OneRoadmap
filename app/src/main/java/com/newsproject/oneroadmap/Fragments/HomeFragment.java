@@ -6,7 +6,6 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
-import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
@@ -23,14 +22,12 @@ import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import androidx.activity.OnBackPressedCallback;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.cardview.widget.CardView;
-import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentActivity;
@@ -48,10 +45,8 @@ import com.google.firebase.storage.FirebaseStorage;
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
-import com.mikhaellopez.circularprogressbar.CircularProgressBar;
 import com.newsproject.oneroadmap.Adapters.CurrentAffairsAdapter;
 import com.newsproject.oneroadmap.Adapters.NewsAdapter;
-import com.newsproject.oneroadmap.Adapters.RecentlyOpenedAdapter;
 import com.newsproject.oneroadmap.Adapters.StoriesAdapter;
 import com.newsproject.oneroadmap.Adapters.StoryAdapter;
 import com.newsproject.oneroadmap.Adapters.StudentUpdateAdapter;
@@ -68,8 +63,8 @@ import com.newsproject.oneroadmap.R;
 import com.newsproject.oneroadmap.Utils.BuildConfig;
 import com.newsproject.oneroadmap.Models.JobViewModel;
 import com.newsproject.oneroadmap.Utils.CoinAccessController;
-import com.newsproject.oneroadmap.Utils.NewsUtils;
 import com.newsproject.oneroadmap.Utils.ShareHelper;
+import com.newsproject.oneroadmap.Utils.ShareRewardManager;
 import com.newsproject.oneroadmap.database.RecentlyOpenedDatabaseHelper;
 
 import org.imaginativeworld.whynotimagecarousel.ImageCarousel;
@@ -78,7 +73,6 @@ import org.imaginativeworld.whynotimagecarousel.model.CarouselItem;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -97,6 +91,7 @@ import okhttp3.Response;
 public class HomeFragment extends Fragment {
     private CoinAccessController coinAccessController;
     private ShareHelper shareHelper;
+    private ShareRewardManager shareRewardManager;
     private ActivityResultLauncher<Intent> shareLauncher;
     private String userId;
     private LinearLayout saveButton;
@@ -145,6 +140,7 @@ public class HomeFragment extends Fragment {
     private Map<String, News> newsCache = new HashMap<>(); // Cache for news items
     private RecentlyOpenedDatabaseHelper recentDb;
     private static ActivityResultLauncher<Intent> storyShareLauncher;
+    private static ShareRewardManager staticShareRewardManager;
     private TextView tagCareerRoadmap, tagResultHallTicket, tagGovtJobs;
     private TextView tagBankingJobs, tagAllJobs, tagPrivateJobs;
 
@@ -154,21 +150,19 @@ public class HomeFragment extends Fragment {
         executorService = Executors.newSingleThreadExecutor();
         Log.d(TAG, "ExecutorService created in onCreate");
         
+        SharedPreferences prefs = requireContext().getSharedPreferences("UserPrefs", Context.MODE_PRIVATE);
+        userId = prefs.getString("userId", "");
+
+        shareRewardManager = new ShareRewardManager(requireContext(), userId);
+        staticShareRewardManager = shareRewardManager;
+
         // Initialize share launcher for stories
         storyShareLauncher = registerForActivityResult(
                 new ActivityResultContracts.StartActivityForResult(),
                 result -> {
                     if (!isAdded()) return;
-                    // When user returns from sharing, add coins
-                    SharedPreferences prefs = requireContext().getSharedPreferences("UserPrefs", Context.MODE_PRIVATE);
-                    String userId = prefs.getString("userId", "");
-                    if (userId != null && !userId.isEmpty()) {
-                        com.newsproject.oneroadmap.Utils.DatabaseHelper dbHelper = new com.newsproject.oneroadmap.Utils.DatabaseHelper(requireContext());
-                        int current = dbHelper.getUserCoins(userId);
-                        com.newsproject.oneroadmap.Utils.CoinManager coinManager = new com.newsproject.oneroadmap.Utils.CoinManager(requireContext(), userId);
-                        coinManager.addCoinsForShare(newCoins -> {
-                            // Coins added successfully
-                        });
+                    if (shareRewardManager != null) {
+                        shareRewardManager.onShareReturned(null);
                     }
                 });
 
@@ -181,22 +175,21 @@ public class HomeFragment extends Fragment {
 
         // Initialize JobViewModel
         jobViewModel = new ViewModelProvider(this).get(JobViewModel.class);
-        SharedPreferences prefs = requireContext().getSharedPreferences("UserPrefs", Context.MODE_PRIVATE);
-        userId = prefs.getString("userId", "");
 
         shareHelper = new ShareHelper(requireContext());
 
         coinAccessController = new CoinAccessController(
                 this,
                 userId,
-                shareHelper
+                shareHelper,
+                shareRewardManager
         );
 
         shareLauncher = registerForActivityResult(
                 new ActivityResultContracts.StartActivityForResult(),
                 result -> {
                     if (coinAccessController != null) {
-                        coinAccessController.onShareCompleted();
+                        coinAccessController.onShareReturned();
                     }
                 });
 
@@ -218,7 +211,7 @@ public class HomeFragment extends Fragment {
         storiesPlayer.setVisibility(View.VISIBLE);
 
         StoriesAdapter storiesAdapter =
-                new StoriesAdapter(context, storyList, storyAdapter, storiesPlayer, storyShareLauncher);
+                new StoriesAdapter(context, storyList, storyAdapter, storiesPlayer, storyShareLauncher, staticShareRewardManager);
 
         storiesPlayer.setAdapter(storiesAdapter);
         storiesAdapter.setCurrentVisiblePosition(startPosition);
@@ -813,7 +806,7 @@ public class HomeFragment extends Fragment {
             } catch (Exception ignored) {}
         }
         if (epochMillis == null) {
-            String[] patterns = new String[] { "yyyy-MM-dd'T'HH:mm:ss'Z'", "yyyy-MM-dd HH:mm:ss", "yyyy/MM/dd HH:mm:ss", "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", "yyyy-MM-dd'T'HH:mm:ss.SSSXXX" };
+            String[] patterns = new String[] { "yyyy-MM-dd\u0027T\u0027HH:mm:ss\u0027Z\u0027", "yyyy-MM-dd HH:mm:ss", "yyyy/MM/dd HH:mm:ss", "yyyy-MM-dd\u0027T\u0027HH:mm:ss.SSS\u0027Z\u0027", "yyyy-MM-dd\u0027T\u0027HH:mm:ss.SSSXXX" };
             for (String p : patterns) {
                 try {
                     java.time.format.DateTimeFormatter f = java.time.format.DateTimeFormatter.ofPattern(p).withZone(java.time.ZoneOffset.UTC);
@@ -1065,7 +1058,7 @@ public class HomeFragment extends Fragment {
     private void filterAndDisplay(String type) {
         currentStudyMaterials.clear();
         String normalizedType = type;
-        if (type.equals("police_defence")) normalizedType = "police & defence";
+        if (type.equals("police_defence")) normalizedType = "police \u0026 defence";
         for (StudyMaterial material : studyMaterialsAll) {
             if (material.getType().equals(normalizedType)) currentStudyMaterials.add(material);
         }

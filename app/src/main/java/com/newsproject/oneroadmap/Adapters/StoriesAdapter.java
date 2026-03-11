@@ -31,6 +31,7 @@ import com.newsproject.oneroadmap.Fragments.HomeFragment;
 import com.newsproject.oneroadmap.Models.Story;
 import com.newsproject.oneroadmap.R;
 import com.newsproject.oneroadmap.Utils.ShareHelper;
+import com.newsproject.oneroadmap.Utils.ShareRewardManager;
 import com.newsproject.oneroadmap.Utils.TimeAgoUtil;
 import com.newsproject.oneroadmap.Utils.WebViewHelper;
 
@@ -44,6 +45,7 @@ public class StoriesAdapter
     final StoryAdapter storyAdapter;
     private final RecyclerView storiesPlayer;
     private final ActivityResultLauncher<Intent> shareLauncher;
+    private final ShareRewardManager shareRewardManager;
     private static StoryViewHolder currentlyPlayingHolder = null;
 
 
@@ -54,13 +56,15 @@ public class StoriesAdapter
             List<Story> stories,
             StoryAdapter storyAdapter,
             RecyclerView storiesPlayer,
-            ActivityResultLauncher<Intent> shareLauncher
+            ActivityResultLauncher<Intent> shareLauncher,
+            ShareRewardManager shareRewardManager
     ) {
         this.context = context;
         this.stories = stories;
         this.storyAdapter = storyAdapter;
         this.storiesPlayer = storiesPlayer;
         this.shareLauncher = shareLauncher;
+        this.shareRewardManager = shareRewardManager;
     }
 
     public int getCurrentVisiblePosition() {
@@ -161,12 +165,15 @@ public class StoriesAdapter
                 int pos = getAdapterPosition();
                 if (pos == RecyclerView.NO_POSITION) return;
                 Story s = adapter.stories.get(pos);
+                
+                if (adapter.shareRewardManager != null) {
+                    adapter.shareRewardManager.startShare();
+                }
+                
                 ShareHelper shareHelper = new ShareHelper(adapter.context);
-                // Set share launcher to detect when sharing completes
                 if (adapter.shareLauncher != null) {
                     shareHelper.setShareLauncher(adapter.shareLauncher);
                 }
-                // Share with standard message and image
                 shareHelper.sharePost(null, null);
             });
 
@@ -191,7 +198,6 @@ public class StoriesAdapter
 
             storyTitle.setText(s.getTitle());
             
-            // ✅ Fix: Use TimeAgoUtil to calculate relative time from uploadTime string
             if (s.getUploadTime() != null && !s.getUploadTime().isEmpty()) {
                 storyTime.setText(TimeAgoUtil.getTimeAgo(s.getUploadTime()));
             } else if (s.getRelativeTime() != null && !s.getRelativeTime().isEmpty()) {

@@ -16,8 +16,6 @@ import androidx.fragment.app.Fragment;
 
 import com.google.android.gms.ads.AdRequest;
 import com.google.android.gms.ads.LoadAdError;
-import com.google.android.gms.ads.OnUserEarnedRewardListener;
-import com.google.android.gms.ads.rewarded.RewardItem;
 import com.google.android.gms.ads.rewarded.RewardedAd;
 import com.google.android.gms.ads.rewarded.RewardedAdLoadCallback;
 import com.newsproject.oneroadmap.R;
@@ -28,17 +26,19 @@ public class CoinAccessController {
     private final Fragment fragment;
     private final String userId;
     private final CoinManager coinManager;
-    private String pendingUrl;
     private final ShareHelper shareHelper;
+    private final ShareRewardManager shareRewardManager;
     private RewardedAd rewardedAd;
     private boolean isLoadingAd = false;
 
     public CoinAccessController(Fragment fragment,
                                 String userId,
-                                ShareHelper shareHelper) {
+                                ShareHelper shareHelper,
+                                ShareRewardManager shareRewardManager) {
         this.fragment = fragment;
         this.userId = userId;
         this.shareHelper = shareHelper;
+        this.shareRewardManager = shareRewardManager;
         this.coinManager = new CoinManager(fragment.requireContext(), userId);
         loadRewardedAd();
     }
@@ -48,7 +48,6 @@ public class CoinAccessController {
 
         isLoadingAd = true;
         AdRequest adRequest = new AdRequest.Builder().build();
-        // Use test ID for now: ca-app-pub-3940256099942544/5224354917
         RewardedAd.load(fragment.requireContext(), "ca-app-pub-3940256099942544/5224354917",
                 adRequest, new RewardedAdLoadCallback() {
                     @Override
@@ -74,7 +73,6 @@ public class CoinAccessController {
         if (current >= required) {
             showConfirmDialog(url, required, onAccessGranted);
         } else {
-            pendingUrl = url;
             showNotEnoughDialog();
         }
     }
@@ -204,19 +202,23 @@ public class CoinAccessController {
     }
 
     private void triggerShare() {
+        if (shareRewardManager != null) {
+            shareRewardManager.startShare();
+        }
         shareHelper.sharePost("", "");
     }
 
-    public void onShareCompleted() {
+    public void onShareReturned() {
+        if (shareRewardManager == null) return;
+
         int before = coinManager.getCoins();
-        coinManager.addCoinsForShare(newCoins -> {
+        shareRewardManager.onShareReturned(newTotalCoins -> {
             showCoinIncrementAnimation(
                     before,
-                    newCoins,
+                    newTotalCoins,
                     false,
                     null
             );
-            pendingUrl = null;
         });
     }
 

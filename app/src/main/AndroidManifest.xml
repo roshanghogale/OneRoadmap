@@ -80,6 +80,10 @@
             </intent-filter>
         </receiver>
 
+        <receiver
+            android:name=".Utils.ShareResultReceiver"
+            android:exported="false" />
+
         <meta-data
             android:name="preloaded_fonts"
             android:resource="@array/preloaded_fonts" />

@@ -36,6 +36,7 @@ import com.newsproject.oneroadmap.R;
 import com.newsproject.oneroadmap.Utils.BuildConfig;
 import com.newsproject.oneroadmap.Utils.CoinAccessController;
 import com.newsproject.oneroadmap.Utils.ShareHelper;
+import com.newsproject.oneroadmap.Utils.ShareRewardManager;
 
 import de.hdodenhof.circleimageview.CircleImageView;
 
@@ -54,6 +55,7 @@ public class AllBannersList extends Fragment {
     private ImageView backButton;
     private CoinAccessController coinAccessController;
     private ShareHelper shareHelper;
+    private ShareRewardManager shareRewardManager;
     private String userId;
     private ActivityResultLauncher<Intent> shareLauncher;
 
@@ -65,11 +67,15 @@ public class AllBannersList extends Fragment {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
+        SharedPreferences prefs = requireContext().getSharedPreferences("UserPrefs", Context.MODE_PRIVATE);
+        userId = prefs.getString("userId", "");
+        shareRewardManager = new ShareRewardManager(requireContext(), userId);
+
         shareLauncher = registerForActivityResult(
                 new ActivityResultContracts.StartActivityForResult(),
                 result -> {
                     if (coinAccessController != null) {
-                        coinAccessController.onShareCompleted();
+                        coinAccessController.onShareReturned();
                     }
                 });
     }
@@ -77,26 +83,21 @@ public class AllBannersList extends Fragment {
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
-        // Inflate the layout for this fragment
         View view = inflater.inflate(R.layout.fragment_all_banners_list, container, false);
-        SharedPreferences prefs =
-                requireContext().getSharedPreferences("UserPrefs", Context.MODE_PRIVATE);
-
-        userId = prefs.getString("userId", "");
-
+        
         shareHelper = new ShareHelper(requireContext());
-        shareHelper.setShareLauncher(shareLauncher);  // 🔥 IMPORTANT
+        shareHelper.setShareLauncher(shareLauncher);
 
         coinAccessController = new CoinAccessController(
                 this,
                 userId,
-                shareHelper
+                shareHelper,
+                shareRewardManager
         );
         backButton = view.findViewById(R.id.back_button7);
         loadStudentUpdates(view);
 
         ConstraintLayout constraintLayout = view.findViewById(R.id.constraintLayout4);
-
         ViewGroup.LayoutParams params = constraintLayout.getLayoutParams();
 
         if (Build.VERSION.SDK_INT >= 35) {
@@ -106,11 +107,8 @@ public class AllBannersList extends Fragment {
         }
 
         backButton.setOnClickListener(v -> {
-            Log.d("ReelsAdapter", "Back button pressed");
             if (getParentFragmentManager().getBackStackEntryCount() > 0) {
                 getParentFragmentManager().popBackStack();
-            } else {
-                Log.w("ReelsAdapter", "No back stack entries to pop");
             }
         });
 
@@ -135,7 +133,6 @@ public class AllBannersList extends Fragment {
         client.newCall(request).enqueue(new Callback() {
             @Override
             public void onFailure(@NonNull Call call, @NonNull IOException e) {
-                Log.e("AllBannersList", "Failed to fetch student updates: " + e.getMessage());
                 if (getActivity() != null) {
                     getActivity().runOnUiThread(() ->
                             Toast.makeText(getContext(), "Failed to load student updates", Toast.LENGTH_SHORT).show());
@@ -144,14 +141,7 @@ public class AllBannersList extends Fragment {
 
             @Override
             public void onResponse(@NonNull Call call, @NonNull Response response) throws IOException {
-                if (!response.isSuccessful()) {
-                    Log.e("AllBannersList", "Unexpected response: " + response.code());
-                    if (getActivity() != null) {
-                        getActivity().runOnUiThread(() ->
-                                Toast.makeText(getContext(), "Failed to load student updates", Toast.LENGTH_SHORT).show());
-                    }
-                    return;
-                }
+                if (!response.isSuccessful()) return;
                 String body = response.body().string();
                 try {
                     JsonObject root = new Gson().fromJson(body, JsonObject.class);
@@ -190,11 +180,9 @@ public class AllBannersList extends Fragment {
                             itemList.clear();
                             itemList.addAll(fetched);
                             adapter.notifyDataSetChanged();
-                            Log.d("AllBannersList", "Student updates loaded, count: " + itemList.size());
                         });
                     }
                 } catch (Exception e) {
-                    Log.e("AllBannersList", "Failed to parse student updates: " + e.getMessage());
                     if (getActivity() != null) {
                         getActivity().runOnUiThread(() ->
                                 Toast.makeText(getContext(), "Failed to parse student updates", Toast.LENGTH_SHORT).show());
@@ -208,11 +196,9 @@ public class AllBannersList extends Fragment {
         Context context = this.getContext();
         if (context == null) return;
 
-        // Create Dialog with BlurDialogTheme
         Dialog dialog = new Dialog(context, R.style.BlurDialogTheme);
         dialog.setContentView(R.layout.student_update);
 
-        // Set window attributes to match news dialog
         WindowManager.LayoutParams lp = new WindowManager.LayoutParams();
         lp.copyFrom(dialog.getWindow().getAttributes());
         lp.width = WindowManager.LayoutParams.MATCH_PARENT;
@@ -223,7 +209,6 @@ public class AllBannersList extends Fragment {
         dialog.getWindow().addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
         dialog.getWindow().setStatusBarColor(android.graphics.Color.TRANSPARENT);
 
-        // Initialize views
         CircleImageView iconImageView = dialog.findViewById(R.id.circleImageView2);
         ImageButton btnClose = dialog.findViewById(R.id.btn_close);
         TextView titleText = dialog.findViewById(R.id.title_text);
@@ -232,10 +217,8 @@ public class AllBannersList extends Fragment {
         androidx.cardview.widget.CardView openLinkButton = dialog.findViewById(R.id.open_link_button);
         androidx.cardview.widget.CardView selectionPdfButton = dialog.findViewById(R.id.selection_pdf_button);
         
-        // Close button click
         btnClose.setOnClickListener(v -> dialog.dismiss());
 
-        // Load icon image
         if (item.getIconUrl() != null && !item.getIconUrl().isEmpty()) {
             Glide.with(context)
                     .load(item.getIconUrl())
@@ -246,42 +229,32 @@ public class AllBannersList extends Fragment {
             iconImageView.setImageResource(R.drawable.app_logo);
         }
 
-        // Set text data
         titleText.setText(item.getTitle() != null ? item.getTitle() : "N/A");
         educationValue.setText(item.getEducation() != null ? item.getEducation() : "N/A");
         descriptionText.setText(item.getDescription() != null ? item.getDescription() : "N/A");
 
-        // 🔗 Open Link Button Click
         openLinkButton.setOnClickListener(v -> {
             String link = item.getApplicationLink();
             if (link != null && !link.isEmpty()) {
-                dialog.dismiss(); // Close dialog before opening WebView
+                dialog.dismiss();
                 com.newsproject.oneroadmap.Utils.WebViewHelper.openUrlInApp(this, link);
             } else {
                 Toast.makeText(context, "अर्जाची लिंक उपलब्ध नाही", Toast.LENGTH_SHORT).show();
             }
         });
 
-        // 📄 Selection PDF Button Click
         selectionPdfButton.setOnClickListener(v -> {
-
             String pdfUrl = item.getSelectionPdfUrl();
-
             if (pdfUrl != null && !pdfUrl.isEmpty()) {
-
                 coinAccessController.requestPdfAccess(
                         pdfUrl,
-                        () -> dialog.dismiss()   // 🔥 close only after Open pressed
+                        () -> dialog.dismiss()
                 );
-
             } else {
-                Toast.makeText(context,
-                        "सिलेक्शन PDF उपलब्ध नाही",
-                        Toast.LENGTH_SHORT).show();
+                Toast.makeText(context, "सिलेक्शन PDF उपलब्ध नाही", Toast.LENGTH_SHORT).show();
             }
         });
 
-        // Show dialog
         dialog.setCancelable(true);
         dialog.show();
     }

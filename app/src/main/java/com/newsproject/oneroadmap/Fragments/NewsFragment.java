@@ -21,6 +21,7 @@ import com.newsproject.oneroadmap.R;
 import com.newsproject.oneroadmap.Utils.BuildConfig;
 import com.newsproject.oneroadmap.Utils.TimeAgoUtil;
 import com.newsproject.oneroadmap.Utils.ShareHelper;
+import com.newsproject.oneroadmap.Utils.ShareRewardManager;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import android.content.Context;
@@ -51,6 +52,7 @@ public class NewsFragment extends Fragment {
     private List<News> newsList;
     private int initialPosition;
     private ShareHelper shareHelper;
+    private ShareRewardManager shareRewardManager;
     private ActivityResultLauncher<Intent> shareLauncher;
     private Handler handler = new Handler(Looper.getMainLooper());
     private int displayedCoins = 0;
@@ -84,6 +86,12 @@ public class NewsFragment extends Fragment {
             }
         }
         
+        SharedPreferences prefs = requireContext().getSharedPreferences("UserPrefs", Context.MODE_PRIVATE);
+        String userId = prefs.getString("userId", "");
+        
+        // Initialize ShareRewardManager
+        shareRewardManager = new ShareRewardManager(requireContext(), userId);
+        
         // Initialize ShareHelper
         shareHelper = new ShareHelper(requireContext());
         
@@ -91,20 +99,14 @@ public class NewsFragment extends Fragment {
         shareLauncher = registerForActivityResult(
                 new ActivityResultContracts.StartActivityForResult(),
                 result -> {
-                    // When user returns from sharing, add coins and show dialog
-                    if (shareHelper != null) {
-                        // Get current coins to show in dialog
-                        android.content.SharedPreferences prefs = requireContext().getSharedPreferences("UserPrefs", Context.MODE_PRIVATE);
-                        String userId = prefs.getString("userId", "");
-                        if (userId != null && !userId.isEmpty()) {
-                            com.newsproject.oneroadmap.Utils.DatabaseHelper dbHelper = new com.newsproject.oneroadmap.Utils.DatabaseHelper(requireContext());
-                            int current = dbHelper.getUserCoins(userId);
-                            com.newsproject.oneroadmap.Utils.CoinManager coinManager = new com.newsproject.oneroadmap.Utils.CoinManager(requireContext(), userId);
-                            coinManager.addCoinsForShare(newCoins -> {
-                                // Show coin animation dialog
-                                showCoinAnimationDialog(current, newCoins);
-                            });
-                        }
+                    // When user returns from sharing, validate reward
+                    if (userId != null && !userId.isEmpty()) {
+                        com.newsproject.oneroadmap.Utils.DatabaseHelper dbHelper = new com.newsproject.oneroadmap.Utils.DatabaseHelper(requireContext());
+                        int current = dbHelper.getUserCoins(userId);
+                        shareRewardManager.onShareReturned(newTotalCoins -> {
+                            // Show coin animation dialog
+                            showCoinAnimationDialog(current, newTotalCoins);
+                        });
                     }
                 });
         
@@ -136,7 +138,6 @@ public class NewsFragment extends Fragment {
             }
             
             // Set orientation to horizontal for left/right swiping
-            // Standard behavior: swipe left = next (older), swipe right = previous (newer)
             viewPager.setOrientation(ViewPager2.ORIENTATION_HORIZONTAL);
             
             // Add smooth page transformer for better animation
@@ -250,16 +251,8 @@ public class NewsFragment extends Fragment {
                 // Set description fields from description object
                 News.Description description = news.getDescription();
                 if (description != null) {
-                    // Set paragraph1: prefer titleDescription, fallback to paragraph1
-                    String paragraph1Text = null;
-                    paragraph1Text = description.getParagraph1();
-                    setTextIfNotNull(paragraph1TextView, paragraph1Text);
-                    
-                    // Set paragraph2: prefer subTitle, fallback to paragraph2
-                    String paragraph2Text = null;
-                    paragraph2Text = description.getParagraph2();
-                    
-                    setTextIfNotNull(paragraph2TextView, paragraph2Text);
+                    setTextIfNotNull(paragraph1TextView, description.getParagraph1());
+                    setTextIfNotNull(paragraph2TextView, description.getParagraph2());
                 } else {
                     paragraph1TextView.setVisibility(View.GONE);
                     paragraph2TextView.setVisibility(View.GONE);
@@ -285,16 +278,17 @@ public class NewsFragment extends Fragment {
                 // Setup share button
                 if (shareButtonContainer != null && shareHelper != null) {
                     shareButtonContainer.setOnClickListener(v -> {
-                        // Get news title - use getTitle() method
+                        if (shareRewardManager != null) {
+                            shareRewardManager.startShare();
+                        }
+                        
                         String title = news.getTitle() != null ? news.getTitle() : "Latest News";
                         String bannerUrl = news.getImageUrl();
                         
-                        // Build full URL for banner if it's relative
                         if (bannerUrl != null && !bannerUrl.isEmpty()) {
                             bannerUrl = buildFullUrl(bannerUrl);
                         }
                         
-                        // Share only the title with banner image (same format as student update)
                         shareHelper.shareJobWithImage(title, null, bannerUrl);
                     });
                 }
@@ -331,17 +325,14 @@ public class NewsFragment extends Fragment {
             private String formatDateToMarathi(News news) {
                 Date date = null;
 
-                // Try to get date from createdAt first (preferred)
                 if (news.getCreatedAt() != null) {
                     date = news.getCreatedAt();
                 } else if (news.getDate() != null && !news.getDate().isEmpty()) {
-                    // Try to parse date string (format: yyyy-MM-dd)
                     try {
                         SimpleDateFormat inputFormat = new SimpleDateFormat("yyyy-MM-dd", Locale.US);
                         inputFormat.setTimeZone(TimeZone.getTimeZone("Asia/Kolkata"));
                         date = inputFormat.parse(news.getDate());
                     } catch (Exception e1) {
-                        // Try ISO format as fallback
                         try {
                             SimpleDateFormat isoFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.US);
                             isoFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
@@ -354,12 +345,10 @@ public class NewsFragment extends Fragment {
 
                 if (date == null) return null;
 
-                // Format in Marathi locale with Marathi digits
                 SimpleDateFormat sdf = new SimpleDateFormat("dd MMMM yyyy", new Locale("mr", "IN"));
                 sdf.setTimeZone(TimeZone.getTimeZone("Asia/Kolkata"));
                 String formatted = sdf.format(date);
 
-                // Convert to Marathi digits
                 return toMarathiDigits(formatted);
             }
 
@@ -385,7 +374,7 @@ public class NewsFragment extends Fragment {
                 .inflate(R.layout.coin_dialog_layout, null);
         TextView count = view.findViewById(R.id.coin_count);
         CardView ok = view.findViewById(R.id.btn_close);
-        count.setText("Coins: " + start);
+        count.setText(String.valueOf(start));
         AlertDialog dialog = new AlertDialog.Builder(requireContext())
                 .setView(view).create();
         if (dialog.getWindow() != null)
@@ -399,7 +388,11 @@ public class NewsFragment extends Fragment {
                 if (!isAdded() || getActivity() == null) return;
                 if (displayedCoins < end) {
                     displayedCoins++;
-                    count.setText("Coins: " + displayedCoins);
+                    count.setText(String.valueOf(displayedCoins));
+                    handler.postDelayed(this, 20);
+                } else if (displayedCoins > end) {
+                    displayedCoins--;
+                    count.setText(String.valueOf(displayedCoins));
                     handler.postDelayed(this, 20);
                 }
             }

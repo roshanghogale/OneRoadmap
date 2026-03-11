@@ -4,6 +4,7 @@ import com.newsproject.oneroadmap.Utils.ShareHelper;
 
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.util.Log;
 import android.widget.Toast;
 import com.google.gson.Gson;
@@ -34,12 +35,10 @@ public class NewsUtils {
                 .url(url)
                 .addHeader("Accept", "application/json")
                 .build();
-        Log.d("NewsUtils", "Fetching news: id=" + id + ", url=" + url);
 
         client.newCall(request).enqueue(new Callback() {
             @Override
             public void onFailure(Call call, IOException e) {
-                Log.e("NewsUtils", "Failed to fetch news: " + e.getMessage());
                 mainHandler.post(() -> {
                     Toast.makeText(context, "Failed to load news", Toast.LENGTH_SHORT).show();
                     if (onComplete != null) onComplete.run();
@@ -49,7 +48,6 @@ public class NewsUtils {
             @Override
             public void onResponse(Call call, Response response) throws IOException {
                 if (!response.isSuccessful()) {
-                    Log.e("NewsUtils", "Non-200 for news: code=" + response.code());
                     mainHandler.post(() -> {
                         Toast.makeText(context, "Failed to load news", Toast.LENGTH_SHORT).show();
                         if (onComplete != null) onComplete.run();
@@ -82,14 +80,12 @@ public class NewsUtils {
                     if (onComplete != null) onComplete.run();
                 });
             } else {
-                Log.e("NewsUtils", "Unexpected news response shape: " + body);
                 mainHandler.post(() -> {
                     Toast.makeText(context, "Failed to load news", Toast.LENGTH_SHORT).show();
                     if (onComplete != null) onComplete.run();
                 });
             }
         } catch (Exception e) {
-            Log.e("NewsUtils", "Exception parsing news response: " + e.getMessage(), e);
             mainHandler.post(() -> {
                 Toast.makeText(context, "Failed to load news", Toast.LENGTH_SHORT).show();
                 if (onComplete != null) onComplete.run();
@@ -131,7 +127,6 @@ public class NewsUtils {
         StringBuilder descriptionText = new StringBuilder();
         News.Description description = news.getDescription();
         if (description != null) {
-            // Add titleDescription if available, otherwise paragraph1
             String text = description.getTitleDescription();
             if (text == null || text.isEmpty()) {
                 text = description.getParagraph1();
@@ -140,7 +135,6 @@ public class NewsUtils {
                 descriptionText.append(text);
             }
             
-            // Add subTitle if available, otherwise paragraph2
             text = description.getSubTitle();
             if (text == null || text.isEmpty()) {
                 text = description.getParagraph2();
@@ -155,6 +149,11 @@ public class NewsUtils {
         dialog.findViewById(R.id.cardView7).setOnClickListener(v -> dialog.dismiss());
         dialog.findViewById(R.id.imageView17).setOnClickListener(v -> dialog.dismiss());
         dialog.findViewById(R.id.cardView).setOnClickListener(v -> {
+            SharedPreferences prefs = context.getSharedPreferences("UserPrefs", Context.MODE_PRIVATE);
+            String userId = prefs.getString("userId", "");
+            ShareRewardManager rewardManager = new ShareRewardManager(context, userId);
+            rewardManager.startShare();
+            
             ShareHelper shareHelper = new ShareHelper(context);
             shareHelper.sharePost(news.getTitle(), news.getWebUrl());
         });

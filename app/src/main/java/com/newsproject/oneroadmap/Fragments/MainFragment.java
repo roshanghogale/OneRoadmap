@@ -35,6 +35,7 @@ import com.newsproject.oneroadmap.R;
 import com.newsproject.oneroadmap.Utils.BuildConfig;
 import com.newsproject.oneroadmap.Utils.CoinAccessController;
 import com.newsproject.oneroadmap.Utils.ShareHelper;
+import com.newsproject.oneroadmap.Utils.ShareRewardManager;
 
 import java.io.IOException;
 import java.text.ParseException;
@@ -73,6 +74,7 @@ public class MainFragment extends Fragment {
     private boolean isStartupCardFirstClick = true;
     private boolean isEducationFilterActive = false;
     private CoinAccessController coinAccessController;
+    private ShareRewardManager shareRewardManager;
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
@@ -93,16 +95,16 @@ public class MainFragment extends Fragment {
 
         SharedPreferences prefs = requireContext().getSharedPreferences("UserPrefs", Context.MODE_PRIVATE);
         userEducationCategory = prefs.getString("education_category", "All");
-        Log.d(TAG, "User education category: " + userEducationCategory);
-
         String userId = prefs.getString("userId", "");
 
+        shareRewardManager = new ShareRewardManager(requireContext(), userId);
         ShareHelper shareHelper = new ShareHelper(requireContext());
 
         coinAccessController = new CoinAccessController(
                 this,
                 userId,
-                shareHelper
+                shareHelper,
+                shareRewardManager
         );
 
         adapter = new CareerRoadmapsAdapter(
@@ -125,7 +127,7 @@ public class MainFragment extends Fragment {
                         new ActivityResultContracts.StartActivityForResult(),
                         result -> {
                             if (coinAccessController != null) {
-                                coinAccessController.onShareCompleted();
+                                coinAccessController.onShareReturned();
                             }
                         }
                 );
@@ -140,7 +142,6 @@ public class MainFragment extends Fragment {
     @Override
     public void onStop() {
         super.onStop();
-        // Cancel pending tasks to prevent accessing detached fragment
         if (executorService != null && !executorService.isShutdown()) {
             executorService.shutdownNow();
             executorService = null;
@@ -150,7 +151,6 @@ public class MainFragment extends Fragment {
     @Override
     public void onDestroyView() {
         super.onDestroyView();
-        // Ensure executor is shut down if not already
         if (executorService != null && !executorService.isShutdown()) {
             executorService.shutdown();
         }
@@ -172,15 +172,11 @@ public class MainFragment extends Fragment {
                     if (!response.isSuccessful()) throw new IOException("Unexpected code " + response.code());
 
                     String json = response.body().string();
-                    Log.d(TAG, "setupCareerRoadmaps: API response received");
                     CareerRoadmapResponse careerRoadmapResponse = gson.fromJson(json, CareerRoadmapResponse.class);
                     List<CareerRoadmaps> roadmaps = careerRoadmapResponse.getCareerRoadmaps();
 
                     mainHandler.post(() -> {
-                        if (!isAdded()) {
-                            Log.w(TAG, "Fragment not attached, skipping roadmap update");
-                            return;
-                        }
+                        if (!isAdded()) return;
                         careerRoadmapsList.clear();
                         originalRoadmapsList.clear();
                         Set<String> uniqueCategories = new HashSet<>();
@@ -215,7 +211,6 @@ public class MainFragment extends Fragment {
                         educationOptions = new ArrayList<>(uniqueCategories);
                         Collections.sort(educationOptions);
 
-                        // Always sort latest first when loaded
                         sortByNewest(originalRoadmapsList);
                         filterByType("all");
 
@@ -224,11 +219,7 @@ public class MainFragment extends Fragment {
                 }
             } catch (Exception e) {
                 mainHandler.post(() -> {
-                    if (!isAdded()) {
-                        Log.w(TAG, "Fragment not attached, skipping error toast");
-                        return;
-                    }
-                    Log.e(TAG, "setupCareerRoadmaps: Error " + e.getMessage());
+                    if (!isAdded()) return;
                     Toast.makeText(getContext(), "Failed to load career roadmaps.", Toast.LENGTH_SHORT).show();
                     loadingProgress.setVisibility(View.GONE);
                 });
@@ -270,14 +261,8 @@ public class MainFragment extends Fragment {
 
     private void updateCardForegrounds() {
         Drawable borderDrawable = getResources().getDrawable(R.drawable.rectangle_white_solid_border);
-
-        startupCard.setForeground(
-                isEducationFilterActive && !isStartupCardFirstClick ? borderDrawable : null
-        );
-
-        jobCard.setForeground(
-                isEducationFilterActive && !isJobCardFirstClick ? borderDrawable : null
-        );
+        startupCard.setForeground(isEducationFilterActive && !isStartupCardFirstClick ? borderDrawable : null);
+        jobCard.setForeground(isEducationFilterActive && !isJobCardFirstClick ? borderDrawable : null);
     }
 
     // --------------------------- FILTER LOGIC ---------------------------
@@ -302,7 +287,6 @@ public class MainFragment extends Fragment {
                     }
                 }
             }
-
             sortByNewest(filtered);
             careerRoadmapsList.addAll(filtered);
         }
@@ -332,15 +316,9 @@ public class MainFragment extends Fragment {
                     CareerRoadmapSlider slider = sliders != null && sliders.length > 0 ? sliders[0] : null;
 
                     mainHandler.post(() -> {
-                        if (!isAdded()) {
-                            Log.w(TAG, "Fragment not attached, skipping slider update");
-                            return;
-                        }
+                        if (!isAdded()) return;
                         Context context = getContext();
-                        if (context == null) {
-                            Log.w(TAG, "Context is null, skipping slider update");
-                            return;
-                        }
+                        if (context == null) return;
 
                         if (slider != null && slider.getImageUrl() != null && !slider.getImageUrl().isEmpty()) {
                             String sliderUrl = slider.getImageUrl();
@@ -376,11 +354,7 @@ public class MainFragment extends Fragment {
                 }
             } catch (Exception e) {
                 mainHandler.post(() -> {
-                    if (!isAdded()) {
-                        Log.w(TAG, "Fragment not attached, skipping error toast");
-                        return;
-                    }
-                    Log.e(TAG, "setupCareerSlider: " + e.getMessage());
+                    if (!isAdded()) return;
                     Toast.makeText(getContext(), "Failed to load slider.", Toast.LENGTH_SHORT).show();
                     loadingProgress.setVisibility(View.GONE);
                 });
@@ -392,13 +366,12 @@ public class MainFragment extends Fragment {
 
     private void sortByNewest(List<CareerRoadmaps> list) {
         SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
-
         Collections.sort(list, (r1, r2) -> {
             try {
                 Date d1 = sdf.parse(r1.getCreatedAt());
                 Date d2 = sdf.parse(r2.getCreatedAt());
                 if (d1 != null && d2 != null) {
-                    return d2.compareTo(d1); // Newest first
+                    return d2.compareTo(d1);
                 }
             } catch (ParseException e) {
                 Log.w(TAG, "Date parsing error: " + e.getMessage());

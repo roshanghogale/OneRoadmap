@@ -13,7 +13,6 @@ public class CoinManager {
     private static final int COINS_PER_SHARE = 50;
     private static final int COINS_PER_DOWNLOAD = 25;
     private static final int COINS_PER_VIDEO = 150;
-    
     private final DatabaseHelper dbHelper;
     private final ApiClient apiClient;
     private final String userId;

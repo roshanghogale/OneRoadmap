@@ -42,6 +42,7 @@ import com.newsproject.oneroadmap.Utils.CoinManager;
 import com.newsproject.oneroadmap.Utils.DataConstants;
 import com.newsproject.oneroadmap.Utils.DatabaseHelper;
 import com.newsproject.oneroadmap.Utils.ShareHelper;
+import com.newsproject.oneroadmap.Utils.ShareRewardManager;
 import com.newsproject.oneroadmap.Activities.LoginActivity;
 import com.newsproject.oneroadmap.Models.User;
 
@@ -79,6 +80,7 @@ public class ProfileFragment extends Fragment {
     private int displayedCoins = 0;
     private String tempSelectedAvatar = "";
     private CoinAccessController coinAccessController;
+    private ShareRewardManager shareRewardManager;
 
     private final String[] studyMaterialOptions = {
             "Government", "Police & Defence", "Banking"
@@ -122,6 +124,9 @@ public class ProfileFragment extends Fragment {
         userId = sharedPreferences.getString("userId", null);
         dbHelper = new DatabaseHelper(requireContext());
         apiClient = ApiClient.getInstance();
+
+        // Initialize ShareRewardManager
+        shareRewardManager = new ShareRewardManager(requireContext(), userId);
 
         // One-time migration from old mpsc/upsc keys
         migrateOldStudyPreferences();
@@ -176,8 +181,8 @@ public class ProfileFragment extends Fragment {
         deleteAccountBtn.setOnClickListener(v -> showDeleteAccountDialog());
         profileImage.setOnClickListener(v -> showAvatarPickerDialog());
 
-        // Initialize CoinAccessController (after setupShareButton which creates profileShareHelper)
-        coinAccessController = new CoinAccessController(this, userId, profileShareHelper);
+        // Initialize CoinAccessController
+        coinAccessController = new CoinAccessController(this, userId, profileShareHelper, shareRewardManager);
 
         watchEarnContainer.setOnClickListener(v -> showDailyTasksDialog());
 
@@ -210,9 +215,6 @@ public class ProfileFragment extends Fragment {
     private void setupTaskItem(View taskView, int taskNum, int reward) {
         if (taskView == null) return;
 
-        // Since the <include> tag in dialog_daily_tasks.xml has an ID (e.g., task1),
-        // it overrides the root ID (task_root) of the included layout.
-        // Thus, taskView IS the RelativeLayout root of item_daily_task.xml.
         RelativeLayout taskRoot = (RelativeLayout) taskView;
         TextView taskText = taskView.findViewById(R.id.task_text);
         ImageView rewardIcon = taskView.findViewById(R.id.task_reward_icon);
@@ -290,16 +292,15 @@ public class ProfileFragment extends Fragment {
                 drawableName -> tempSelectedAvatar = drawableName
         );
 
-        // ------------------ GRID + SPACING (IMPORTANT PART) ------------------
+        // ------------------ GRID + SPACING ------------------
         int spanCount = 4;
-        int spacingPx = (int) (10 * getResources().getDisplayMetrics().density); // 12dp
+        int spacingPx = (int) (10 * getResources().getDisplayMetrics().density);
 
         GridLayoutManager layoutManager =
                 new GridLayoutManager(requireContext(), spanCount);
         recyclerView.setLayoutManager(layoutManager);
         recyclerView.setAdapter(adapter);
 
-        // Remove old decoration to avoid stacking
         if (recyclerView.getItemDecorationCount() > 0) {
             recyclerView.removeItemDecorationAt(0);
         }
@@ -327,7 +328,6 @@ public class ProfileFragment extends Fragment {
 
         adapter.setSelectedAvatar(tempSelectedAvatar);
 
-        // ------------------ SAVE ------------------
         btnSave.setOnClickListener(v -> {
             if (tempSelectedAvatar.isEmpty()) {
                 Toast.makeText(
@@ -345,14 +345,12 @@ public class ProfileFragment extends Fragment {
                         saveAvatar(tempSelectedAvatar);
                         dialog.dismiss();
                     },
-                    () -> {} // dialog stays open
+                    () -> {}
             );
         });
 
-        // ------------------ CANCEL ------------------
         btnCancel.setOnClickListener(v -> dialog.dismiss());
 
-        // ------------------ WINDOW STYLE ------------------
         if (dialog.getWindow() != null) {
             dialog.getWindow().setBackgroundDrawable(
                     new ColorDrawable(Color.TRANSPARENT)
@@ -363,82 +361,55 @@ public class ProfileFragment extends Fragment {
     }
 
     private void saveAvatar(String avatar) {
-
-        // 1️⃣ Save to SharedPreferences
         editor.putString("avatar", avatar).apply();
-
-        // 2️⃣ Update UI immediately
         loadAvatar(avatar);
-
-        // 3️⃣ Update SQLite + server
         updateSQLiteUser();
-
-        Toast.makeText(requireContext(),
-                "Profile photo updated", Toast.LENGTH_SHORT).show();
+        Toast.makeText(requireContext(), "Profile photo updated", Toast.LENGTH_SHORT).show();
     }
 
     @Override
     public void onResume() {
         super.onResume();
-        // Refresh coin balance when returning to profile
         if (userId != null && !userId.isEmpty()) {
             coinTextView.setText(String.valueOf(dbHelper.getUserCoins(userId)));
         }
-        // Refresh profile data when fragment becomes visible to ensure latest values are shown
         if (userId != null && !userId.isEmpty() && getView() != null) {
             getView().post(() -> loadProfileData());
         }
-        
-        // Start FAB animation
         handler.postDelayed(watchEarnRunnable, 2000);
     }
 
     @Override
     public void onPause() {
         super.onPause();
-        // Stop FAB animation
         handler.removeCallbacks(watchEarnRunnable);
     }
 
     /* --------------------------------------------------------------------- */
     private void setupSpinners() {
-        // Age Group
         setupSpinner(spinnerAgeGroup, ageGroupOptions, "ageGroup");
-
-        // Twelfth Stream
         setupSpinner(spinnerTwelfth, DataConstants.TWELFTH_OPTIONS, "twelfth");
 
-        // ---- Twelfth listener – controls advanced education & job text ----------
         spinnerTwelfth.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
             public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
-
                 if (isReverting || isInitializing) return;
-
                 String selectedTwelfth = DataConstants.TWELFTH_OPTIONS.get(position);
-
-                // First time init safety
                 if (lastTwelfthValue == null) {
                     lastTwelfthValue = selectedTwelfth;
                     return;
                 }
-
                 if (selectedTwelfth.equals(lastTwelfthValue)) return;
 
                 showConfirmationDialog(
                         "twelfth",
                         selectedTwelfth,
-                        // YES
                         () -> {
                             lastTwelfthValue = selectedTwelfth;
                             saveToSharedPreferences("twelfth", selectedTwelfth);
-
-                            boolean enableAdvanced =
-                                    shouldEnableAdvancedEducation(selectedTwelfth);
-
+                            boolean enableAdvanced = shouldEnableAdvancedEducation(selectedTwelfth);
                             setAdvancedEducationEnabled(enableAdvanced);
                             updateJobTextByTwelfth(selectedTwelfth);
-
                             if (!enableAdvanced) {
                                 isReverting = true;
                                 spinnerEducation.setSelection(0);
@@ -446,10 +417,8 @@ public class ProfileFragment extends Fragment {
                                 spinnerPostGrad.setSelection(0);
                                 isReverting = false;
                             }
-
                             updateSQLiteUser();
                         },
-                        // NO
                         () -> {
                             isReverting = true;
                             int oldPos = DataConstants.TWELFTH_OPTIONS.indexOf(lastTwelfthValue);
@@ -458,18 +427,15 @@ public class ProfileFragment extends Fragment {
                         }
                 );
             }
-
             @Override
             public void onNothingSelected(AdapterView<?> parent) {}
         });
 
-        // Education Category
         ArrayAdapter<String> educationAdapter = new ArrayAdapter<>(
                 requireContext(), R.layout.spinner_item, DataConstants.EDUCATION_OPTIONS);
         educationAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         spinnerEducation.setAdapter(educationAdapter);
 
-        // Degree & PostGrad default adapters
         degreeAdapter = new ArrayAdapter<>(
                 requireContext(), R.layout.spinner_item,
                 new ArrayList<>(Arrays.asList("Select Degree")));
@@ -482,13 +448,11 @@ public class ProfileFragment extends Fragment {
         postGradAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         spinnerPostGrad.setAdapter(postGradAdapter);
 
-        // District
         ArrayAdapter<String> districtAdapter = new ArrayAdapter<>(
                 requireContext(), R.layout.spinner_item, DataConstants.DISTRICTS);
         districtAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         spinnerDistrict.setAdapter(districtAdapter);
 
-        // Taluka
         talukaAdapter = new ArrayAdapter<>(
                 requireContext(), R.layout.spinner_item,
                 new ArrayList<>(Arrays.asList("Select Taluka")));
@@ -497,7 +461,6 @@ public class ProfileFragment extends Fragment {
         spinnerTaluka.setEnabled(false);
         spinnerTaluka.setAlpha(0.5f);
 
-        // Education listener
         spinnerEducation.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
             public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
@@ -524,26 +487,21 @@ public class ProfileFragment extends Fragment {
                     updateDegreeAndPostGradSpinners(selected);
                 }
             }
-
             @Override
             public void onNothingSelected(AdapterView<?> parent) {
                 updateDegreeAndPostGradSpinners(DataConstants.EDUCATION_OPTIONS.get(0));
             }
         });
 
-        // Other spinners
         spinnerDegree.setOnItemSelectedListener(createDegreeListener());
         spinnerPostGrad.setOnItemSelectedListener(createPostGradListener());
         spinnerDistrict.setOnItemSelectedListener(createDistrictListener());
         spinnerTaluka.setOnItemSelectedListener(createTalukaListener());
     }
 
-    /* --------------------------------------------------------------------- */
-    /** Same logic as LoginPage3 – updates the job label text */
     private void updateJobTextByTwelfth(String twelfth) {
         String savedJobText = sharedPreferences.getString("jobTextByTwelfth", "");
         String jobText = "";
-
         if (!savedJobText.isEmpty()) {
             jobText = savedJobText;
         } else {
@@ -552,7 +510,6 @@ public class ProfileFragment extends Fragment {
                 jobText = DataConstants.JOB_TEXT_BY_TWELFTH.get(idx);
             }
         }
-
         if (!jobText.isEmpty()) {
             profileTxtJobByStream.setText("तुम्हाला " + jobText);
         } else {
@@ -560,7 +517,6 @@ public class ProfileFragment extends Fragment {
         }
     }
 
-    /* --------------------------------------------------------------------- */
     private void setAdvancedEducationEnabled(boolean enabled) {
         spinnerEducation.setEnabled(enabled);
         spinnerDegree.setEnabled(enabled);
@@ -609,7 +565,6 @@ public class ProfileFragment extends Fragment {
         }
     }
 
-    /* --------------------------------------------------------------------- */
     private void setupSpinner(Spinner spinner, List<String> options, String prefKey) {
         ArrayAdapter<String> adapter = new ArrayAdapter<>(
                 requireContext(), R.layout.spinner_item, new ArrayList<>(options));
@@ -638,12 +593,10 @@ public class ProfileFragment extends Fragment {
                     });
                 }
             }
-
             @Override public void onNothingSelected(AdapterView<?> parent) {}
         });
     }
 
-    /* --------------------------------------------------------------------- */
     private AdapterView.OnItemSelectedListener createDegreeListener() {
         return new AdapterView.OnItemSelectedListener() {
             @Override public void onItemSelected(AdapterView<?> parent, View view, int pos, long id) {
@@ -754,7 +707,6 @@ public class ProfileFragment extends Fragment {
         };
     }
 
-    /* --------------------------------------------------------------------- */
     private void setupEditListeners() {
         profileNameEdit.setOnClickListener(v -> showNameEditDialog());
         currentAffairsEdit.setOnClickListener(v ->
@@ -766,7 +718,6 @@ public class ProfileFragment extends Fragment {
         studyMaterialEdit.setOnClickListener(v -> showStudyMaterialDialog());
     }
 
-    /* --------------------------------------------------------------------- */
     private void showNameEditDialog() {
         AlertDialog.Builder b = new AlertDialog.Builder(requireContext())
                 .setTitle("Edit Name");
@@ -837,7 +788,6 @@ public class ProfileFragment extends Fragment {
         return selected.isEmpty() ? "कोणतेही नाही" : String.join(", ", selected);
     }
 
-    /* --------------------------------------------------------------------- */
     private void setupGenderListener() {
         radioGroupGender.setOnCheckedChangeListener((group, checkedId) -> {
             if (isReverting || isInitializing) return;
@@ -908,25 +858,20 @@ public class ProfileFragment extends Fragment {
         };
     }
 
-    /* --------------------------------------------------------------------- */
     private void saveToSharedPreferences(String key, String value) {
         editor.putString(key, value).apply();
     }
 
-    /* --------------------------------------------------------------------- */
     private void updateSQLiteUser() {
         if (userId == null) return;
-
         User user = new User(
                 userId,
                 sharedPreferences.getString("name", "User"),
                 sharedPreferences.getString("gender", ""),
                 sharedPreferences.getString("avatar", "girl_profile"),
-
                 sharedPreferences.getBoolean("study_Government", false),
                 sharedPreferences.getBoolean("study_Police_Defence", false),
                 sharedPreferences.getBoolean("study_Banking", false),
-
                 sharedPreferences.getString("degree", "Select Degree"),
                 sharedPreferences.getString("postGrad", "Select Post Graduation"),
                 sharedPreferences.getString("district", "Select District"),
@@ -938,13 +883,11 @@ public class ProfileFragment extends Fragment {
                 sharedPreferences.getString("twelfth",
                         DataConstants.TWELFTH_OPTIONS.get(0))
         );
-
         try {
             if (dbHelper.getUser(userId) != null)
                 dbHelper.updateUser(user);
             else
                 dbHelper.insertUser(user);
-
             syncToServer(user);
         } catch (Exception e) {
             Log.e("Profile", "DB update failed", e);
@@ -964,7 +907,6 @@ public class ProfileFragment extends Fragment {
                     });
                 }
             }
-
             @Override public void onResponse(Call call, Response response) throws java.io.IOException {
                 android.app.Activity activity = getActivity();
                 if (activity != null && isAdded()) {
@@ -985,7 +927,6 @@ public class ProfileFragment extends Fragment {
         });
     }
 
-    /* --------------------------------------------------------------------- */
     private void loadProfileData() {
         if (userId == null || userId.isEmpty()) {
             startActivity(new Intent(requireContext(), LoginActivity.class)
@@ -994,7 +935,6 @@ public class ProfileFragment extends Fragment {
             requireActivity().finish();
             return;
         }
-
         User user = dbHelper.getUser(userId);
         if (user != null) loadUserData(user);
         else loadFromSharedPrefs();
@@ -1002,9 +942,7 @@ public class ProfileFragment extends Fragment {
     }
 
     private void loadUserData(User user) {
-        // First, sync SharedPreferences with database values to ensure consistency
         syncSharedPreferencesFromUser(user);
-
         profileName.setText(user.getName() != null ? user.getName() : "User");
         loadAvatar(user.getAvatar());
         setGender(user.getGender());
@@ -1013,19 +951,16 @@ public class ProfileFragment extends Fragment {
         jobsSelection.setText(user.isJobs() ? "हो" : "नाही");
         studyMaterialSelection.setText(getStudyMaterialDisplayText());
         coinTextView.setText(String.valueOf(dbHelper.getUserCoins(userId)));
-
         updateJobTextByTwelfth(user.getTwelfth());
     }
 
     private void syncSharedPreferencesFromUser(User user) {
-        // Sync all user data to SharedPreferences to ensure consistency
         editor.putString("name", user.getName() != null ? user.getName() : "User");
         editor.putString("gender", user.getGender() != null ? user.getGender() : "");
         editor.putString("avatar", user.getAvatar() != null ? user.getAvatar() : "girl_profile");
         editor.putBoolean("study_Government", user.isStudyGovernment());
         editor.putBoolean("study_Police_Defence", user.isStudyPoliceDefence());
         editor.putBoolean("study_Banking", user.isStudyBanking());
-        editor.putBoolean("study_Self_Improvement", user.isStudySelfImprovement());
         editor.putString("degree", user.getDegree() != null ? user.getDegree() : "Select Degree");
         editor.putString("postGrad", user.getPostGraduation() != null ? user.getPostGraduation() : "Select Post Graduation");
         editor.putString("district", user.getDistrict() != null ? user.getDistrict() : "Select District");
@@ -1049,7 +984,6 @@ public class ProfileFragment extends Fragment {
                 sharedPreferences.getBoolean("jobs", false) ? "हो" : "नाही");
         studyMaterialSelection.setText(getStudyMaterialDisplayText());
         coinTextView.setText(String.valueOf(dbHelper.getUserCoins(userId)));
-
         updateJobTextByTwelfth(sharedPreferences.getString("twelfth",
                 DataConstants.TWELFTH_OPTIONS.get(0)));
     }
@@ -1072,7 +1006,6 @@ public class ProfileFragment extends Fragment {
     }
 
     private void setSpinnersFromUser(User user) {
-        // First, update SharedPreferences with user data to ensure consistency
         if (user.getAgeGroup() != null) editor.putString("ageGroup", user.getAgeGroup());
         if (user.getTwelfth() != null) editor.putString("twelfth", user.getTwelfth());
         if (user.getEducation() != null) editor.putString("education", user.getEducation());
@@ -1083,71 +1016,46 @@ public class ProfileFragment extends Fragment {
         editor.apply();
 
         setSpinnerSelection(spinnerAgeGroup, ageGroupOptions, user.getAgeGroup());
-
-        // Set twelfth first, which controls advanced education
         String twelfth = user.getTwelfth() != null ? user.getTwelfth() : DataConstants.TWELFTH_OPTIONS.get(0);
         lastTwelfthValue = twelfth;
         isReverting = true;
         setSpinnerSelection(spinnerTwelfth, DataConstants.TWELFTH_OPTIONS, twelfth);
-        // Update advanced education enabled state based on twelfth selection
-        int twelfthPos = DataConstants.TWELFTH_OPTIONS.indexOf(twelfth);
-        boolean enableAdvanced = shouldEnableAdvancedEducation(twelfth);
-        setAdvancedEducationEnabled(enableAdvanced);
-        // Update job text
+        setAdvancedEducationEnabled(shouldEnableAdvancedEducation(twelfth));
         updateJobTextByTwelfth(twelfth);
         isReverting = false;
 
-        // Set education and update dependent spinners
         String education = user.getEducation() != null ? user.getEducation() : "Select Education Category";
         setSpinnerSelection(spinnerEducation, DataConstants.EDUCATION_OPTIONS, education);
-        // updateDegreeAndPostGradSpinners will set the selections based on saved preferences
         updateDegreeAndPostGradSpinners(education);
 
-        // Set district and update taluka spinner
         String district = user.getDistrict() != null ? user.getDistrict() : "Select District";
         setSpinnerSelection(spinnerDistrict, DataConstants.DISTRICTS, district);
-        // updateTalukaSpinner will set the selection based on saved preferences
         updateTalukaSpinner(district);
     }
 
     private void setSpinnersFromPrefs() {
-        String education = sharedPreferences.getString("education",
-                "Select Education Category");
-
-        setSpinnerSelection(spinnerAgeGroup, ageGroupOptions,
-                sharedPreferences.getString("ageGroup", "Select Age Group"));
-
-        // Set twelfth with proper state updates
+        String education = sharedPreferences.getString("education", "Select Education Category");
+        setSpinnerSelection(spinnerAgeGroup, ageGroupOptions, sharedPreferences.getString("ageGroup", "Select Age Group"));
         String twelfth = sharedPreferences.getString("twelfth", DataConstants.TWELFTH_OPTIONS.get(0));
         isReverting = true;
         setSpinnerSelection(spinnerTwelfth, DataConstants.TWELFTH_OPTIONS, twelfth);
-        // Update advanced education enabled state based on twelfth selection
-        int twelfthPos = DataConstants.TWELFTH_OPTIONS.indexOf(twelfth);
-        boolean enableAdvanced = shouldEnableAdvancedEducation(twelfth);
-        setAdvancedEducationEnabled(enableAdvanced);
-        // Update job text
+        setAdvancedEducationEnabled(shouldEnableAdvancedEducation(twelfth));
         updateJobTextByTwelfth(twelfth);
         lastTwelfthValue = twelfth;
         isReverting = false;
-
-        setSpinnerSelection(spinnerEducation, DataConstants.EDUCATION_OPTIONS,
-                education);
+        setSpinnerSelection(spinnerEducation, DataConstants.EDUCATION_OPTIONS, education);
         updateDegreeAndPostGradSpinners(education);
         setSpinnerSelection(spinnerDegree,
-                new ArrayList<>(DataConstants.DEGREE_MAP.getOrDefault(
-                        education, Arrays.asList("Select Degree"))),
+                new ArrayList<>(DataConstants.DEGREE_MAP.getOrDefault(education, Arrays.asList("Select Degree"))),
                 sharedPreferences.getString("degree", "Select Degree"));
         setSpinnerSelection(spinnerPostGrad,
-                new ArrayList<>(DataConstants.POST_GRAD_MAP.getOrDefault(
-                        education, Arrays.asList("Select Post Graduation"))),
+                new ArrayList<>(DataConstants.POST_GRAD_MAP.getOrDefault(education, Arrays.asList("Select Post Graduation"))),
                 sharedPreferences.getString("postGrad", "Select Post Graduation"));
-
         String district = sharedPreferences.getString("district", "Select District");
         setSpinnerSelection(spinnerDistrict, DataConstants.DISTRICTS, district);
         updateTalukaSpinner(district);
         setSpinnerSelection(spinnerTaluka,
-                new ArrayList<>(DataConstants.TALUKA_MAP.getOrDefault(
-                        district, Arrays.asList("Select Taluka"))),
+                new ArrayList<>(DataConstants.TALUKA_MAP.getOrDefault(district, Arrays.asList("Select Taluka"))),
                 sharedPreferences.getString("taluka", "Select Taluka"));
     }
 
@@ -1160,7 +1068,6 @@ public class ProfileFragment extends Fragment {
         }
     }
 
-    /* --------------------------------------------------------------------- */
     private void showDeleteAccountDialog() {
         new AlertDialog.Builder(requireContext())
                 .setTitle("Delete Account")
@@ -1175,27 +1082,21 @@ public class ProfileFragment extends Fragment {
             logoutAndClear();
             return;
         }
-
-        // Step 1: Delete from server
         apiClient.deleteUser(userId, new Callback() {
-            @Override
-            public void onFailure(Call call, java.io.IOException e) {
+            @Override public void onFailure(Call call, java.io.IOException e) {
                 android.app.Activity activity = getActivity();
                 if (activity != null && isAdded()) {
                     activity.runOnUiThread(() -> {
                         if (isAdded() && getActivity() != null) {
                             Toast.makeText(requireContext(), "Network error: " + e.getMessage(), Toast.LENGTH_LONG).show();
                         }
-                        // Still proceed to local cleanup
                         completeAccountDeletion();
                     });
                 } else {
                     completeAccountDeletion();
                 }
             }
-
-            @Override
-            public void onResponse(Call call, Response response) throws java.io.IOException {
+            @Override public void onResponse(Call call, Response response) throws java.io.IOException {
                 android.app.Activity activity = getActivity();
                 if (activity != null && isAdded()) {
                     activity.runOnUiThread(() -> {
@@ -1207,7 +1108,6 @@ public class ProfileFragment extends Fragment {
                             }
                         }
                         response.close();
-                        // Always proceed to local deletion
                         completeAccountDeletion();
                     });
                 } else {
@@ -1222,7 +1122,6 @@ public class ProfileFragment extends Fragment {
         editor.clear().apply();
         SharedPreferences loginPrefs = requireContext().getSharedPreferences("UserPrefs", Context.MODE_PRIVATE);
         loginPrefs.edit().putBoolean("isLoggedIn", false).apply();
-
         Intent intent = new Intent(requireContext(), LoginActivity.class);
         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
         startActivity(intent);
@@ -1230,21 +1129,14 @@ public class ProfileFragment extends Fragment {
     }
 
     private void completeAccountDeletion() {
-        // Step 2: Delete from SQLite
         dbHelper.deleteUser(userId);
-
-        // Step 3: Clear ALL SharedPreferences
         editor.clear().apply();
-
-        // Step 4: Explicitly set login state
         SharedPreferences loginPrefs = requireContext().getSharedPreferences("UserPrefs", Context.MODE_PRIVATE);
         loginPrefs.edit().putBoolean("isLoggedIn", false).apply();
-
-        // Step 5: Go to Login + Finish all
         Intent intent = new Intent(requireContext(), LoginActivity.class);
         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
         startActivity(intent);
-        requireActivity().finishAffinity(); // Closes all activities
+        requireActivity().finishAffinity();
     }
 
     /* --------------------------------------------------------------------- */
@@ -1252,36 +1144,26 @@ public class ProfileFragment extends Fragment {
     private ActivityResultLauncher<Intent> profileShareLauncher;
     
     private void setupShareButton() {
-        // Initialize ShareHelper
         profileShareHelper = new ShareHelper(requireContext());
-        
-        // Initialize share launcher
         profileShareLauncher = registerForActivityResult(
                 new androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult(),
                 result -> {
-                    // When user returns from sharing, add coins and show dialog
                     if (userId != null && !userId.isEmpty()) {
                         int current = dbHelper.getUserCoins(userId);
-                        CoinManager coinManager = new CoinManager(requireContext(), userId);
-                        coinManager.addCoinsForShare(newCoins -> {
-                            showCoinAnimationDialog(current, newCoins);
+                        shareRewardManager.onShareReturned(newTotalCoins -> {
+                            showCoinAnimationDialog(current, newTotalCoins);
                         });
                     }
                 });
         
-        // Set share launcher for ShareHelper
         profileShareHelper.setShareLauncher(profileShareLauncher);
         
         shareButtonContainer.setOnClickListener(v -> {
             try {
-                // Use ShareHelper to share with standard message and image
+                shareRewardManager.startShare();
                 profileShareHelper.sharePost(null, null);
             } catch (Exception e) {
-                Toast.makeText(
-                        requireContext(),
-                        "Unable to share right now",
-                        Toast.LENGTH_SHORT
-                ).show();
+                Toast.makeText(requireContext(), "Unable to share right now", Toast.LENGTH_SHORT).show();
                 Log.e("Share", "Share error", e);
             }
         });
@@ -1293,7 +1175,7 @@ public class ProfileFragment extends Fragment {
                 .inflate(R.layout.coin_dialog_layout, null);
         TextView count = view.findViewById(R.id.coin_count);
         CardView ok = view.findViewById(R.id.btn_close);
-        count.setText("Coins: " + start);
+        count.setText(String.valueOf(start));
         AlertDialog dialog = new AlertDialog.Builder(requireContext())
                 .setView(view).create();
         if (dialog.getWindow() != null)
@@ -1306,56 +1188,16 @@ public class ProfileFragment extends Fragment {
             @Override public void run() {
                 if (displayedCoins < end) {
                     displayedCoins++;
-                    count.setText("Coins: " + displayedCoins);
+                    count.setText(String.valueOf(displayedCoins));
+                    handler.postDelayed(this, 20);
+                } else if (displayedCoins > end) {
+                    displayedCoins--;
+                    count.setText(String.valueOf(displayedCoins));
                     handler.postDelayed(this, 20);
                 } else {
                     coinTextView.setText(String.valueOf(end));
                 }
             }
         });
-    }
-
-    private void saveCoinsToServer(int coins) {
-        if (userId != null) {
-            User tempUser = new User();
-            tempUser.setUserId(userId);
-            // Create minimal user with only userId and coins
-            Map<String, Object> map = new HashMap<>();
-            map.put("userId", userId);
-            map.put("coins", coins);
-            String json = new Gson().toJson(map);
-
-            apiClient.saveUser(json, new Callback() {
-                @Override public void onFailure(Call call, java.io.IOException e) {
-                    // Silent fail
-                }
-                @Override public void onResponse(Call call, Response response) throws java.io.IOException {
-                    response.close();
-                }
-            });
-        }
-    }
-
-    private RecyclerView.ItemDecoration avatarSpacing(int spanCount, int spacingPx) {
-        return new RecyclerView.ItemDecoration() {
-            @Override
-            public void getItemOffsets(
-                    android.graphics.Rect outRect,
-                    View view,
-                    RecyclerView parent,
-                    RecyclerView.State state
-            ) {
-                int position = parent.getChildAdapterPosition(view);
-                int column = position % spanCount;
-
-                outRect.left  = spacingPx - column * spacingPx / spanCount;
-                outRect.right = (column + 1) * spacingPx / spanCount;
-
-                if (position < spanCount) {
-                    outRect.top = spacingPx;
-                }
-                outRect.bottom = spacingPx;
-            }
-        };
     }
 }

@@ -36,6 +36,7 @@ import com.newsproject.oneroadmap.R;
 import com.newsproject.oneroadmap.Utils.CoinAccessController;
 import com.newsproject.oneroadmap.Utils.TimeAgoUtil;
 import com.newsproject.oneroadmap.Utils.ShareHelper;
+import com.newsproject.oneroadmap.Utils.ShareRewardManager;
 import com.newsproject.oneroadmap.Utils.DatabaseHelper;
 import com.newsproject.oneroadmap.Utils.CoinManager;
 import com.newsproject.oneroadmap.database.RecentlyOpenedDatabaseHelper;
@@ -59,6 +60,7 @@ public class JobUpdateDetails extends Fragment {
     private ImageView saveButton;
     private FloatingActionButton fabShare;
     private ShareHelper shareHelper;
+    private ShareRewardManager shareRewardManager;
     private ActivityResultLauncher<Intent> shareLauncher;
     private CoinAccessController coinAccessController;
     private String userId;
@@ -101,26 +103,25 @@ public class JobUpdateDetails extends Fragment {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         jobUpdate = getFullJobUpdate();
-        if (jobUpdate == null) {
-            Log.w(TAG, "No JobUpdate object provided, fragment may fail to load");
-        }
         
         SharedPreferences prefs = requireContext().getSharedPreferences("UserPrefs", Context.MODE_PRIVATE);
         userId = prefs.getString("userId", "");
         
+        shareRewardManager = new ShareRewardManager(requireContext(), userId);
         shareHelper = new ShareHelper(requireContext());
 
         coinAccessController = new CoinAccessController(
                 this,
                 userId,
-                shareHelper
+                shareHelper,
+                shareRewardManager
         );
 
         shareLauncher = registerForActivityResult(
                 new ActivityResultContracts.StartActivityForResult(),
                 result -> {
                     if (coinAccessController != null) {
-                        coinAccessController.onShareCompleted();
+                        coinAccessController.onShareReturned();
                     }
                 });
         
@@ -134,19 +135,14 @@ public class JobUpdateDetails extends Fragment {
         handler = new Handler(Looper.getMainLooper());
         dbHelper = new SavedJobsDatabaseHelper(requireContext());
         recentDb = new RecentlyOpenedDatabaseHelper(requireContext());
-        saveButton = view.findViewById(R.id.imageView3); // Save icon
-        fabShare = view.findViewById(R.id.fab_share); // Share FAB
+        saveButton = view.findViewById(R.id.imageView3);
+        fabShare = view.findViewById(R.id.fab_share);
 
-        // Load Native Ad
         loadNativeAd(view);
-
-        // Set initial icon
         updateSaveButtonIcon();
 
-        // Save/Unsave on click
         saveButton.setOnClickListener(v -> {
             if (jobUpdate == null) return;
-
             if (dbHelper.isJobSaved(jobUpdate.getDocumentId())) {
                 dbHelper.deleteJob(jobUpdate.getDocumentId());
                 Toast.makeText(requireContext(), "Removed from saved", Toast.LENGTH_SHORT).show();
@@ -157,27 +153,26 @@ public class JobUpdateDetails extends Fragment {
             updateSaveButtonIcon();
         });
         
-        // Share button click
         fabShare.setOnClickListener(v -> {
             if (jobUpdate != null) {
+                if (shareRewardManager != null) {
+                    shareRewardManager.startShare();
+                }
                 String title = jobUpdate.getPostName() != null ? jobUpdate.getPostName() : "Government Job Alert";
                 String url = jobUpdate.getApplicationLink();
-                String imageUrl = jobUpdate.getImageUrl(); // Banner image
+                String imageUrl = jobUpdate.getImageUrl();
                 shareHelper.shareJobWithImage(title, url, imageUrl);
             }
         });
 
         if (jobUpdate != null) {
-            Log.d(TAG, "Using passed JobUpdate object for ID: " + jobUpdate.getDocumentId());
             populateUIFromObject(view);
         } else {
             String documentId = getArguments() != null ? getArguments().getString("documentId") : null;
             if (documentId != null) {
-                Log.d(TAG, "Fetching from Firebase with documentId: " + documentId);
                 fetchJobUpdate(documentId, view);
             } else {
                 Toast.makeText(requireContext(), "No job data provided", Toast.LENGTH_SHORT).show();
-                return view;
             }
         }
 
@@ -185,7 +180,7 @@ public class JobUpdateDetails extends Fragment {
     }
 
     private void loadNativeAd(View rootView) {
-        AdLoader adLoader = new AdLoader.Builder(requireContext(), "ca-app-pub-3940256099942544/2247696110") // Test ID
+        AdLoader adLoader = new AdLoader.Builder(requireContext(), "ca-app-pub-3940256099942544/2247696110")
                 .forNativeAd(nativeAd -> {
                     if (isAdded()) {
                         if (mNativeAd != null) {
@@ -252,7 +247,6 @@ public class JobUpdateDetails extends Fragment {
     }
 
     private void populateUIFromObject(View view) {
-        // Load image
         ImageView imageView25 = view.findViewById(R.id.imageView25);
         Glide.with(requireContext())
                 .load(jobUpdate.getImageUrl())
@@ -260,7 +254,6 @@ public class JobUpdateDetails extends Fragment {
                 .error(R.drawable.job_details)
                 .into(imageView25);
 
-        // Basic Details
         TextView postNameValue = view.findViewById(R.id.post_value);
         TextView educationRequirementValue = view.findViewById(R.id.education_requirement_value);
         TextView ageRequirementValue = view.findViewById(R.id.age_requirement_value);
@@ -276,7 +269,6 @@ public class JobUpdateDetails extends Fragment {
         applicationFeesValue.setText(jobUpdate.getFormattedApplicationFees());
         lastDateValue.setText(jobUpdate.getFormattedLastDateMarathi());
         
-        // Handle Note visibility and text
         LinearLayout noteContainer = view.findViewById(R.id.note_container);
         String note = jobUpdate.getNote();
         if (note != null && !note.isEmpty()) {
@@ -287,16 +279,12 @@ public class JobUpdateDetails extends Fragment {
             noteContainer.setVisibility(View.GONE);
         }
 
-        // === LINK VISIBILITY & CLICK HANDLING ===
         setupLink(view, R.id.application_link_container, R.id.textView45, jobUpdate.getApplicationLink(), "अर्जाची लिंक");
         setupLink(view, R.id.notification_pdf_container, R.id.textView34, jobUpdate.getNotificationPdfLink(), "नोटिफिकेशन PDF");
         setupLink(view, R.id.selection_pdf_container, R.id.textView48, jobUpdate.getSelectionPdfLink(), "सिलेक्शन PDF");
         setupLink(view, R.id.syllabus_pdf_container, R.id.textView44, jobUpdate.getSyllabusPdf(), "अभ्यासक्रम PDF");
 
-        // Save to Recently Opened FIRST
         recentDb.addOrUpdateJob(jobUpdate);
-
-        // Then load the list (excludes current job)
         loadRecentlyOpened(view);
     }
 
@@ -309,8 +297,6 @@ public class JobUpdateDetails extends Fragment {
             textView.setText(defaultText);
             textView.setOnClickListener(v -> {
                 coinAccessController.requestPdfAccess(url, null);
-
-
             });
         } else {
             container.setVisibility(View.GONE);
@@ -323,37 +309,19 @@ public class JobUpdateDetails extends Fragment {
                 .addOnSuccessListener(documentSnapshot -> {
                     if (isAdded()) {
                         if (documentSnapshot.exists()) {
-                            Log.d(TAG, "Document data: " + documentSnapshot.getData());
                             jobUpdate = documentSnapshot.toObject(JobUpdate.class);
                             if (jobUpdate != null) {
                                 jobUpdate.setDocumentId(documentId);
                                 jobUpdate.setTimeAgo(TimeAgoUtil.getTimeAgo(jobUpdate.getTimestamp()));
-                                populateUIFromObject(view);  // This handles save + load
-                            } else {
-                                Log.e(TAG, "Failed to deserialize JobUpdate for document: " + documentId);
-                                Toast.makeText(requireContext(), "Failed to load job data", Toast.LENGTH_SHORT).show();
+                                populateUIFromObject(view);
                             }
-                        } else {
-                            Log.w(TAG, "Document does not exist: " + documentId);
-                            Toast.makeText(requireContext(), "Job data not found", Toast.LENGTH_SHORT).show();
                         }
-                    }
-                })
-                .addOnFailureListener(e -> {
-                    if (isAdded()) {
-                        Log.e(TAG, "Error fetching document: " + documentId, e);
-                        String errorMessage = e.getMessage() != null ? e.getMessage() : "Unknown error";
-                        if (errorMessage.contains("The query requires an index")) {
-                            errorMessage += ". Please create the index in the Firebase console.";
-                        }
-                        Toast.makeText(requireContext(), "Failed to load job: " + errorMessage, Toast.LENGTH_LONG).show();
                     }
                 });
     }
 
     private void loadRecentlyOpened(View view) {
         RecyclerView recyclerView = view.findViewById(R.id.recent_post_recyler);
-
         TextView tvTitle   = view.findViewById(R.id.textView38);
 
         recyclerView.setLayoutManager(
@@ -387,8 +355,6 @@ public class JobUpdateDetails extends Fragment {
                         .commit();
             });
             recyclerView.setAdapter(adapter);
-        } else {
-            recyclerView.setAdapter(null);
         }
     }
 
