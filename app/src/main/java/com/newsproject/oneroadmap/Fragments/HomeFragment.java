@@ -4,6 +4,8 @@ import android.app.Dialog;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.graphics.Color;
+import android.graphics.drawable.ColorDrawable;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.Build;
@@ -18,6 +20,7 @@ import android.view.WindowManager;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
+import android.widget.RelativeLayout;
 import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -27,6 +30,7 @@ import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
+import androidx.appcompat.app.AlertDialog;
 import androidx.cardview.widget.CardView;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
@@ -36,6 +40,7 @@ import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.PagerSnapHelper;
 import androidx.recyclerview.widget.RecyclerView;
+import androidx.transition.TransitionManager;
 import androidx.viewbinding.ViewBinding;
 
 import com.bumptech.glide.Glide;
@@ -63,6 +68,7 @@ import com.newsproject.oneroadmap.R;
 import com.newsproject.oneroadmap.Utils.BuildConfig;
 import com.newsproject.oneroadmap.Models.JobViewModel;
 import com.newsproject.oneroadmap.Utils.CoinAccessController;
+import com.newsproject.oneroadmap.Utils.DatabaseHelper;
 import com.newsproject.oneroadmap.Utils.ShareHelper;
 import com.newsproject.oneroadmap.Utils.ShareRewardManager;
 import com.newsproject.oneroadmap.database.RecentlyOpenedDatabaseHelper;
@@ -72,10 +78,12 @@ import org.imaginativeworld.whynotimagecarousel.listener.CarouselListener;
 import org.imaginativeworld.whynotimagecarousel.model.CarouselItem;
 
 import java.io.IOException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -144,14 +152,39 @@ public class HomeFragment extends Fragment {
     private TextView tagCareerRoadmap, tagResultHallTicket, tagGovtJobs;
     private TextView tagBankingJobs, tagAllJobs, tagPrivateJobs;
 
+    private LinearLayout watchEarnContainer;
+    private TextView watchEarnText;
+    private DatabaseHelper dbHelper;
+    private SharedPreferences sharedPreferences;
+    private SharedPreferences.Editor editor;
+    private final Handler handler = new Handler(Looper.getMainLooper());
+
+    private final Runnable watchEarnRunnable = new Runnable() {
+        @Override
+        public void run() {
+            if (watchEarnContainer != null && watchEarnText != null && isAdded()) {
+                TransitionManager.beginDelayedTransition(watchEarnContainer);
+                if (watchEarnText.getVisibility() == View.GONE) {
+                    watchEarnText.setVisibility(View.VISIBLE);
+                    handler.postDelayed(this, 3000); // Show for 3 seconds
+                } else {
+                    watchEarnText.setVisibility(View.GONE);
+                    handler.postDelayed(this, 5000); // Hide for 5 seconds
+                }
+            }
+        }
+    };
+
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         executorService = Executors.newSingleThreadExecutor();
         Log.d(TAG, "ExecutorService created in onCreate");
         
-        SharedPreferences prefs = requireContext().getSharedPreferences("UserPrefs", Context.MODE_PRIVATE);
-        userId = prefs.getString("userId", "");
+        sharedPreferences = requireContext().getSharedPreferences("UserPrefs", Context.MODE_PRIVATE);
+        editor = sharedPreferences.edit();
+        userId = sharedPreferences.getString("userId", "");
+        dbHelper = new DatabaseHelper(requireContext());
 
         shareRewardManager = new ShareRewardManager(requireContext(), userId);
         staticShareRewardManager = shareRewardManager;
@@ -390,6 +423,8 @@ public class HomeFragment extends Fragment {
         profileIcon = view.findViewById(R.id.profile_image);
         allStudentUpdates = view.findViewById(R.id.all_student_updates);
         userName = view.findViewById(R.id.user_name);
+        watchEarnContainer = view.findViewById(R.id.fab_watch);
+        watchEarnText = view.findViewById(R.id.watch_earn_text);
 
         LinearLayout studyCards = view.findViewById(R.id.study_material_cards_linear);
         LinearLayout row1 = (LinearLayout) studyCards.getChildAt(1);
@@ -566,6 +601,75 @@ public class HomeFragment extends Fragment {
         govLinear.setOnClickListener(v -> filterAndDisplay("government"));
         policeLinear.setOnClickListener(v -> filterAndDisplay("police_defence"));
         bankLinear.setOnClickListener(v -> filterAndDisplay("banking"));
+
+        watchEarnContainer.setOnClickListener(v -> showDailyTasksDialog());
+    }
+
+    private void showDailyTasksDialog() {
+        checkAndResetDailyTasks();
+        
+        View view = LayoutInflater.from(requireContext()).inflate(R.layout.dialog_daily_tasks, null);
+        AlertDialog dialog = new AlertDialog.Builder(requireContext())
+                .setView(view)
+                .create();
+        
+        if (dialog.getWindow() != null) {
+            dialog.getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
+        }
+
+        setupTaskItem(view.findViewById(R.id.task1), 1, 150);
+        setupTaskItem(view.findViewById(R.id.task2), 2, 175);
+        setupTaskItem(view.findViewById(R.id.task3), 3, 200);
+
+        dialog.show();
+    }
+
+    private void setupTaskItem(View taskView, int taskNum, int reward) {
+        if (taskView == null) return;
+
+        RelativeLayout taskRoot = (RelativeLayout) taskView;
+        TextView taskText = taskView.findViewById(R.id.task_text);
+        ImageView rewardIcon = taskView.findViewById(R.id.task_reward_icon);
+        
+        boolean isCompleted = sharedPreferences.getBoolean("task_" + taskNum + "_completed", false);
+
+        if (isCompleted) {
+            taskRoot.setBackgroundResource(R.drawable.bg_task_completed);
+            taskText.setText("Your Task " + taskNum + " completed");
+            taskText.setTextColor(Color.parseColor("#2DBE6C"));
+            rewardIcon.setImageResource(R.drawable.green_tick);
+            taskRoot.setOnClickListener(null);
+        } else {
+            taskRoot.setBackgroundResource(R.drawable.bg_task_card);
+            taskText.setText("Task " + taskNum + " Earn +" + reward + " Coin");
+            taskText.setTextColor(Color.parseColor("#FFE600"));
+            rewardIcon.setImageResource(R.drawable.ic_coin);
+            
+            taskRoot.setOnClickListener(v -> {
+                coinAccessController.showVideoAd(reward, newTotalCoins -> {
+                    editor.putBoolean("task_" + taskNum + "_completed", true).apply();
+                    // Update UI
+                    taskRoot.setBackgroundResource(R.drawable.bg_task_completed);
+                    taskText.setText("Your Task " + taskNum + " completed");
+                    taskText.setTextColor(Color.parseColor("#2DBE6C"));
+                    rewardIcon.setImageResource(R.drawable.green_tick);
+                    taskRoot.setOnClickListener(null);
+                });
+            });
+        }
+    }
+
+    private void checkAndResetDailyTasks() {
+        String lastDate = sharedPreferences.getString("last_task_date", "");
+        String currentDate = new SimpleDateFormat("yyyyMMdd", Locale.getDefault()).format(new Date());
+
+        if (!currentDate.equals(lastDate)) {
+            editor.putString("last_task_date", currentDate);
+            editor.putBoolean("task_1_completed", false);
+            editor.putBoolean("task_2_completed", false);
+            editor.putBoolean("task_3_completed", false);
+            editor.apply();
+        }
     }
 
     private boolean isNetworkAvailable() {
@@ -905,8 +1009,8 @@ public class HomeFragment extends Fragment {
                             String description = o.has("description") && !o.get("description").isJsonNull() ? o.get("description").getAsString() : "";
                             String applicationLink = o.has("application_link") && !o.get("application_link").isJsonNull() ? o.get("application_link").getAsString() : "";
                             String lastDate = o.has("last_date") && !o.get("last_date").isJsonNull() ? o.get("last_date").getAsString() : "";
-                            String imageUrl = o.has("image_url") && !o.get("image_url").isJsonNull() ? o.get("image_url").getAsString() : "";
-                            String iconUrl = o.has("icon_url") && !o.get("icon_url").isJsonNull() ? o.get("icon_url").getAsString() : "";
+                            String imageUrl = o.has("image_url") && !o.get("image_url").isJsonNull() ? o.get("image_url").getAsString() : null;
+                            String iconUrl = o.has("icon_url") && !o.get("icon_url").isJsonNull() ? o.get("icon_url").getAsString() : null;
                             String notificationPdfUrl = o.has("notification_pdf_url") && !o.get("notification_pdf_url").isJsonNull() ? o.get("notification_pdf_url").getAsString() : "";
                             String selectionPdfUrl = o.has("selection_pdf_url") && !o.get("selection_pdf_url").isJsonNull() ? o.get("selection_pdf_url").getAsString() : "";
                             String createdAt = o.has("created_at") && !o.get("created_at").isJsonNull() ? o.get("created_at").getAsString() : "";
@@ -939,6 +1043,12 @@ public class HomeFragment extends Fragment {
     }
 
     @Override
+    public void onResume() {
+        super.onResume();
+        handler.postDelayed(watchEarnRunnable, 2000);
+    }
+
+    @Override
     public void onPause() {
         super.onPause();
         try {
@@ -946,6 +1056,7 @@ public class HomeFragment extends Fragment {
         } catch (Exception e) {
             Log.e(TAG, "Failed to stop stories in onPause");
         }
+        handler.removeCallbacks(watchEarnRunnable);
     }
 
     public void showStudentUpdateDialog(@NonNull StudentUpdateItem item) {

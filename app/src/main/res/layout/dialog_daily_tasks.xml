@@ -34,7 +34,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_gravity="center_vertical"
-                    android:text="Today Task"
+                    android:text="Today's Task"
                     android:textColor="#000"
                     android:textSize="24sp"
                     android:textStyle="bold" />
