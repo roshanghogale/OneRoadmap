@@ -105,7 +105,7 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
         
         boolean isJobType = "job_update".equals(type);
         boolean isNewsType = "news".equals(type);
-        boolean isResultType = "result_hallticket".equals(type);
+        boolean isResultType = "result_hallticket".equals(type) || "result_hallticket_update".equals(type);
         boolean isCurrentAffairsType = "current_affairs".equals(type);
         boolean isCareerRoadmapType = "career_roadmap".equals(type);
         boolean isStudyMaterialType = "study_material".equals(type);
@@ -124,8 +124,16 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
         } else if (isStudentUpdateType) {
             mainIntent.putExtra("navigate_to", "student_update_details");
             mainIntent.putExtra("student_data", new Gson().toJson(createStudentUpdateFromData(data)));
-        } else if (isHomeRedirectType || isResultType) {
+        } else if (isResultType) {
+
             mainIntent.putExtra("navigate_to", "home");
+            mainIntent.putExtra("result_notification", "true");
+            mainIntent.putExtra("result_data", new Gson().toJson(data));
+
+        } else if (isHomeRedirectType) {
+
+            mainIntent.putExtra("navigate_to", "home");
+
         }
 
         PendingIntent pendingIntent = PendingIntent.getActivity(this, (int) System.currentTimeMillis(), mainIntent,

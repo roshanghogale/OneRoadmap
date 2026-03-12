@@ -123,7 +123,7 @@ public class Result_HallTitcket extends Fragment implements ResultAdapter.OnItem
         setupListeners();
         loadResultAndHallticketData();
         restoreEducationFilter();
-
+        handleNotificationResult();
         return view;
     }
 
@@ -164,6 +164,68 @@ public class Result_HallTitcket extends Fragment implements ResultAdapter.OnItem
                 getActivity().onBackPressed();
             }
         });
+    }
+
+    private void handleNotificationResult() {
+
+        if (getArguments() == null) return;
+
+        String json = getArguments().getString("notification_result_data");
+
+        if (json == null) return;
+
+        try {
+
+            JSONObject obj = new JSONObject(json);
+
+            ResultItem item = new ResultItem();
+
+            item.setId(obj.optString("id"));
+            item.setTitle(obj.optString("title"));
+            item.setCategory(obj.optString("category"));
+            item.setType(obj.optString("update_type"));
+            item.setIconUrl(obj.optString("icon_url"));
+
+            JSONObject desc = obj.optJSONObject("description");
+
+            if (desc != null) {
+
+                item.setDescription1(desc.optString("paragraph1", ""));
+                item.setDescription2(desc.optString("paragraph2", ""));
+
+            }
+
+            JSONArray urls = new JSONArray(obj.optString("website_urls","[]"));
+
+            List<Map<String,String>> websiteUrls = new ArrayList<>();
+
+            for (int i = 0; i < urls.length(); i++) {
+
+                JSONObject u = urls.getJSONObject(i);
+
+                Map<String,String> map = new HashMap<>();
+                map.put("title", u.optString("title"));
+                map.put("url", u.optString("url"));
+
+                websiteUrls.add(map);
+
+            }
+
+            item.setWebsiteUrls(websiteUrls);
+
+            new android.os.Handler().postDelayed(() -> {
+
+                showDetailsDialog(item);
+
+            }, 600);
+
+        }
+        catch (Exception e) {
+
+            e.printStackTrace();
+
+        }
+
     }
 
     private void updateChipColors() {
@@ -535,10 +597,16 @@ public class Result_HallTitcket extends Fragment implements ResultAdapter.OnItem
         titleTv.setText(item.getTitle());
 
         TextView descTv = dialog.findViewById(R.id.textView18);
-        String desc = item.getDescription1();
-        if (!item.getDescription2().isEmpty()) {
-            desc += "\n\n" + item.getDescription2();
+
+        String desc1 = item.getDescription1() != null ? item.getDescription1() : "";
+        String desc2 = item.getDescription2() != null ? item.getDescription2() : "";
+
+        String desc = desc1;
+
+        if (!desc2.isEmpty()) {
+            desc += "\n\n" + desc2;
         }
+
         descTv.setText(desc);
 
         // Setup URL buttons

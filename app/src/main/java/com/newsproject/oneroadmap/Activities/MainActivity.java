@@ -186,8 +186,24 @@ public class MainActivity extends AppCompatActivity {
             homeFragment.setArguments(args);
             replaceFragment(homeFragment, false);
         } else if ("home".equals(navigateTo)) {
+
             clearBackStack();
-            replaceFragment(new HomeFragment(), false);
+
+            HomeFragment homeFragment = new HomeFragment();
+
+            Bundle bundle = new Bundle();
+
+            if ("true".equals(intent.getStringExtra("result_notification"))) {
+
+                bundle.putString("result_notification", "true");
+                bundle.putString("result_data", intent.getStringExtra("result_data"));
+
+            }
+
+            homeFragment.setArguments(bundle);
+
+            replaceFragment(homeFragment, false);
+
         }
     }
 

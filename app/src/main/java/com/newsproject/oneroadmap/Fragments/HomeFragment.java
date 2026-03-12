@@ -60,6 +60,7 @@ import com.newsproject.oneroadmap.Models.CurrentAffairs;
 import com.newsproject.oneroadmap.Models.JobUpdate;
 import com.newsproject.oneroadmap.Models.News;
 import com.newsproject.oneroadmap.Models.RecentlyOpenedItem;
+import com.newsproject.oneroadmap.Models.ResultItem;
 import com.newsproject.oneroadmap.Models.Slider;
 import com.newsproject.oneroadmap.Models.Story;
 import com.newsproject.oneroadmap.Models.StudentUpdateItem;
@@ -76,6 +77,8 @@ import com.newsproject.oneroadmap.database.RecentlyOpenedDatabaseHelper;
 import org.imaginativeworld.whynotimagecarousel.ImageCarousel;
 import org.imaginativeworld.whynotimagecarousel.listener.CarouselListener;
 import org.imaginativeworld.whynotimagecarousel.model.CarouselItem;
+import org.json.JSONArray;
+import org.json.JSONObject;
 
 import java.io.IOException;
 import java.text.SimpleDateFormat;
@@ -387,6 +390,7 @@ public class HomeFragment extends Fragment {
         storyPrefs = requireContext().getSharedPreferences("StoryPrefs", Context.MODE_PRIVATE);
         recentDb = new RecentlyOpenedDatabaseHelper(requireContext());
         initViews(view);
+        handleResultNotification();
         loadData();
 
         setBottomMarginsBasedOnAndroidVersion();
@@ -603,6 +607,89 @@ public class HomeFragment extends Fragment {
         bankLinear.setOnClickListener(v -> filterAndDisplay("banking"));
 
         watchEarnContainer.setOnClickListener(v -> showDailyTasksDialog());
+    }
+
+    private void handleResultNotification() {
+
+        if (getArguments() == null) return;
+
+        String isResult = getArguments().getString("result_notification");
+
+        if (!"true".equals(isResult)) return;
+
+        String json = getArguments().getString("result_data");
+
+        if (json == null) return;
+
+        try {
+
+            JSONObject obj = new JSONObject(json);
+
+            ResultItem item = new ResultItem();
+
+            item.setId(obj.optString("id"));
+            item.setTitle(obj.optString("title"));
+            item.setCategory(obj.optString("category"));
+            item.setType(obj.optString("update_type"));
+            item.setIconUrl(obj.optString("icon_url"));
+
+            String descStr = obj.optString("description");
+
+            if (descStr != null && !descStr.isEmpty()) {
+
+                JSONObject desc = new JSONObject(descStr);
+
+                item.setDescription1(desc.optString("paragraph1",""));
+                item.setDescription2(desc.optString("paragraph2",""));
+
+            }
+
+            JSONArray urls = new JSONArray(obj.optString("website_urls","[]"));
+
+            List<Map<String,String>> websiteUrls = new ArrayList<>();
+
+            for (int i = 0; i < urls.length(); i++) {
+
+                JSONObject u = urls.getJSONObject(i);
+
+                Map<String,String> map = new HashMap<>();
+                map.put("title", u.optString("title"));
+                map.put("url", u.optString("url"));
+
+                websiteUrls.add(map);
+
+            }
+
+            item.setWebsiteUrls(websiteUrls);
+
+            new Handler().postDelayed(() -> {
+
+                Result_HallTitcket fragment = new Result_HallTitcket();
+
+                FragmentTransaction transaction = getParentFragmentManager().beginTransaction();
+                transaction.replace(R.id.fragment_container, fragment);
+                transaction.addToBackStack(null);
+                transaction.commit();
+
+                new Handler().postDelayed(() -> {
+
+                    if (fragment.isAdded()) {
+
+                        fragment.onItemClick(item);
+
+                    }
+
+                }, 500);
+
+            }, 800);
+
+        }
+        catch (Exception e) {
+
+            e.printStackTrace();
+
+        }
+
     }
 
     private void showDailyTasksDialog() {
