@@ -246,6 +246,12 @@ public class HomeFragment extends Fragment {
 
         storiesPlayer.setVisibility(View.VISIBLE);
 
+        // Hide Watch & Earn FAB
+        if (context instanceof FragmentActivity) {
+            View fab = ((FragmentActivity) context).findViewById(R.id.fab_watch);
+            if (fab != null) fab.setVisibility(View.GONE);
+        }
+
         StoriesAdapter storiesAdapter =
                 new StoriesAdapter(context, storyList, storyAdapter, storiesPlayer, storyShareLauncher, staticShareRewardManager);
 
@@ -349,6 +355,12 @@ public class HomeFragment extends Fragment {
 
         storiesPlayer.setAdapter(null);
         storiesPlayer.setVisibility(View.GONE);
+
+        // Show Watch & Earn FAB again
+        if (context instanceof FragmentActivity) {
+            View fab = ((FragmentActivity) context).findViewById(R.id.fab_watch);
+            if (fab != null) fab.setVisibility(View.VISIBLE);
+        }
 
         if (context instanceof FragmentActivity) {
             View bottom =
@@ -694,12 +706,12 @@ public class HomeFragment extends Fragment {
 
     private void showDailyTasksDialog() {
         checkAndResetDailyTasks();
-        
+
         View view = LayoutInflater.from(requireContext()).inflate(R.layout.dialog_daily_tasks, null);
         AlertDialog dialog = new AlertDialog.Builder(requireContext())
                 .setView(view)
                 .create();
-        
+
         if (dialog.getWindow() != null) {
             dialog.getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
         }
@@ -717,7 +729,7 @@ public class HomeFragment extends Fragment {
         RelativeLayout taskRoot = (RelativeLayout) taskView;
         TextView taskText = taskView.findViewById(R.id.task_text);
         ImageView rewardIcon = taskView.findViewById(R.id.task_reward_icon);
-        
+
         boolean isCompleted = sharedPreferences.getBoolean("task_" + taskNum + "_completed", false);
 
         if (isCompleted) {
@@ -731,7 +743,7 @@ public class HomeFragment extends Fragment {
             taskText.setText("Task " + taskNum + " Earn +" + reward + " Coin");
             taskText.setTextColor(Color.parseColor("#FFE600"));
             rewardIcon.setImageResource(R.drawable.ic_coin);
-            
+
             taskRoot.setOnClickListener(v -> {
                 coinAccessController.showVideoAd(reward, newTotalCoins -> {
                     editor.putBoolean("task_" + taskNum + "_completed", true).apply();
@@ -809,7 +821,7 @@ public class HomeFragment extends Fragment {
         String userPostGrad = prefs.getString("postGraduation", "");
         String userTaluka = prefs.getString("taluka", "");
         String userAgeGroup = prefs.getString("ageGroup", "");
-        
+
         boolean studyGov = prefs.getBoolean("study_Government", false);
         boolean studyPolice = prefs.getBoolean("study_Police_Defence", false);
         boolean studyBank = prefs.getBoolean("study_Banking", false);
@@ -842,7 +854,7 @@ public class HomeFragment extends Fragment {
                         for (int i = 0; i < arr.size(); i++) {
                             JsonObject o = arr.get(i).getAsJsonObject();
                             Story story = new Gson().fromJson(o, Story.class);
-                            
+
                             story.setIconUrl(buildFullUrl(story.getIconUrl()));
                             story.setBannerUrl(buildFullUrl(story.getBannerUrl()));
                             story.setVideoUrl(buildFullUrl(story.getVideoUrl()));
