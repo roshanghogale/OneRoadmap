@@ -16,6 +16,7 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.annotation.NonNull;
 import androidx.cardview.widget.CardView;
 import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
@@ -30,6 +31,7 @@ import com.google.android.gms.ads.nativead.NativeAd;
 import com.google.android.gms.ads.nativead.NativeAdView;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
+import com.newsproject.oneroadmap.Activities.MainActivity;
 import com.newsproject.oneroadmap.Adapters.RecentlyOpenedAdapter;
 import com.newsproject.oneroadmap.Models.JobUpdate;
 import com.newsproject.oneroadmap.R;
@@ -359,10 +361,27 @@ public class JobUpdateDetails extends Fragment {
     }
 
     @Override
-    public void onDestroy() {
-        if (mNativeAd != null) {
-            mNativeAd.destroy();
+    public void onViewCreated(@NonNull View view, Bundle savedInstanceState) {
+        super.onViewCreated(view, savedInstanceState);
+
+        if (getActivity() instanceof MainActivity) {
+            ((MainActivity) getActivity()).hideBottomNavigation();
         }
-        super.onDestroy();
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        if (getActivity() instanceof MainActivity) {
+            ((MainActivity) getActivity()).hideBottomNavigation();
+        }
+    }
+
+    @Override
+    public void onDestroyView() {
+        super.onDestroyView();
+        if (getActivity() instanceof MainActivity) {
+            ((MainActivity) getActivity()).showBottomNavigation();
+        }
     }
 }

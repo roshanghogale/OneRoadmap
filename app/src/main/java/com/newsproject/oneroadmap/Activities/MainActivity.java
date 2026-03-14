@@ -1,5 +1,6 @@
 package com.newsproject.oneroadmap.Activities;
 
+import android.app.NotificationManager;
 import android.app.ProgressDialog;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -37,6 +38,7 @@ import com.newsproject.oneroadmap.R;
 import com.newsproject.oneroadmap.Utils.DataConstants;
 import com.newsproject.oneroadmap.Utils.DatabaseHelper;
 import com.newsproject.oneroadmap.Utils.NewsUtils;
+import com.newsproject.oneroadmap.database.SavedJobsDatabaseHelper;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -151,6 +153,14 @@ public class MainActivity extends AppCompatActivity {
             return;
         }
 
+        int notificationId = intent.getIntExtra("notification_id", -1);
+
+        if (notificationId != -1) {
+            NotificationManager manager =
+                    (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
+            manager.cancel(notificationId);
+        }
+
         // Handle Notification Navigation
         String navigateTo = intent.getStringExtra("navigate_to");
         if ("job_details".equals(navigateTo)) {
@@ -159,9 +169,36 @@ public class MainActivity extends AppCompatActivity {
                 JobUpdate job = new Gson().fromJson(jobJson, JobUpdate.class);
                 clearBackStack();
                 replaceFragment(new HomeFragment(), false);
-                replaceFragment(JobUpdateDetails.newInstance(job), true);
+
+                uiHandler.postDelayed(() -> {
+                    replaceFragment(JobUpdateDetails.newInstance(job), true);
+                }, 120);
             }
-        } else if ("news_details".equals(navigateTo)) {
+        } else if ("save_job".equals(navigateTo)) {
+
+            String jobJson = intent.getStringExtra("job_data");
+
+            if (jobJson != null) {
+
+                JobUpdate job = new Gson().fromJson(jobJson, JobUpdate.class);
+
+                SavedJobsDatabaseHelper dbHelper =
+                        new SavedJobsDatabaseHelper(this);
+
+                dbHelper.saveJob(job);
+
+                Toast.makeText(this,
+                        "Job Saved Successfully! 😇",
+                        Toast.LENGTH_SHORT).show();
+            }
+
+            clearBackStack();
+            replaceFragment(new HomeFragment(), false);
+
+            uiHandler.postDelayed(() -> {
+                replaceFragment(new SavedJobsFragment(), true);
+            }, 120);
+        }else if ("news_details".equals(navigateTo)) {
             String newsId = intent.getStringExtra("news_id");
             clearBackStack();
             HomeFragment homeFragment = new HomeFragment();
@@ -170,13 +207,20 @@ public class MainActivity extends AppCompatActivity {
             homeFragment.setArguments(args);
             replaceFragment(homeFragment, false);
         } else if ("pdf_navigation".equals(navigateTo)) {
+
             String pdfUrl = intent.getStringExtra("pdf_url");
+
             clearBackStack();
+
             HomeFragment homeFragment = new HomeFragment();
+
             Bundle args = new Bundle();
             args.putString("target_pdf_url", pdfUrl);
+
             homeFragment.setArguments(args);
+
             replaceFragment(homeFragment, false);
+
         } else if ("student_update_details".equals(navigateTo)) {
             String studentData = intent.getStringExtra("student_data");
             clearBackStack();
@@ -218,8 +262,11 @@ public class MainActivity extends AppCompatActivity {
         ft.replace(R.id.fragment_container, fragment, fragment.getClass().getSimpleName());
         if (addToBackStack) ft.addToBackStack(fragment.getClass().getSimpleName());
         ft.commitAllowingStateLoss();
-        updateBottomNavigationView(fragment);
-        handleBottomNavigationVisibility(fragment);
+
+        uiHandler.post(() -> {
+            updateBottomNavigationView(fragment);
+            handleBottomNavigationVisibility(fragment);
+        });
     }
 
     private void clearBackStack() {

@@ -106,7 +106,7 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
         boolean isJobType = "job_update".equals(type);
         boolean isNewsType = "news".equals(type);
         boolean isResultType = "result_hallticket".equals(type) || "result_hallticket_update".equals(type);
-        boolean isCurrentAffairsType = "current_affairs".equals(type);
+        boolean isCurrentAffairsType = "current_affair".equals(type);
         boolean isCareerRoadmapType = "career_roadmap".equals(type);
         boolean isStudyMaterialType = "study_material".equals(type);
         boolean isStudentUpdateType = "student_update".equals(type);
@@ -136,8 +136,13 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
 
         }
 
-        PendingIntent pendingIntent = PendingIntent.getActivity(this, (int) System.currentTimeMillis(), mainIntent,
-                PendingIntent.FLAG_ONE_SHOT | PendingIntent.FLAG_IMMUTABLE);
+        PendingIntent pendingIntent = PendingIntent.getActivity(
+                this,
+                (int) System.currentTimeMillis(),
+                mainIntent,
+                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
+        );
+
 
         Uri soundUri = Uri.parse(ContentResolver.SCHEME_ANDROID_RESOURCE + "://" + getPackageName() + "/" + soundResId);
         
@@ -165,6 +170,8 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
                 .setSound(soundUri)
                 .setPriority(NotificationCompat.PRIORITY_HIGH)
                 .setContentIntent(pendingIntent);
+
+        builder.setAutoCancel(true);
 
         if (icon != null) {
             builder.setLargeIcon(icon);
@@ -200,22 +207,39 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
 
         if (isJobType) {
             int notificationId = (int) System.currentTimeMillis();
+
             JobUpdate job = createJobFromData(data);
             String jobJson = new Gson().toJson(job);
-            Intent saveIntent = new Intent(this, NotificationActionReceiver.class);
-            saveIntent.setAction(NotificationActionReceiver.ACTION_SAVE_JOB);
-            saveIntent.putExtra(NotificationActionReceiver.EXTRA_JOB_DATA, jobJson);
-            saveIntent.putExtra(NotificationActionReceiver.EXTRA_NOTIFICATION_ID, notificationId);
-            PendingIntent savePI = PendingIntent.getBroadcast(this, notificationId + 1, saveIntent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
-            builder.addAction(0, "Save 😇", savePI);
+
+            Intent saveIntent = new Intent(this, MainActivity.class);
+            saveIntent.putExtra("navigate_to", "save_job");
+            saveIntent.putExtra("job_data", jobJson);
+            saveIntent.putExtra("notification_id", notificationId);
+            saveIntent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+
+            PendingIntent savePI = PendingIntent.getActivity(
+                    this,
+                    notificationId + 1,
+                    saveIntent,
+                    PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
+            );
 
             Intent openIntent = new Intent(this, MainActivity.class);
             openIntent.putExtra("navigate_to", "job_details");
             openIntent.putExtra("job_data", jobJson);
-            openIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
-            PendingIntent openPI = PendingIntent.getActivity(this, notificationId + 2, openIntent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+            openIntent.putExtra("notification_id", notificationId);
+            openIntent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+
+            PendingIntent openPI = PendingIntent.getActivity(
+                    this,
+                    notificationId + 2,
+                    openIntent,
+                    PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
+            );
+
+            builder.addAction(0, "Save 😇", savePI);
             builder.addAction(0, "Open Post 🚀", openPI);
-            
+
             manager.notify(notificationId, builder.build());
         } else {
             manager.notify((int) System.currentTimeMillis(), builder.build());
@@ -235,13 +259,16 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
 
     private JobUpdate createJobFromData(Map<String, String> data) {
         JobUpdate job = new JobUpdate();
+
         job.setTitle(data.get("title"));
         job.setDocumentId(data.get("id"));
         job.setEducationRequirement(data.get("education_requirement"));
+
         String img = data.get("image_url");
         if (img == null) img = data.get("imageUrl");
         if (img == null) img = data.get("image");
         job.setImageUrl(img);
+
         job.setApplicationLink(data.get("application_link"));
         job.setSalary(data.get("salary"));
         job.setLastDateString(data.get("last_date"));
@@ -251,6 +278,12 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
         job.setAgeRequirement(data.get("age_requirement"));
         job.setApplicationFees(data.get("application_fees"));
         job.setNote(data.get("note"));
+
+        // ⭐ ADD THESE
+        job.setNotificationPdfLink(data.get("pdf_url"));
+        job.setSelectionPdfLink(data.get("selection_pdf_url"));
+        job.setSyllabusPdf(data.get("syllabus_pdf_url"));
+
         return job;
     }
 

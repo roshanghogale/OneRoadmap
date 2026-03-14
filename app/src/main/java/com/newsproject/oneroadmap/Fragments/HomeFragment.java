@@ -403,6 +403,7 @@ public class HomeFragment extends Fragment {
         recentDb = new RecentlyOpenedDatabaseHelper(requireContext());
         initViews(view);
         handleResultNotification();
+        handlePdfNavigation();
         loadData();
 
         setBottomMarginsBasedOnAndroidVersion();
@@ -622,23 +623,23 @@ public class HomeFragment extends Fragment {
     }
 
     private void handleResultNotification() {
-
         if (getArguments() == null) return;
 
         String isResult = getArguments().getString("result_notification");
-
         if (!"true".equals(isResult)) return;
 
         String json = getArguments().getString("result_data");
+        if (json == null || json.isEmpty()) return;
 
-        if (json == null) return;
+// ⭐ Remove arguments so this logic runs only once
+        getArguments().remove("result_notification");
+        getArguments().remove("result_data");
 
         try {
 
             JSONObject obj = new JSONObject(json);
 
             ResultItem item = new ResultItem();
-
             item.setId(obj.optString("id"));
             item.setTitle(obj.optString("title"));
             item.setCategory(obj.optString("category"));
@@ -648,33 +649,32 @@ public class HomeFragment extends Fragment {
             String descStr = obj.optString("description");
 
             if (descStr != null && !descStr.isEmpty()) {
-
                 JSONObject desc = new JSONObject(descStr);
-
-                item.setDescription1(desc.optString("paragraph1",""));
-                item.setDescription2(desc.optString("paragraph2",""));
-
+                item.setDescription1(desc.optString("paragraph1", ""));
+                item.setDescription2(desc.optString("paragraph2", ""));
             }
 
-            JSONArray urls = new JSONArray(obj.optString("website_urls","[]"));
+            JSONArray urls = new JSONArray(obj.optString("website_urls", "[]"));
 
-            List<Map<String,String>> websiteUrls = new ArrayList<>();
+            List<Map<String, String>> websiteUrls = new ArrayList<>();
 
             for (int i = 0; i < urls.length(); i++) {
-
                 JSONObject u = urls.getJSONObject(i);
 
-                Map<String,String> map = new HashMap<>();
+                Map<String, String> map = new HashMap<>();
                 map.put("title", u.optString("title"));
                 map.put("url", u.optString("url"));
 
                 websiteUrls.add(map);
-
             }
 
             item.setWebsiteUrls(websiteUrls);
 
-            new Handler().postDelayed(() -> {
+            Handler handler = new Handler(Looper.getMainLooper());
+
+            handler.postDelayed(() -> {
+
+                if (!isAdded()) return;
 
                 Result_HallTitcket fragment = new Result_HallTitcket();
 
@@ -683,26 +683,22 @@ public class HomeFragment extends Fragment {
                 transaction.addToBackStack(null);
                 transaction.commit();
 
-                new Handler().postDelayed(() -> {
+                handler.postDelayed(() -> {
 
                     if (fragment.isAdded()) {
-
                         fragment.onItemClick(item);
-
                     }
 
                 }, 500);
 
             }, 800);
 
-        }
-        catch (Exception e) {
-
+        } catch (Exception e) {
             e.printStackTrace();
-
         }
 
     }
+
 
     private void showDailyTasksDialog() {
         checkAndResetDailyTasks();
@@ -1414,6 +1410,24 @@ public class HomeFragment extends Fragment {
                 } catch (Exception e) { Log.e(TAG, "Failed to parse carousel"); }
             }
         });
+    }
+
+    private void handlePdfNavigation() {
+
+        if (getArguments() == null) return;
+
+        String pdfUrl = getArguments().getString("target_pdf_url");
+
+        if (pdfUrl == null || pdfUrl.isEmpty()) return;
+
+        new Handler().postDelayed(() -> {
+
+            if (!isAdded()) return;
+
+            coinAccessController.requestPdfAccess(pdfUrl, null);
+
+        }, 700);
+
     }
 
     @Override

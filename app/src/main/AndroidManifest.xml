@@ -74,10 +74,12 @@
         <receiver
             android:name=".Services.NotificationActionReceiver"
             android:exported="false">
+
             <intent-filter>
-                <action android:name="com.newsproject.oneroadmap.ACTION_SAVE_JOB" />
-                <action android:name="com.newsproject.oneroadmap.ACTION_OPEN_POST" />
+                <action android:name="com.newsproject.oneroadmap.ACTION_SAVE_JOB"/>
+                <action android:name="com.newsproject.oneroadmap.ACTION_OPEN_JOB"/>
             </intent-filter>
+
         </receiver>
 
         <receiver
