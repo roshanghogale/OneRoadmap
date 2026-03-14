@@ -1420,14 +1420,23 @@ public class HomeFragment extends Fragment {
 
         if (pdfUrl == null || pdfUrl.isEmpty()) return;
 
-        new Handler().postDelayed(() -> {
+        getArguments().remove("target_pdf_url");
+
+        new Handler(Looper.getMainLooper()).postDelayed(() -> {
 
             if (!isAdded()) return;
 
-            coinAccessController.requestPdfAccess(pdfUrl, null);
+            coinAccessController.requestPdfAccess(pdfUrl, () -> {
 
-        }, 700);
+                // Open WebView after coin unlock
+                com.newsproject.oneroadmap.Utils.WebViewHelper.openUrlInApp(
+                        HomeFragment.this,
+                        pdfUrl
+                );
 
+            });
+
+        }, 500);
     }
 
     @Override

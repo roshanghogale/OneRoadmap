@@ -117,10 +117,13 @@ public class CoinAccessController {
                             newCoins,
                             true,
                             () -> {
+
                                 if (onAccessGranted != null) {
                                     onAccessGranted.run();
+                                } else {
+                                    WebViewHelper.openUrlInApp(fragment, url);
                                 }
-                                WebViewHelper.openUrlInApp(fragment, url);
+
                             }
                     );
                 });

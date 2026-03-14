@@ -19,301 +19,309 @@ import com.newsproject.oneroadmap.Activities.MainActivity;
 import com.newsproject.oneroadmap.Models.JobUpdate;
 import com.newsproject.oneroadmap.Models.StudentUpdateItem;
 import com.newsproject.oneroadmap.R;
+import com.newsproject.oneroadmap.Utils.BuildConfig;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.Map;
 
 public class MyFirebaseMessagingService extends FirebaseMessagingService {
-    private static final String TAG = "FCM_DEBUG";
+
+    private static final String TAG = "FCM_SERVICE";
 
     @Override
     public void onMessageReceived(RemoteMessage remoteMessage) {
-        super.onMessageReceived(remoteMessage);
-        Map<String, String> data = remoteMessage.getData();
-        
-        if (data.size() > 0) {
-            Log.d(TAG, "onMessageReceived Payload: " + data.toString());
 
-            String type = data.get("notificationType");
-            if (type == null) type = data.get("type");
-            if (type != null) type = type.toLowerCase();
-            
-            if (type == null) {
-                String titleText = data.get("title") != null ? data.get("title").toLowerCase() : "";
-                if (titleText.contains("upsc") || titleText.contains("exam") || titleText.contains("job")) {
-                    type = "job_update";
-                } else {
-                    type = "news";
+        Log.d(TAG, "FCM received from: " + remoteMessage.getFrom());
+
+        Map<String, String> data = remoteMessage.getData();
+
+        if (data == null || data.isEmpty()) return;
+
+        Log.d(TAG, "Payload: " + data.toString());
+
+        String type = data.get("type");
+        if (type == null) type = "news";
+        type = type.toLowerCase();
+
+        String title = data.get("title");
+        String body = data.get("body");
+
+        if (body == null || body.isEmpty()) {
+            body = "Tap to view update";
+        }
+
+        String bannerUrl = resolveBannerUrl(data);
+        String iconUrl = data.get("icon_url");
+
+        int soundRes = getSoundForType(type);
+        String channelId = "channel_" + type;
+        String channelName = getChannelName(type);
+
+        String finalType = type;
+        String finalBannerUrl = bannerUrl;
+        String finalIconUrl = iconUrl;
+        String finalTitle = title;
+        String finalBody = body;
+
+        new Thread(() -> {
+
+            Bitmap bannerBitmap = null;
+            Bitmap iconBitmap = null;
+
+            try {
+
+                if (finalBannerUrl != null) {
+                    Log.d(TAG, "Downloading banner: " + finalBannerUrl);
+                    bannerBitmap = getBitmapFromUrl(finalBannerUrl);
                 }
+
+                if (finalIconUrl != null) {
+                    iconBitmap = getBitmapFromUrl(finalIconUrl);
+                }
+
+            } catch (Exception e) {
+                Log.e(TAG, "Image loading failed", e);
             }
 
-            String title = data.get("title");
-            String body = data.get("body");
-            
-            String bannerUrl = data.get("image_url");
-            if (bannerUrl == null) bannerUrl = data.get("imageUrl");
-            if (bannerUrl == null) bannerUrl = data.get("image");
-            
-            String iconUrl = data.get("icon_url");
-            if (iconUrl == null) iconUrl = data.get("iconUrl");
+            sendNotification(
+                    finalTitle,
+                    finalBody,
+                    bannerBitmap,
+                    iconBitmap,
+                    channelId,
+                    channelName,
+                    soundRes,
+                    finalType,
+                    data
+            );
 
-            int soundResId = getSoundForType(type);
-            String channelId = "channel_" + (type != null ? type : "default");
-            String channelName = getChannelNameForType(type);
+        }).start();
+    }
 
-            Bitmap bannerBitmap = (bannerUrl != null && !bannerUrl.isEmpty()) ? getBitmapFromUrl(bannerUrl) : null;
-            Bitmap iconBitmap = (iconUrl != null && !iconUrl.isEmpty()) ? getBitmapFromUrl(iconUrl) : null;
+    private String resolveBannerUrl(Map<String, String> data) {
 
-            sendNotification(title, body, bannerBitmap, iconBitmap, channelId, channelName, soundResId, type, data);
+        String banner = data.get("banner_url");
+
+        if (banner == null || banner.isEmpty())
+            banner = data.get("image_url");
+
+        if (banner == null || banner.isEmpty())
+            banner = data.get("image");
+
+        if (banner != null && !banner.startsWith("http")) {
+            banner = BuildConfig.BASE_URL + banner;
         }
+
+        Log.d(TAG, "Resolved banner URL: " + banner);
+
+        return banner;
     }
 
     private int getSoundForType(String type) {
-        if (type == null) return R.raw.news_notification;
+
         switch (type) {
+
             case "job_update":
-            case "student_update": return R.raw.job_notification;
-            case "career_roadmap": return R.raw.career_notification;
-            case "result_hallticket": return R.raw.result_notification;
+            case "student_update":
+                return R.raw.job_notification;
+
+            case "career_roadmap":
+                return R.raw.career_notification;
+
+            case "result_hallticket":
+                return R.raw.result_notification;
+
             case "current_affairs":
-            case "study_material": return R.raw.current_notification;
+            case "current_affair":
+            case "study_material":
+                return R.raw.current_notification;
+
             case "slider":
             case "story":
-            default: return R.raw.news_notification;
+            default:
+                return R.raw.news_notification;
         }
     }
 
-    private String getChannelNameForType(String type) {
-        if (type == null) return "General Updates";
+    private String getChannelName(String type) {
+
         switch (type) {
+
             case "job_update":
-            case "student_update": return "Job & Student Updates";
-            case "career_roadmap": return "Career Roadmaps";
-            case "current_affairs": return "Current Affairs";
-            case "result_hallticket": return "Results & Hall Tickets";
-            case "study_material": return "Study Materials";
-            case "slider": return "Promotions";
-            case "story": return "Stories";
-            default: return "Latest News";
+            case "student_update":
+                return "Job & Student Updates";
+
+            case "career_roadmap":
+                return "Career Roadmaps";
+
+            case "current_affairs":
+                return "Current Affairs";
+
+            case "result_hallticket":
+                return "Results & Hall Tickets";
+
+            case "study_material":
+                return "Study Materials";
+
+            case "slider":
+                return "Promotions";
+
+            case "story":
+                return "Stories";
+
+            default:
+                return "Latest Updates";
         }
     }
 
-    private void sendNotification(String title, String body, Bitmap banner, Bitmap icon, String channelId, String channelName, int soundResId, String type, Map<String, String> data) {
-        Intent mainIntent = new Intent(this, MainActivity.class);
-        mainIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
-        
-        boolean isJobType = "job_update".equals(type);
-        boolean isNewsType = "news".equals(type);
-        boolean isResultType = "result_hallticket".equals(type) || "result_hallticket_update".equals(type);
-        boolean isCurrentAffairsType = "current_affair".equals(type);
-        boolean isCareerRoadmapType = "career_roadmap".equals(type);
-        boolean isStudyMaterialType = "study_material".equals(type);
-        boolean isStudentUpdateType = "student_update".equals(type);
-        boolean isHomeRedirectType = "slider".equals(type) || "story".equals(type);
-        
-        if (isJobType) {
-            mainIntent.putExtra("navigate_to", "job_details");
-            mainIntent.putExtra("job_data", new Gson().toJson(createJobFromData(data)));
-        } else if (isNewsType) {
-            mainIntent.putExtra("navigate_to", "news_details");
-            mainIntent.putExtra("news_id", data.get("id"));
-        } else if (isCurrentAffairsType || isCareerRoadmapType || isStudyMaterialType) {
-            mainIntent.putExtra("navigate_to", "pdf_navigation");
-            mainIntent.putExtra("pdf_url", data.get("pdf_url"));
-        } else if (isStudentUpdateType) {
-            mainIntent.putExtra("navigate_to", "student_update_details");
-            mainIntent.putExtra("student_data", new Gson().toJson(createStudentUpdateFromData(data)));
-        } else if (isResultType) {
+    private void sendNotification(
+            String title,
+            String body,
+            Bitmap banner,
+            Bitmap icon,
+            String channelId,
+            String channelName,
+            int soundRes,
+            String type,
+            Map<String, String> data
+    ) {
 
-            mainIntent.putExtra("navigate_to", "home");
-            mainIntent.putExtra("result_notification", "true");
-            mainIntent.putExtra("result_data", new Gson().toJson(data));
+        int notificationId = (int) System.currentTimeMillis();
 
-        } else if (isHomeRedirectType) {
+        Intent intent = new Intent(this, MainActivity.class);
+        intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+        intent.putExtra("notification_id", notificationId);
 
-            mainIntent.putExtra("navigate_to", "home");
+        if ("job_update".equals(type)) {
+
+            intent.putExtra("navigate_to", "job_details");
+            intent.putExtra("job_data", new Gson().toJson(createJobFromData(data)));
+
+        } else if ("story".equals(type)) {
+
+            intent.putExtra("navigate_to", "home");
+
+        } else if ("slider".equals(type)) {
+
+            intent.putExtra("navigate_to", "home");
+            intent.putExtra("slider_post_id", data.get("post_document_id"));
+
+        } else if ("current_affairs".equals(type) || "study_material".equals(type)) {
+
+            intent.putExtra("navigate_to", "pdf_navigation");
+            intent.putExtra("pdf_url", data.get("pdf_url"));
 
         }
 
         PendingIntent pendingIntent = PendingIntent.getActivity(
                 this,
-                (int) System.currentTimeMillis(),
-                mainIntent,
+                notificationId,
+                intent,
                 PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
         );
 
+        Uri soundUri = Uri.parse(
+                ContentResolver.SCHEME_ANDROID_RESOURCE +
+                        "://" + getPackageName() +
+                        "/" + soundRes
+        );
 
-        Uri soundUri = Uri.parse(ContentResolver.SCHEME_ANDROID_RESOURCE + "://" + getPackageName() + "/" + soundResId);
-        
-        String notificationTitle = title;
-        String contentText = body;
+        NotificationCompat.Builder builder =
+                new NotificationCompat.Builder(this, channelId)
+                        .setSmallIcon(R.drawable.app_logo)
+                        .setContentTitle(title)
+                        .setSound(soundUri)
+                        .setPriority(NotificationCompat.PRIORITY_HIGH)
+                        .setAutoCancel(true)
+                        .setContentIntent(pendingIntent);
 
-        if (isJobType && data.containsKey("education_requirement")) {
-            contentText = data.get("education_requirement");
-        } else if (isCurrentAffairsType) {
-            notificationTitle = "Today's Current Affair";
-            if (data.containsKey("date")) {
-                contentText = data.get("date");
-            }
-        } else if (isCareerRoadmapType) {
-            if (data.containsKey("type")) {
-                contentText = data.get("type");
-            }
+// ⭐ Only add description if NOT slider
+        if (!"slider".equals(type)) {
+            builder.setContentText(body);
         }
 
-        NotificationCompat.Builder builder = new NotificationCompat.Builder(this, channelId)
-                .setSmallIcon(R.drawable.app_logo)
-                .setContentTitle(notificationTitle)
-                .setContentText(contentText)
-                .setAutoCancel(true)
-                .setSound(soundUri)
-                .setPriority(NotificationCompat.PRIORITY_HIGH)
-                .setContentIntent(pendingIntent);
+        if (icon != null) builder.setLargeIcon(icon);
 
-        builder.setAutoCancel(true);
+        if (banner != null) {
 
-        if (icon != null) {
-            builder.setLargeIcon(icon);
-        }
+            NotificationCompat.BigPictureStyle style =
+                    new NotificationCompat.BigPictureStyle()
+                            .bigPicture(banner)
+                            .setBigContentTitle(title);
 
-        if (isResultType) {
-            builder.setStyle(null);
-        } else if (banner != null) {
-            NotificationCompat.BigPictureStyle bigPictureStyle = new NotificationCompat.BigPictureStyle()
-                    .bigPicture(banner)
-                    .setBigContentTitle(notificationTitle);
-            
-            if (isJobType || isCurrentAffairsType || isCareerRoadmapType || isStudyMaterialType || isStudentUpdateType) {
-                bigPictureStyle.setSummaryText(contentText);
+            if (!"slider".equals(type)) {
+                style.setSummaryText(body);
             }
-            
-            builder.setStyle(bigPictureStyle);
+
+            builder.setStyle(style);
+
         } else {
-            builder.setStyle(new NotificationCompat.BigTextStyle().bigText(contentText));
+
+            builder.setStyle(new NotificationCompat.BigTextStyle().bigText(body));
         }
 
-        // Add Action Buttons
-        if (isCurrentAffairsType || isStudyMaterialType) {
-            builder.addAction(0, "PDF ओपन करा 🎯", pendingIntent);
-        } else if (isCareerRoadmapType) {
-            builder.addAction(0, "संपूर्ण रोडमॅप पहा 🔖", pendingIntent);
-        } else if (isStudentUpdateType) {
-            builder.addAction(0, "संपूर्ण माहिती पहा 🚀", pendingIntent);
-        }
+        NotificationManager manager =
+                (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
 
-        NotificationManager manager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
-        setupChannel(manager, channelId, channelName, soundUri);
+        createChannel(manager, channelId, channelName, soundUri);
 
-        if (isJobType) {
-            int notificationId = (int) System.currentTimeMillis();
-
-            JobUpdate job = createJobFromData(data);
-            String jobJson = new Gson().toJson(job);
-
-            Intent saveIntent = new Intent(this, MainActivity.class);
-            saveIntent.putExtra("navigate_to", "save_job");
-            saveIntent.putExtra("job_data", jobJson);
-            saveIntent.putExtra("notification_id", notificationId);
-            saveIntent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
-
-            PendingIntent savePI = PendingIntent.getActivity(
-                    this,
-                    notificationId + 1,
-                    saveIntent,
-                    PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
-            );
-
-            Intent openIntent = new Intent(this, MainActivity.class);
-            openIntent.putExtra("navigate_to", "job_details");
-            openIntent.putExtra("job_data", jobJson);
-            openIntent.putExtra("notification_id", notificationId);
-            openIntent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
-
-            PendingIntent openPI = PendingIntent.getActivity(
-                    this,
-                    notificationId + 2,
-                    openIntent,
-                    PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
-            );
-
-            builder.addAction(0, "Save 😇", savePI);
-            builder.addAction(0, "Open Post 🚀", openPI);
-
-            manager.notify(notificationId, builder.build());
-        } else {
-            manager.notify((int) System.currentTimeMillis(), builder.build());
-        }
+        manager.notify(notificationId, builder.build());
     }
 
-    private void setupChannel(NotificationManager manager, String id, String name, Uri sound) {
+    private void createChannel(NotificationManager manager, String id, String name, Uri sound) {
+
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            NotificationChannel channel = new NotificationChannel(id, name, NotificationManager.IMPORTANCE_HIGH);
-            AudioAttributes attrs = new AudioAttributes.Builder()
-                    .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
-                    .setUsage(AudioAttributes.USAGE_NOTIFICATION).build();
+
+            NotificationChannel channel =
+                    new NotificationChannel(
+                            id,
+                            name,
+                            NotificationManager.IMPORTANCE_HIGH
+                    );
+
+            AudioAttributes attrs =
+                    new AudioAttributes.Builder()
+                            .setUsage(AudioAttributes.USAGE_NOTIFICATION)
+                            .build();
+
             channel.setSound(sound, attrs);
+
             manager.createNotificationChannel(channel);
         }
     }
 
     private JobUpdate createJobFromData(Map<String, String> data) {
+
         JobUpdate job = new JobUpdate();
 
         job.setTitle(data.get("title"));
         job.setDocumentId(data.get("id"));
         job.setEducationRequirement(data.get("education_requirement"));
-
-        String img = data.get("image_url");
-        if (img == null) img = data.get("imageUrl");
-        if (img == null) img = data.get("image");
-        job.setImageUrl(img);
-
-        job.setApplicationLink(data.get("application_link"));
-        job.setSalary(data.get("salary"));
-        job.setLastDateString(data.get("last_date"));
-        job.setPostName(data.get("post_name"));
-        job.setJobPlace(data.get("job_place"));
-        job.setTotalPosts(data.get("total_posts"));
-        job.setAgeRequirement(data.get("age_requirement"));
-        job.setApplicationFees(data.get("application_fees"));
-        job.setNote(data.get("note"));
-
-        // ⭐ ADD THESE
-        job.setNotificationPdfLink(data.get("pdf_url"));
-        job.setSelectionPdfLink(data.get("selection_pdf_url"));
-        job.setSyllabusPdf(data.get("syllabus_pdf_url"));
+        job.setImageUrl(data.get("image_url"));
 
         return job;
     }
 
-    private StudentUpdateItem createStudentUpdateFromData(Map<String, String> data) {
-        StudentUpdateItem item = new StudentUpdateItem();
-        try { item.setId(Integer.parseInt(data.get("id"))); } catch (Exception ignored) {}
-        item.setTitle(data.get("title"));
-        item.setEducation(data.get("education"));
-        item.setDescription(data.get("description"));
-        item.setApplicationLink(data.get("application_link"));
-        item.setLastDate(data.get("last_date"));
-        item.setImageUrl(data.get("image_url"));
-        item.setIconUrl(data.get("icon_url"));
-        item.setNotificationPdfUrl(data.get("notification_pdf_url"));
-        item.setSelectionPdfUrl(data.get("selection_pdf_url"));
-        item.setCreatedAt(data.get("created_at"));
-        return item;
-    }
+    private Bitmap getBitmapFromUrl(String urlStr) {
 
-    public Bitmap getBitmapFromUrl(String urlStr) {
         try {
+
             URL url = new URL(urlStr);
-            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+
+            HttpURLConnection connection =
+                    (HttpURLConnection) url.openConnection();
+
             connection.setDoInput(true);
-            connection.setConnectTimeout(10000);
-            connection.setReadTimeout(10000);
             connection.connect();
+
             InputStream input = connection.getInputStream();
+
             return BitmapFactory.decodeStream(input);
+
         } catch (Exception e) {
+
+            Log.e(TAG, "Bitmap download failed", e);
             return null;
         }
     }
