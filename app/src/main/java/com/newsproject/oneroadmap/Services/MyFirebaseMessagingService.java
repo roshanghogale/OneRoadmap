@@ -262,12 +262,34 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
             if (banner != null) {
                 builder.setStyle(new NotificationCompat.BigPictureStyle()
                         .bigPicture(banner)
-                        .setBigContentTitle(title));
+                        .setBigContentTitle(title)
+                        .setSummaryText(body)); // ✅ moved here
             }
 
-            PendingIntent pi = getDefaultIntent(notificationId);
-            builder.setContentIntent(pi);
-            builder.addAction(0, "संपूर्ण रोडमॅप पहा 🔖", pi);
+            // ❌ REMOVE GREY TEXT
+            builder.setContentText("");
+
+            String pdfUrl = data.get("pdf_url");
+
+            if (pdfUrl != null && pdfUrl.contains("localhost")) {
+                pdfUrl = pdfUrl.replace("http://localhost:3000", "http://test.todaybharti.in");
+            }
+
+            Intent pdfIntent = new Intent(this, MainActivity.class);
+            pdfIntent.putExtra("navigate_to", "pdf_navigation");
+            pdfIntent.putExtra("pdf_url", pdfUrl);
+            pdfIntent.putExtra("notification_id", notificationId);
+            pdfIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+
+            PendingIntent pdfPI = PendingIntent.getActivity(
+                    this,
+                    notificationId + 20,
+                    pdfIntent,
+                    PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
+            );
+
+            builder.setContentIntent(pdfPI);
+            builder.addAction(0, "संपूर्ण रोडमॅप पहा 🔖", pdfPI);
         }
 
         NotificationManager manager =
