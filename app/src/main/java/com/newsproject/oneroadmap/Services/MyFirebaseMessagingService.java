@@ -124,9 +124,42 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
         /*
         ================= RESULT =================
         */
-        else if ("result_hallticket".equals(type)) {
+        else if ("result_hallticket".equals(type) || "result_hallticket_update".equals(type)) {
 
             if (icon != null) builder.setLargeIcon(icon);
+
+            if (banner != null) {
+                builder.setStyle(new NotificationCompat.BigPictureStyle()
+                        .bigPicture(banner)
+                        .setBigContentTitle(title)
+                        .setSummaryText(body));
+            }
+
+            // ❌ REMOVE GREY TEXT
+            builder.setContentText("");
+
+            // 🔥 SEND FULL DATA
+            String resultJson = new Gson().toJson(data);
+
+            Intent intent = new Intent(this, MainActivity.class);
+            intent.putExtra("navigate_to", "home");
+            intent.putExtra("result_notification", "true");
+            intent.putExtra("result_data", resultJson);
+            intent.putExtra("notification_id", notificationId);
+            intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+
+            PendingIntent pi = PendingIntent.getActivity(
+                    this,
+                    notificationId + 40,
+                    intent,
+                    PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
+            );
+
+            // ✅ CLICK ACTION
+            builder.setContentIntent(pi);
+
+            // ✅ BUTTON
+            builder.addAction(0, "View Details 📄", pi);
         }
 
         /*
@@ -240,8 +273,31 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
             if (banner != null) {
                 builder.setStyle(new NotificationCompat.BigPictureStyle()
                         .bigPicture(banner)
-                        .setBigContentTitle(title));
+                        .setBigContentTitle(title)
+                        .setSummaryText(body));
             }
+
+            // 🔥 REMOVE GREY TEXT
+            builder.setContentText("");
+
+            // 🔥 SEND FULL DATA
+            String studentJson = new Gson().toJson(data);
+
+            Intent intent = new Intent(this, MainActivity.class);
+            intent.putExtra("navigate_to", "student_update_details");
+            intent.putExtra("student_data", studentJson);
+            intent.putExtra("notification_id", notificationId);
+            intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+
+            PendingIntent pi = PendingIntent.getActivity(
+                    this,
+                    notificationId + 30,
+                    intent,
+                    PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
+            );
+
+            builder.setContentIntent(pi);
+            builder.addAction(0, "View Details 🎓", pi);
         }
 
         /*

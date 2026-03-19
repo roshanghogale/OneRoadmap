@@ -154,7 +154,6 @@ public class HomeFragment extends Fragment {
     private static ShareRewardManager staticShareRewardManager;
     private TextView tagCareerRoadmap, tagResultHallTicket, tagGovtJobs;
     private TextView tagBankingJobs, tagAllJobs, tagPrivateJobs;
-
     private LinearLayout watchEarnContainer;
     private TextView watchEarnText;
     private DatabaseHelper dbHelper;
@@ -402,6 +401,7 @@ public class HomeFragment extends Fragment {
         storyPrefs = requireContext().getSharedPreferences("StoryPrefs", Context.MODE_PRIVATE);
         recentDb = new RecentlyOpenedDatabaseHelper(requireContext());
         initViews(view);
+        handleStudentNotification();
         handleResultNotification();
         handlePdfNavigation();
         loadData();
@@ -620,6 +620,49 @@ public class HomeFragment extends Fragment {
         bankLinear.setOnClickListener(v -> filterAndDisplay("banking"));
 
         watchEarnContainer.setOnClickListener(v -> showDailyTasksDialog());
+    }
+
+    private void handleStudentNotification() {
+
+        if (getArguments() == null) return;
+
+        String studentJson = getArguments().getString("target_student_data");
+        if (studentJson == null || studentJson.isEmpty()) return;
+
+        // remove so it doesn't repeat
+        getArguments().remove("target_student_data");
+
+        try {
+
+            Map<String, String> data =
+                    new Gson().fromJson(studentJson, Map.class);
+
+            StudentUpdateItem item = new StudentUpdateItem(
+                    Integer.parseInt(data.get("id")),
+                    data.get("title"),
+                    data.get("education"),
+                    "", // application_method (not in payload)
+                    data.get("description"),
+                    data.get("application_link"),
+                    data.get("last_date"),
+                    data.get("image_url"),
+                    data.get("icon_url"),
+                    data.get("notification_pdf_url"),
+                    data.get("selection_pdf_url"),
+                    data.get("created_at")
+            );
+
+            new Handler(Looper.getMainLooper()).postDelayed(() -> {
+
+                if (!isAdded()) return;
+
+                showStudentUpdateDialog(item);
+
+            }, 400);
+
+        } catch (Exception e) {
+            Log.e("HomeFragment", "Student parse error", e);
+        }
     }
 
     private void handleResultNotification() {
