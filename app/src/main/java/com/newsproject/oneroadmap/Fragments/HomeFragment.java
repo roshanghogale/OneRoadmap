@@ -405,6 +405,7 @@ public class HomeFragment extends Fragment {
         handleResultNotification();
         handlePdfNavigation();
         loadData();
+        handleNewsNotification();  // 🔥 ADD THIS
 
         setBottomMarginsBasedOnAndroidVersion();
 
@@ -621,6 +622,19 @@ public class HomeFragment extends Fragment {
 
         watchEarnContainer.setOnClickListener(v -> showDailyTasksDialog());
     }
+    private void handleNewsNotification() {
+
+        if (getArguments() == null) return;
+
+        String newsId = getArguments().getString("target_news_id");
+
+        if (newsId == null || newsId.isEmpty()) return;
+
+        // remove so it doesn't repeat
+        getArguments().remove("target_news_id");
+
+        loadAndOpenNews(newsId);
+    }
 
     private void handleStudentNotification() {
 
@@ -663,6 +677,62 @@ public class HomeFragment extends Fragment {
         } catch (Exception e) {
             Log.e("HomeFragment", "Student parse error", e);
         }
+    }
+    private void loadAndOpenNews(String targetNewsId) {
+
+        if (targetNewsId == null || targetNewsId.isEmpty()) return;
+
+        // Step 1: If already loaded → open immediately
+        if (!newsList.isEmpty()) {
+            openNewsById(targetNewsId);
+            return;
+        }
+
+        // Step 2: If not loaded → wait until loaded
+        new Handler(Looper.getMainLooper()).postDelayed(new Runnable() {
+            @Override
+            public void run() {
+
+                if (!isAdded()) return;
+
+                if (!newsList.isEmpty()) {
+                    openNewsById(targetNewsId);
+                } else {
+                    // Retry again until data comes
+                    new Handler(Looper.getMainLooper()).postDelayed(this, 300);
+                }
+            }
+        }, 300);
+    }
+
+    private void openNewsById(String newsId) {
+
+        if (newsList == null || newsList.isEmpty()) return;
+
+        int position = -1;
+
+        for (int i = 0; i < newsList.size(); i++) {
+            if (newsId.equals(String.valueOf(newsList.get(i).getId()))) {
+                position = i;
+                break;
+            }
+        }
+
+        if (position == -1) {
+            Toast.makeText(getContext(), "News not found", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        Gson gson = new Gson();
+        String newsJson = gson.toJson(newsList);
+
+        NewsFragment fragment = NewsFragment.newInstance(newsJson, position);
+
+        getParentFragmentManager()
+                .beginTransaction()
+                .replace(R.id.fragment_container, fragment)
+                .addToBackStack(null)
+                .commit();
     }
 
     private void handleResultNotification() {

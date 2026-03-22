@@ -188,6 +188,22 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
                         .bigPicture(banner)
                         .setBigContentTitle(title));
             }
+
+            // ✅ CLICK ACTION (CRITICAL FIX)
+            Intent intent = new Intent(this, MainActivity.class);
+            intent.putExtra("navigate_to", "news_details");
+            intent.putExtra("news_id", data.get("id"));
+            intent.putExtra("notification_id", notificationId);
+            intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+
+            PendingIntent pi = PendingIntent.getActivity(
+                    this,
+                    notificationId + 60,
+                    intent,
+                    PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
+            );
+
+            builder.setContentIntent(pi);
         }
 
         /*
