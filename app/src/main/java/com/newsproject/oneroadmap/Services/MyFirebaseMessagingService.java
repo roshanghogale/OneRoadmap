@@ -119,6 +119,22 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
                         .bigPicture(banner)
                         .setBigContentTitle(title));
             }
+
+            builder.setContentText("");
+
+            Intent intent = new Intent(this, MainActivity.class);
+            intent.putExtra("navigate_to", "home");
+            intent.putExtra("notification_id", notificationId);
+            intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+
+            PendingIntent pi = PendingIntent.getActivity(
+                    this,
+                    notificationId + 50,
+                    intent,
+                    PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
+            );
+
+            builder.setContentIntent(pi);
         }
 
         /*
