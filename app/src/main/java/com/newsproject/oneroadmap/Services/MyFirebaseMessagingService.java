@@ -321,9 +321,29 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
         */
         else if ("study_material".equals(type)) {
 
-            PendingIntent pi = getDefaultIntent(notificationId);
-            builder.setContentIntent(pi);
-            builder.addAction(0, "PDF ओपन करा 🎯", pi);
+            String pdfUrl = data.get("pdf_url");
+
+// 🔥 FIX localhost issue (IMPORTANT)
+            if (pdfUrl != null && pdfUrl.contains("localhost")) {
+                pdfUrl = pdfUrl.replace("http://localhost:3000", "http://test.todaybharti.in");
+            }
+
+            Intent pdfIntent = new Intent(this, MainActivity.class);
+            pdfIntent.putExtra("navigate_to", "pdf_navigation");
+            pdfIntent.putExtra("pdf_url", pdfUrl);
+            pdfIntent.putExtra("notification_id", notificationId);
+            pdfIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+
+            PendingIntent pdfPI = PendingIntent.getActivity(
+                    this,
+                    notificationId + 10,
+                    pdfIntent,
+                    PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
+            );
+
+// Default click
+            builder.setContentIntent(pdfPI);
+            builder.addAction(0, "PDF ओपन करा 🎯", pdfPI);
         }
 
         /*
