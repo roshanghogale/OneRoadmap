@@ -282,7 +282,7 @@ public class JobUpdateDetails extends Fragment {
         }
 
         setupLink(view, R.id.application_link_container, R.id.textView45, jobUpdate.getApplicationLink(), "अर्जाची लिंक");
-        setupLink(view, R.id.notification_pdf_container, R.id.textView34, jobUpdate.getNotificationPdfLink(), "नोटिफिकेशन PDF");
+        setupLink(view, R.id.notification_pdf_container, R.id.textView34, jobUpdate.getSelectionPdfLink(), "नोटिफिकेशन PDF");
         setupLink(view, R.id.selection_pdf_container, R.id.textView48, jobUpdate.getSelectionPdfLink(), "सिलेक्शन PDF");
         setupLink(view, R.id.syllabus_pdf_container, R.id.textView44, jobUpdate.getSyllabusPdf(), "अभ्यासक्रम PDF");
 
@@ -298,7 +298,12 @@ public class JobUpdateDetails extends Fragment {
             container.setVisibility(View.VISIBLE);
             textView.setText(defaultText);
             textView.setOnClickListener(v -> {
-                coinAccessController.requestPdfAccess(url, null);
+                if (defaultText.equals("नोटिफिकेशन PDF")){
+                    Toast.makeText(this.requireContext(), "this is the toast", Toast.LENGTH_SHORT).show();
+                    com.newsproject.oneroadmap.Utils.WebViewHelper.openUrlInApp(requireContext(), url);
+                } else {
+                    coinAccessController.requestPdfAccess(url, null);
+                }
             });
         } else {
             container.setVisibility(View.GONE);

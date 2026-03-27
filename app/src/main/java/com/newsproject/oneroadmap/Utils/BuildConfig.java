@@ -1,8 +1,8 @@
 package com.newsproject.oneroadmap.Utils;
 
 public class BuildConfig {
-    public static final String BASE_URL2 = "https://admin.mahaalert.cloud";
-    public static final String BASE_URL = "https://test.todaybharti.in";
+    public static final String BASE_URL = "https://admin.mahaalert.cloud";
+    public static final String BASE_URL2 = "https://test.todaybharti.in";
     public static final String UPLOADS_PATH = "/uploads/";
 
     // Endpoints
