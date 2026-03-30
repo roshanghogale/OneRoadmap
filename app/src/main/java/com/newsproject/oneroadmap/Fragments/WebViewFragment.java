@@ -41,7 +41,7 @@ import com.newsproject.oneroadmap.R;
 public class WebViewFragment extends Fragment {
     private static final String ARG_URL = "url";
     private static final String TAG = "WebViewFragment";
-    private static final String AD_UNIT_ID = "ca-app-pub-3940256099942544/1033173712"; // Test ID
+    private static final String AD_UNIT_ID = "ca-app-pub-1998155307869144/5141101529"; // Test ID
     private String url;
     private WebView webView;
     private ProgressBar progressBar;
@@ -77,6 +77,10 @@ public class WebViewFragment extends Fragment {
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
+
+        if (getActivity() instanceof com.newsproject.oneroadmap.Activities.MainActivity) {
+            ((com.newsproject.oneroadmap.Activities.MainActivity) getActivity()).hideBottomNavigation();
+        }
 
         webView = view.findViewById(R.id.web_view);
         progressBar = view.findViewById(R.id.progress_bar);
@@ -334,6 +338,11 @@ public class WebViewFragment extends Fragment {
     @Override
     public void onResume() {
         super.onResume();
+
+        if (getActivity() instanceof com.newsproject.oneroadmap.Activities.MainActivity) {
+            ((com.newsproject.oneroadmap.Activities.MainActivity) getActivity()).hideBottomNavigation();
+        }
+
         if (webView != null) {
             webView.onResume();
         }
@@ -342,7 +351,13 @@ public class WebViewFragment extends Fragment {
     @Override
     public void onDestroyView() {
         super.onDestroyView();
+
+        if (getActivity() instanceof com.newsproject.oneroadmap.Activities.MainActivity) {
+            ((com.newsproject.oneroadmap.Activities.MainActivity) getActivity()).showBottomNavigation();
+        }
+
         mainHandler.removeCallbacksAndMessages(null);
+
         if (webView != null) {
             webView.destroy();
             webView = null;

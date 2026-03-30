@@ -182,7 +182,7 @@ public class JobUpdateDetails extends Fragment {
     }
 
     private void loadNativeAd(View rootView) {
-        AdLoader adLoader = new AdLoader.Builder(requireContext(), "ca-app-pub-3940256099942544/2247696110")
+        AdLoader adLoader = new AdLoader.Builder(requireContext(), "ca-app-pub-1998155307869144/9766742249")
                 .forNativeAd(nativeAd -> {
                     if (isAdded()) {
                         if (mNativeAd != null) {
@@ -298,8 +298,7 @@ public class JobUpdateDetails extends Fragment {
             container.setVisibility(View.VISIBLE);
             textView.setText(defaultText);
             textView.setOnClickListener(v -> {
-                if (defaultText.equals("नोटिफिकेशन PDF")){
-                    Toast.makeText(this.requireContext(), "this is the toast", Toast.LENGTH_SHORT).show();
+                if (defaultText.equals("नोटिफिकेशन PDF") || defaultText.equals("अर्जाची लिंक")){
                     com.newsproject.oneroadmap.Utils.WebViewHelper.openUrlInApp(requireContext(), url);
                 } else {
                     coinAccessController.requestPdfAccess(url, null);
