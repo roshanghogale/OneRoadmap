@@ -365,27 +365,10 @@ public class JobUpdateDetails extends Fragment {
     }
 
     @Override
-    public void onViewCreated(@NonNull View view, Bundle savedInstanceState) {
-        super.onViewCreated(view, savedInstanceState);
-
-        if (getActivity() instanceof MainActivity) {
-            ((MainActivity) getActivity()).hideBottomNavigation();
-        }
-    }
-
-    @Override
-    public void onResume() {
-        super.onResume();
-        if (getActivity() instanceof MainActivity) {
-            ((MainActivity) getActivity()).hideBottomNavigation();
-        }
-    }
-
-    @Override
     public void onDestroyView() {
         super.onDestroyView();
-        if (getActivity() instanceof MainActivity) {
-            ((MainActivity) getActivity()).showBottomNavigation();
+        if (mNativeAd != null) {
+            mNativeAd.destroy();
         }
     }
 }

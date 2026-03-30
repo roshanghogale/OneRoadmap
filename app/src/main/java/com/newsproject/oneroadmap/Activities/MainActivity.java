@@ -109,11 +109,16 @@ public class MainActivity extends AppCompatActivity {
             return false;
         });
 
-        getSupportFragmentManager().addOnBackStackChangedListener(() -> {
-            Fragment currentFragment = getCurrentFragment();
-            updateBottomNavigationView(currentFragment);
-            handleBottomNavigationVisibility(currentFragment);
-        });
+        // Use LifecycleCallbacks to centralize visibility and selection logic.
+        // This triggers regardless of how the fragment was opened (Notification, Button, or Nav Bar).
+        getSupportFragmentManager().registerFragmentLifecycleCallbacks(new FragmentManager.FragmentLifecycleCallbacks() {
+            @Override
+            public void onFragmentResumed(@NonNull FragmentManager fm, @NonNull Fragment f) {
+                super.onFragmentResumed(fm, f);
+                updateBottomNavigationView(f);
+                handleBottomNavigationVisibility(f);
+            }
+        }, true);
 
         getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
             @Override
@@ -123,7 +128,16 @@ public class MainActivity extends AppCompatActivity {
                 if (currentFragment instanceof HomeFragment) {
                     if (HomeFragment.isStoriesPlayerVisible()) HomeFragment.stopStory(MainActivity.this);
                     else finishAffinity();
-                } else if (fm.getBackStackEntryCount() > 0) fm.popBackStack();
+                } else if (fm.getBackStackEntryCount() > 0) {
+                    fm.popBackStack();
+                    // Crucial: After popping, handle visibility for the fragment that becomes visible again
+                    uiHandler.postDelayed(() -> {
+                        Fragment newCurrent = getCurrentFragment();
+                        if (newCurrent != null) {
+                            handleBottomNavigationVisibility(newCurrent);
+                        }
+                    }, 100);
+                }
                 else finishAffinity();
             }
         });
@@ -262,11 +276,6 @@ public class MainActivity extends AppCompatActivity {
         ft.replace(R.id.fragment_container, fragment, fragment.getClass().getSimpleName());
         if (addToBackStack) ft.addToBackStack(fragment.getClass().getSimpleName());
         ft.commitAllowingStateLoss();
-
-        uiHandler.post(() -> {
-            updateBottomNavigationView(fragment);
-            handleBottomNavigationVisibility(fragment);
-        });
     }
 
     private void clearBackStack() {
@@ -279,7 +288,7 @@ public class MainActivity extends AppCompatActivity {
         if (fragment == null) return;
         Integer navItemId = null;
         for (Map.Entry<Integer, Class<? extends Fragment>> entry : navItemToFragmentClassMap.entrySet()) {
-            if (entry.getValue() == fragment.getClass()) {
+            if (entry.getValue().isAssignableFrom(fragment.getClass())) {
                 navItemId = entry.getKey();
                 break;
             }
@@ -294,11 +303,24 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    private void handleBottomNavigationVisibility(Fragment fragment) {
-        boolean hide = fragment instanceof AllCategory || fragment instanceof BankingJobs || fragment instanceof PrivateJobs
-                || fragment instanceof GovernmentJobs || fragment instanceof Result_HallTitcket || fragment instanceof JobUpdateDetails
-                || fragment instanceof AllBannersList || fragment instanceof VideoFragment || fragment instanceof WebViewFragment
-                || fragment instanceof NewsFragment;
+    public void handleBottomNavigationVisibility(Fragment fragment) {
+        if (fragment == null) return;
+        
+        boolean hide = fragment instanceof AllCategory || 
+                      fragment instanceof BankingJobs || 
+                      fragment instanceof PrivateJobs || 
+                      fragment instanceof GovernmentJobs || 
+                      fragment instanceof Result_HallTitcket || 
+                      fragment instanceof JobUpdateDetails || 
+                      fragment instanceof AllBannersList || 
+                      fragment instanceof VideoFragment || 
+                      fragment instanceof WebViewFragment || 
+                      fragment instanceof NewsFragment ||
+                      fragment instanceof AskQuery ||
+                      fragment instanceof MyQueries ||
+                      fragment instanceof LoginPage1 ||
+                      fragment instanceof LoginPage2 ||
+                      fragment instanceof LoginPage3;
 
         if (hide) hideBottomNavigation();
         else showBottomNavigation();
@@ -313,11 +335,24 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void hideBottomNavigation() {
-        if (bottomNavigationView != null) bottomNavigationView.animate().translationY(bottomNavigationView.getHeight()).setDuration(500).start();
+        if (bottomNavigationView != null && bottomNavigationView.getVisibility() == View.VISIBLE) {
+            bottomNavigationView.animate()
+                    .translationY(bottomNavigationView.getHeight())
+                    .setDuration(300)
+                    .withEndAction(() -> bottomNavigationView.setVisibility(View.GONE))
+                    .start();
+        }
     }
 
     public void showBottomNavigation() {
-        if (bottomNavigationView != null) bottomNavigationView.animate().translationY(0).setDuration(500).start();
+        if (bottomNavigationView != null && bottomNavigationView.getVisibility() != View.VISIBLE) {
+            bottomNavigationView.setVisibility(View.VISIBLE);
+            bottomNavigationView.setTranslationY(bottomNavigationView.getHeight());
+            bottomNavigationView.animate()
+                    .translationY(0)
+                    .setDuration(300)
+                    .start();
+        }
     }
 
     private void subscribeToUserSpecificTopics() {

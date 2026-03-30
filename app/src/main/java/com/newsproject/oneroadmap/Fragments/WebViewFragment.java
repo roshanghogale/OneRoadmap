@@ -41,7 +41,7 @@ import com.newsproject.oneroadmap.R;
 public class WebViewFragment extends Fragment {
     private static final String ARG_URL = "url";
     private static final String TAG = "WebViewFragment";
-    private static final String AD_UNIT_ID = "ca-app-pub-1998155307869144/5141101529"; // Test ID
+    private static final String AD_UNIT_ID = "ca-app-pub-1998155307869144/5141101529"; // Updated ID
     private String url;
     private WebView webView;
     private ProgressBar progressBar;
@@ -78,10 +78,6 @@ public class WebViewFragment extends Fragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
-        if (getActivity() instanceof com.newsproject.oneroadmap.Activities.MainActivity) {
-            ((com.newsproject.oneroadmap.Activities.MainActivity) getActivity()).hideBottomNavigation();
-        }
-
         webView = view.findViewById(R.id.web_view);
         progressBar = view.findViewById(R.id.progress_bar);
         tvError = view.findViewById(R.id.tv_error);
@@ -98,17 +94,13 @@ public class WebViewFragment extends Fragment {
             return;
         }
 
-        if (isPdfUrl(url)) {
-            View urlBar = view.findViewById(R.id.url_bar);
-            if (urlBar != null) {
-                urlBar.setVisibility(View.GONE);
-            }
-            loadUrl(url);
-        } else {
-            setupUrlBar();
-            urlText.setText(url);
-            loadUrl(url);
+        // Always hide the navigation/URL bar as requested earlier
+        View urlBar = view.findViewById(R.id.url_bar);
+        if (urlBar != null) {
+            urlBar.setVisibility(View.GONE);
         }
+
+        loadUrl(url);
     }
 
     private void loadInterstitialAd() {
@@ -136,9 +128,11 @@ public class WebViewFragment extends Fragment {
                 if (webView != null && webView.canGoBack()) {
                     webView.goBack();
                 } else {
-                    if (isPdfUrl(url) && mInterstitialAd != null) {
+                    // Ad will now try to show for both regular URLs and PDF URLs
+                    if (mInterstitialAd != null) {
                         showAdAndExit();
                     } else {
+                        Log.d(TAG, "Ad not ready yet, exiting directly");
                         exitFragment();
                     }
                 }
@@ -153,7 +147,6 @@ public class WebViewFragment extends Fragment {
             public void onAdDismissedFullScreenContent() {
                 Log.d(TAG, "Ad dismissed");
                 mInterstitialAd = null;
-                // Use mainHandler to ensure popBackStack runs instantly on the UI thread
                 mainHandler.post(() -> exitFragment());
             }
 
@@ -183,27 +176,9 @@ public class WebViewFragment extends Fragment {
     }
 
     private void setupEdgeToEdge(View rootView) {
-        if (isPdfUrl(url)) {
-            rootView.setFitsSystemWindows(true);
-            if (webView != null) {
-                webView.setPadding(0, 0, 0, 0);
-            }
-            return;
-        }
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-            ViewCompat.setOnApplyWindowInsetsListener(rootView, (v, insets) -> {
-                int topInset = insets.getInsets(WindowInsetsCompat.Type.statusBars()).top;
-                int bottomInset = insets.getInsets(WindowInsetsCompat.Type.navigationBars()).bottom;
-                View urlBar = v.findViewById(R.id.url_bar);
-                if (urlBar != null) {
-                    urlBar.setPadding(urlBar.getPaddingLeft(), topInset, urlBar.getPaddingRight(), urlBar.getPaddingBottom());
-                }
-                if (webView != null) {
-                    webView.setPadding(webView.getPaddingLeft(), webView.getPaddingTop(), webView.getPaddingRight(), bottomInset);
-                }
-                return WindowInsetsCompat.CONSUMED;
-            });
+        rootView.setFitsSystemWindows(true);
+        if (webView != null) {
+            webView.setPadding(0, 0, 0, 0);
         }
     }
 
@@ -229,18 +204,12 @@ public class WebViewFragment extends Fragment {
                 super.onPageStarted(view, url, favicon);
                 progressBar.setVisibility(View.VISIBLE);
                 tvError.setVisibility(View.GONE);
-                if (urlText != null) {
-                    urlText.setText(url);
-                }
             }
 
             @Override
             public void onPageFinished(WebView view, String url) {
                 super.onPageFinished(view, url);
                 progressBar.setVisibility(View.GONE);
-                if (urlText != null) {
-                    urlText.setText(url);
-                }
             }
 
             @Override
@@ -274,13 +243,15 @@ public class WebViewFragment extends Fragment {
     }
 
     private void setupUrlBar() {
-        copyUrlButton.setOnClickListener(v -> {
-            String currentUrl = webView != null ? webView.getUrl() : url;
-            if (currentUrl != null && !currentUrl.isEmpty()) {
-                copyToClipboard(currentUrl);
-                Toast.makeText(getContext(), "URL copied to clipboard", Toast.LENGTH_SHORT).show();
-            }
-        });
+        if (copyUrlButton != null) {
+            copyUrlButton.setOnClickListener(v -> {
+                String currentUrl = webView != null ? webView.getUrl() : url;
+                if (currentUrl != null && !currentUrl.isEmpty()) {
+                    copyToClipboard(currentUrl);
+                    Toast.makeText(getContext(), "URL copied to clipboard", Toast.LENGTH_SHORT).show();
+                }
+            });
+        }
     }
 
     private void copyToClipboard(String text) {
@@ -338,11 +309,6 @@ public class WebViewFragment extends Fragment {
     @Override
     public void onResume() {
         super.onResume();
-
-        if (getActivity() instanceof com.newsproject.oneroadmap.Activities.MainActivity) {
-            ((com.newsproject.oneroadmap.Activities.MainActivity) getActivity()).hideBottomNavigation();
-        }
-
         if (webView != null) {
             webView.onResume();
         }
@@ -351,13 +317,7 @@ public class WebViewFragment extends Fragment {
     @Override
     public void onDestroyView() {
         super.onDestroyView();
-
-        if (getActivity() instanceof com.newsproject.oneroadmap.Activities.MainActivity) {
-            ((com.newsproject.oneroadmap.Activities.MainActivity) getActivity()).showBottomNavigation();
-        }
-
         mainHandler.removeCallbacksAndMessages(null);
-
         if (webView != null) {
             webView.destroy();
             webView = null;
