@@ -182,7 +182,7 @@ public class JobUpdateDetails extends Fragment {
     }
 
     private void loadNativeAd(View rootView) {
-        AdLoader adLoader = new AdLoader.Builder(requireContext(), "ca-app-pub-3940256099942544/2247696110")
+        AdLoader adLoader = new AdLoader.Builder(requireContext(), "ca-app-pub-1998155307869144/9766742249")
                 .forNativeAd(nativeAd -> {
                     if (isAdded()) {
                         if (mNativeAd != null) {

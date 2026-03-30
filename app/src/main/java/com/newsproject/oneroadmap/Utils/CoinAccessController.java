@@ -48,7 +48,7 @@ public class CoinAccessController {
 
         isLoadingAd = true;
         AdRequest adRequest = new AdRequest.Builder().build();
-        RewardedAd.load(fragment.requireContext(), "ca-app-pub-3940256099942544/5224354917",
+        RewardedAd.load(fragment.requireContext(), "ca-app-pub-1998155307869144/1240648878",
                 adRequest, new RewardedAdLoadCallback() {
                     @Override
                     public void onAdFailedToLoad(@NonNull LoadAdError loadAdError) {

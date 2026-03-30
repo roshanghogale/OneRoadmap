@@ -31,7 +31,7 @@
         <!-- Sample AdMob App ID: ca-app-pub-3940256099942544~3347511713 -->
         <meta-data
             android:name="com.google.android.gms.ads.APPLICATION_ID"
-            android:value="ca-app-pub-3940256099942544~3347511713"/>
+            android:value="ca-app-pub-1998155307869144~6075112506"/>
 
         <activity
             android:name=".Activities.Onboarding"
@@ -70,17 +70,6 @@
                 <action android:name="com.google.firebase.MESSAGING_EVENT" />
             </intent-filter>
         </service>
-
-        <receiver
-            android:name=".Services.NotificationActionReceiver"
-            android:exported="false">
-
-            <intent-filter>
-                <action android:name="com.newsproject.oneroadmap.ACTION_SAVE_JOB"/>
-                <action android:name="com.newsproject.oneroadmap.ACTION_OPEN_JOB"/>
-            </intent-filter>
-
-        </receiver>
 
         <receiver
             android:name=".Utils.ShareResultReceiver"
