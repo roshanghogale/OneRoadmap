@@ -13,7 +13,6 @@ glide = "4.16.0"
 whynotimagecarousel = "2.1.1"
 exoplayer = "2.19.1"
 swiperefreshlayout = "1.1.0"
-androidpdfviewer = "3.2.0-beta.3"
 dotsindicator = "5.1.0"
 googleGmsGoogleServices = "4.4.3"
 firebaseFirestore = "26.0.0"
@@ -39,8 +38,6 @@ glide = { group = "com.github.bumptech.glide", name = "glide", version.ref = "gl
 whynotimagecarousel = { group = "org.imaginativeworld.whynotimagecarousel", name = "whynotimagecarousel", version.ref = "whynotimagecarousel" }
 exoplayer = { group = "com.google.android.exoplayer", name = "exoplayer", version.ref = "exoplayer" }
 swiperefreshlayout = { group = "androidx.swiperefreshlayout", name = "swiperefreshlayout", version.ref = "swiperefreshlayout" }
-
-androidpdfviewer = { group = "com.github.mhiew", name = "android-pdf-viewer", version.ref = "androidpdfviewer" }
 
 gson = { group = "com.google.code.gson", name = "gson", version.ref = "gson" }
 

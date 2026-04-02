@@ -13,8 +13,8 @@ android {
         applicationId = "com.newsproject.oneroadmap"
         minSdk = 24
         targetSdk = 36
-        versionCode = 2
-        versionName = "1.1"
+        versionCode = 4
+        versionName = "1.3"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -57,7 +57,6 @@ dependencies {
     implementation(libs.whynotimagecarousel)
     implementation(libs.exoplayer)
     implementation(libs.swiperefreshlayout)
-    implementation(libs.androidpdfviewer)
     implementation(libs.dotsindicator)
     implementation(libs.firebase.firestore)
     implementation(libs.firebase.storage)
