@@ -445,11 +445,9 @@ public class HomeFragment extends Fragment {
         watchEarnText = view.findViewById(R.id.watch_earn_text);
 
         LinearLayout studyCards = view.findViewById(R.id.study_material_cards_linear);
-        LinearLayout row1 = (LinearLayout) studyCards.getChildAt(1);
-        govLinear = (LinearLayout) row1.getChildAt(0);
-        policeLinear = (LinearLayout) row1.getChildAt(1);
-        LinearLayout row2 = (LinearLayout) studyCards.getChildAt(2);
-        bankLinear = (LinearLayout) row2.getChildAt(0);
+        govLinear = view.findViewById(R.id.government_linear);
+        policeLinear = view.findViewById(R.id.police_defence_llinear);
+        bankLinear = view.findViewById(R.id.bank_linear);
 
         SharedPreferences sharedPreferences = requireContext().getSharedPreferences("UserPrefs", Context.MODE_PRIVATE);
         String userNameText = sharedPreferences.getString("name", "Guest");
@@ -1377,7 +1375,7 @@ public class HomeFragment extends Fragment {
     private void filterAndDisplay(String type) {
         currentStudyMaterials.clear();
         String normalizedType = type;
-        if (type.equals("police_defence")) normalizedType = "police \u0026 defence";
+        if (type.equals("police_defence")) normalizedType = "police & defence";
         for (StudyMaterial material : studyMaterialsAll) {
             if (material.getType().equals(normalizedType)) currentStudyMaterials.add(material);
         }

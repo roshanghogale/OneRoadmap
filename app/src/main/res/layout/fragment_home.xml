@@ -760,6 +760,7 @@
                     android:orientation="horizontal">
 
                     <LinearLayout
+                        android:id="@+id/government_linear"
                         android:layout_width="match_parent"
                         android:layout_height="match_parent"
                         android:layout_marginStart="6dp"
@@ -788,6 +789,7 @@
                     </LinearLayout>
 
                     <LinearLayout
+                        android:id="@+id/bank_linear"
                         android:layout_width="match_parent"
                         android:layout_height="match_parent"
                         android:layout_marginEnd="6dp"
@@ -823,6 +825,7 @@
                     android:orientation="horizontal">
 
                     <LinearLayout
+                        android:id="@+id/police_defence_llinear"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginStart="6dp"
