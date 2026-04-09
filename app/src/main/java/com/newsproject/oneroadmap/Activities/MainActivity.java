@@ -32,6 +32,7 @@ import com.google.gson.Gson;
 import com.newsproject.oneroadmap.Adapters.StoriesAdapter;
 import com.newsproject.oneroadmap.Fragments.*;
 import com.newsproject.oneroadmap.Models.JobUpdate;
+import com.newsproject.oneroadmap.Models.JobViewModel;
 import com.newsproject.oneroadmap.Models.News;
 import com.newsproject.oneroadmap.Models.User;
 import com.newsproject.oneroadmap.R;
@@ -167,6 +168,19 @@ public class MainActivity extends AppCompatActivity {
             return;
         }
 
+        if (data != null) {
+            String path = data.getPath();
+            String jobId = data.getQueryParameter("id");
+
+            Log.d("DEEPLINK", "URL: " + data.toString());
+            Log.d("DEEPLINK", "ID: " + jobId);
+
+            if (path != null && path.startsWith("/job") && jobId != null) {
+                openJobFromApi(jobId);
+                return;
+            }
+        }
+
         int notificationId = intent.getIntExtra("notification_id", -1);
 
         if (notificationId != -1) {
@@ -263,6 +277,35 @@ public class MainActivity extends AppCompatActivity {
             replaceFragment(homeFragment, false);
 
         }
+    }
+
+    private void openJobFromApi(String jobId) {
+
+        ProgressDialog pd = new ProgressDialog(this);
+        pd.setMessage("Loading...");
+        pd.show();
+
+        Map<String, JobUpdate> cache = new HashMap<>();
+
+        JobViewModel.fetchJobUpdate(jobId, cache, this, () -> {
+
+            JobUpdate job = cache.get(jobId);
+
+            if (job != null) {
+
+                clearBackStack();
+                replaceFragment(new HomeFragment(), false);
+
+                new Handler(Looper.getMainLooper()).postDelayed(() -> {
+                    replaceFragment(JobUpdateDetails.newInstance(job), true);
+                    pd.dismiss();
+                }, 200);
+
+            } else {
+                pd.dismiss();
+                Toast.makeText(this, "Job not found", Toast.LENGTH_SHORT).show();
+            }
+        });
     }
 
     private Fragment getCurrentFragment() {

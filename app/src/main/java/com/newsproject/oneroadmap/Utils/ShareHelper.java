@@ -24,26 +24,34 @@ public class ShareHelper {
     
     private static final String STANDARD_SHARE_MESSAGE = 
             "महाराष्ट्र व केंद्र शासनाच्या\n\nसर्व सरकारी जॉब - ची माहिती सरळ तुमच्या स्मार्ट फोनवर मिळवा 👇👇\n\nhttps://mahaalert.in/";
-    
-    public void shareJobWithImage(String title, String url, String imageUrl) {
-        shareWithStandardImage();
+
+    public void shareJobWithImage(String title, String jobId, String imageUrl) {
+
+        String deepLink = "https://mahaalert.in/job?id=" + jobId;
+
+        String message =
+                "महाराष्ट्र व केंद्र शासनाच्या\n\n" +
+                        "सर्व सरकारी जॉब माहिती 👇👇\n\n" +
+                        deepLink;
+
+        shareWithStandardImage(message);
     }
-    
-    public void shareWithStandardImage() {
+
+    public void shareWithStandardImage(String text) {
         try {
             android.content.res.Resources res = context.getResources();
             int resId = res.getIdentifier("share_demo", "drawable", context.getPackageName());
-            
+
             if (resId != 0) {
-                android.graphics.Bitmap bitmap = android.graphics.BitmapFactory.decodeResource(res, resId);
+                Bitmap bitmap = android.graphics.BitmapFactory.decodeResource(res, resId);
                 if (bitmap != null) {
-                    shareImageWithText(bitmap, STANDARD_SHARE_MESSAGE);
+                    shareImageWithText(bitmap, text);
                     return;
                 }
             }
-            shareTextOnly(STANDARD_SHARE_MESSAGE);
+            shareTextOnly(text);
         } catch (Exception e) {
-            shareTextOnly(STANDARD_SHARE_MESSAGE);
+            shareTextOnly(text);
         }
     }
     
@@ -99,6 +107,6 @@ public class ShareHelper {
     }
     
     public void sharePost(String title, String url) {
-        shareWithStandardImage();
+        shareWithStandardImage(title);
     }
 }

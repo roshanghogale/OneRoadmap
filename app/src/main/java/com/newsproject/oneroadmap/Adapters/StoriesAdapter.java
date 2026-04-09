@@ -155,12 +155,7 @@ public class StoriesAdapter
                 int pos = getAdapterPosition();
                 if (pos == RecyclerView.NO_POSITION) return;
                 Story s = adapter.stories.get(pos);
-                if (s.getWebUrl() != null) {
-                    HomeFragment.stopStory(adapter.context);
-                    WebViewHelper.openUrlInApp(adapter.context, s.getWebUrl());
-                }else if (s.getPostDocumentId() != null){
-
-                }
+                HomeFragment.navigateFromStory(adapter.context, s.getType(), s.getPostDocumentId(), s.getWebUrl());
             });
 
             shareButton.setOnClickListener(v -> {

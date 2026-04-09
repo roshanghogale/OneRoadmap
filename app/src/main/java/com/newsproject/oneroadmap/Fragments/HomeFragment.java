@@ -703,7 +703,7 @@ public class HomeFragment extends Fragment {
         }, 300);
     }
 
-    private void openNewsById(String newsId) {
+    public void openNewsById(String newsId) {
 
         if (newsList == null || newsList.isEmpty()) return;
 
@@ -731,6 +731,44 @@ public class HomeFragment extends Fragment {
                 .replace(R.id.fragment_container, fragment)
                 .addToBackStack(null)
                 .commit();
+    }
+
+    public void navigateToContent(String type, String id, String webUrl) {
+        if ("pramotion".equalsIgnoreCase(type) || "promotion".equalsIgnoreCase(type)) {
+            if (webUrl != null && !webUrl.isEmpty()) {
+                com.newsproject.oneroadmap.Utils.WebViewHelper.openUrlInApp(requireContext(), webUrl);
+            }
+        } else if ("news".equalsIgnoreCase(type)) {
+            if (id != null && !id.isEmpty()) {
+                openNewsById(id);
+            }
+        } else if ("post".equalsIgnoreCase(type)) {
+            if (id != null && !id.isEmpty()) {
+                android.app.ProgressDialog pd = new android.app.ProgressDialog(getContext());
+                pd.setMessage("Loading...");
+                pd.show();
+                Map<String, JobUpdate> cache = new HashMap<>();
+                JobViewModel.fetchJobUpdate(id, cache, getContext(), () -> {
+                    JobUpdate j = cache.get(id);
+                    if (j != null) {
+                        JobViewModel.navigateToJobDetails(j, getContext(), pd);
+                    } else {
+                        pd.dismiss();
+                        Toast.makeText(getContext(), "Failed to load post", Toast.LENGTH_SHORT).show();
+                    }
+                });
+            }
+        }
+    }
+
+    public static void navigateFromStory(Context context, String type, String id, String webUrl) {
+        stopStory(context);
+        if (!(context instanceof FragmentActivity)) return;
+        FragmentActivity activity = (FragmentActivity) context;
+        Fragment fragment = activity.getSupportFragmentManager().findFragmentById(R.id.fragment_container);
+        if (fragment instanceof HomeFragment) {
+            ((HomeFragment) fragment).navigateToContent(type, id, webUrl);
+        }
     }
 
     private void handleResultNotification() {
@@ -1502,16 +1540,7 @@ public class HomeFragment extends Fragment {
                             @Override public void onClick(int position, CarouselItem carouselItem) {
                                 if (!isAdded() || position < 0 || position >= finalSliders.size()) return;
                                 Slider s = finalSliders.get(position);
-                                if (s.getPostDocumentId() == null) return;
-                                android.app.ProgressDialog pd = new android.app.ProgressDialog(getContext());
-                                pd.setMessage("Loading..."); pd.show();
-                                if ("post".equalsIgnoreCase(s.getType())) {
-                                    JobViewModel.fetchJobUpdate(s.getPostDocumentId(), jobUpdateCache, getContext(), () -> {
-                                        JobUpdate j = jobUpdateCache.get(s.getPostDocumentId());
-                                        if (j != null) JobViewModel.navigateToJobDetails(j, getContext(), pd);
-                                        else pd.dismiss();
-                                    });
-                                }
+                                navigateToContent(s.getType(), s.getPostDocumentId(), s.getWebUrl());
                             }
                             @Override public void onLongClick(int i, @NonNull CarouselItem carouselItem) {}
                             @Override public void onBindViewHolder(@NonNull ViewBinding viewBinding, @NonNull CarouselItem carouselItem, int i) {}
