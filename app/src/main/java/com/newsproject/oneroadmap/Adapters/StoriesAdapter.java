@@ -158,6 +158,8 @@ public class StoriesAdapter
                 if (s.getWebUrl() != null) {
                     HomeFragment.stopStory(adapter.context);
                     WebViewHelper.openUrlInApp(adapter.context, s.getWebUrl());
+                }else if (s.getPostDocumentId() != null){
+
                 }
             });
 

@@ -282,7 +282,7 @@ public class JobUpdateDetails extends Fragment {
         }
 
         setupLink(view, R.id.application_link_container, R.id.textView45, jobUpdate.getApplicationLink(), "अर्जाची लिंक");
-        setupLink(view, R.id.notification_pdf_container, R.id.textView34, jobUpdate.getSelectionPdfLink(), "नोटिफिकेशन PDF");
+        setupLink(view, R.id.notification_pdf_container, R.id.textView34, jobUpdate.getNotificationPdfLink(), "नोटिफिकेशन PDF");
         setupLink(view, R.id.selection_pdf_container, R.id.textView48, jobUpdate.getSelectionPdfLink(), "सिलेक्शन PDF");
         setupLink(view, R.id.syllabus_pdf_container, R.id.textView44, jobUpdate.getSyllabusPdf(), "अभ्यासक्रम PDF");
 
