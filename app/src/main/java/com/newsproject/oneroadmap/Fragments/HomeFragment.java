@@ -416,6 +416,19 @@ public class HomeFragment extends Fragment {
 
     private void initViews(View view) {
         Log.d(TAG, "initViews called");
+
+        TextView todayDate = view.findViewById(R.id.today_date);
+        SimpleDateFormat sdf = new SimpleDateFormat("dd MMMM yyyy", new Locale("mr", "IN"));
+        String currentDate = sdf.format(new Date());
+        todayDate.setText(currentDate);
+
+        TextView seeAllRecent = view.findViewById(R.id.all_updates2);seeAllRecent.setOnClickListener(v -> {
+            FragmentTransaction transaction = getParentFragmentManager().beginTransaction();
+            transaction.replace(R.id.fragment_container, new AllCategory());
+            transaction.addToBackStack(null);
+            transaction.commit();
+        });
+
         tagCareerRoadmap    = view.findViewById(R.id.tag_career_roadmap);
         tagResultHallTicket = view.findViewById(R.id.tag_result_hallticket);
         tagGovtJobs         = view.findViewById(R.id.tag_govt_jobs);

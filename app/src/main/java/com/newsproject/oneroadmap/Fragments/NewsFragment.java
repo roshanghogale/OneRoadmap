@@ -124,10 +124,27 @@ public class NewsFragment extends Fragment {
         super.onViewCreated(view, savedInstanceState);
         
         viewPager = view.findViewById(R.id.news_viewpager);
+        CardView btnPrevious = view.findViewById(R.id.btn_previous);
+        CardView btnNext = view.findViewById(R.id.btn_next);
+
+        btnPrevious.setOnClickListener(v -> {
+            int current = viewPager.getCurrentItem();
+            if (current > 0) {
+                viewPager.setCurrentItem(current - 1, true);
+            }
+        });
+
+        btnNext.setOnClickListener(v -> {
+            int current = viewPager.getCurrentItem();
+            if (current < newsList.size() - 1) {
+                viewPager.setCurrentItem(current + 1, true);
+            }
+        });
         
         if (newsList != null && !newsList.isEmpty()) {
             NewsPagerAdapter adapter = new NewsPagerAdapter(newsList, shareHelper, shareLauncher);
             viewPager.setAdapter(adapter);
+            updateButtonVisibility(btnPrevious, btnNext);
             
             // Improve animation smoothness
             viewPager.setOffscreenPageLimit(2); // Preload adjacent pages for smoother transitions
@@ -153,6 +170,32 @@ public class NewsFragment extends Fragment {
                     page.setScaleY(scale);
                 }
             });
+
+            viewPager.registerOnPageChangeCallback(new ViewPager2.OnPageChangeCallback() {
+                @Override
+                public void onPageSelected(int position) {
+                    super.onPageSelected(position);
+                    updateButtonVisibility(btnPrevious, btnNext);
+                }
+            });
+        }
+    }
+
+    private void updateButtonVisibility(CardView btnPrevious, CardView btnNext) {
+        int current = viewPager.getCurrentItem();
+
+        // Hide previous if first item
+        if (current == 0) {
+            btnPrevious.setVisibility(View.GONE);
+        } else {
+            btnPrevious.setVisibility(View.VISIBLE);
+        }
+
+        // Hide next if last item
+        if (current == newsList.size() - 1) {
+            btnNext.setVisibility(View.GONE);
+        } else {
+            btnNext.setVisibility(View.VISIBLE);
         }
     }
 
