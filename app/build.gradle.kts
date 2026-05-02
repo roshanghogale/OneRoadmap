@@ -13,8 +13,8 @@ android {
         applicationId = "com.newsproject.oneroadmap"
         minSdk = 24
         targetSdk = 36
-        versionCode = 4
-        versionName = "1.3"
+        versionCode = 5
+        versionName = "1.4"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -74,4 +74,5 @@ dependencies {
     implementation("com.google.code.gson:gson:2.11.0")
     implementation("com.mikhaellopez:circularprogressbar:3.1.0")
     implementation("com.google.android.gms:play-services-ads:23.6.0")
+    implementation("com.github.Dimezis:BlurView:version-3.2.0")
 }

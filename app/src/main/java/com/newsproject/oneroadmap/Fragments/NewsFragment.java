@@ -1,9 +1,11 @@
 package com.newsproject.oneroadmap.Fragments;
 
+import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.ViewOutlineProvider;
 import android.widget.ImageView;
 import android.widget.TextView;
 
@@ -32,9 +34,6 @@ import android.os.Looper;
 import android.app.AlertDialog;
 import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
-import android.widget.Button;
-import android.widget.TextView;
-import android.view.LayoutInflater;
 
 import java.lang.reflect.Type;
 import java.text.SimpleDateFormat;
@@ -43,6 +42,9 @@ import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 import java.util.TimeZone;
+
+import eightbitlab.com.blurview.BlurTarget;
+import eightbitlab.com.blurview.BlurView;
 
 public class NewsFragment extends Fragment {
     private static final String ARG_NEWS_LIST = "news_list";
@@ -124,10 +126,35 @@ public class NewsFragment extends Fragment {
         super.onViewCreated(view, savedInstanceState);
         
         viewPager = view.findViewById(R.id.news_viewpager);
-        CardView btnPrevious = view.findViewById(R.id.btn_previous);
-        CardView btnNext = view.findViewById(R.id.btn_next);
+        BlurView btnPrevious = view.findViewById(R.id.btn_previous);
+        BlurView btnNext = view.findViewById(R.id.btn_next);
+
+        View decorView = requireActivity().getWindow().getDecorView();
+
+        ViewGroup rootView = (ViewGroup) decorView.getRootView();
+        BlurTarget blurTarget = new BlurTarget(rootView.getContext());
+
+        Drawable windowBackground = decorView.getBackground();
+
+        btnPrevious.setupWith(blurTarget)
+                .setFrameClearDrawable(windowBackground)
+                .setBlurRadius(40f)
+                .setBlurAutoUpdate(true);
+
+        btnNext.setupWith(blurTarget)
+                .setFrameClearDrawable(windowBackground)
+                .setBlurRadius(40f)
+                .setBlurAutoUpdate(true);
+
+        btnNext.setOutlineProvider(ViewOutlineProvider.BACKGROUND);
+        btnNext.setClipToOutline(true);
+
+        btnPrevious.setOutlineProvider(ViewOutlineProvider.BACKGROUND);
+        btnPrevious.setClipToOutline(true);
+
 
         btnPrevious.setOnClickListener(v -> {
+            animateClick((BlurView) v);
             int current = viewPager.getCurrentItem();
             if (current > 0) {
                 viewPager.setCurrentItem(current - 1, true);
@@ -135,6 +162,7 @@ public class NewsFragment extends Fragment {
         });
 
         btnNext.setOnClickListener(v -> {
+            animateClick((BlurView) v);
             int current = viewPager.getCurrentItem();
             if (current < newsList.size() - 1) {
                 viewPager.setCurrentItem(current + 1, true);
@@ -181,7 +209,12 @@ public class NewsFragment extends Fragment {
         }
     }
 
-    private void updateButtonVisibility(CardView btnPrevious, CardView btnNext) {
+    private void animateClick(BlurView v) {
+        v.animate().scaleX(0.9f).scaleY(0.9f).setDuration(80)
+                .withEndAction(() -> v.animate().scaleX(1f).scaleY(1f).setDuration(80));
+    }
+
+    private void updateButtonVisibility(BlurView btnPrevious, BlurView btnNext) {
         int current = viewPager.getCurrentItem();
 
         // Hide previous if first item

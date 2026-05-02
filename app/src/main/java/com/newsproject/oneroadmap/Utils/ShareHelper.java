@@ -54,7 +54,7 @@ public class ShareHelper {
             shareTextOnly(text);
         }
     }
-    
+
     private void shareImageWithText(Bitmap bitmap, String text) {
         try {
             File cacheDir = new File(context.getCacheDir(), "shared_images");
@@ -64,20 +64,20 @@ public class ShareHelper {
             bitmap.compress(Bitmap.CompressFormat.JPEG, 95, out);
             out.flush();
             out.close();
-            
+
             Uri imageUri = FileProvider.getUriForFile(
                     context,
                     "com.newsproject.oneroadmap.fileprovider",
                     imageFile
             );
-            
+
             Intent intent = new Intent(Intent.ACTION_SEND);
             intent.setType("image/*");
             intent.putExtra(Intent.EXTRA_TEXT, text);
             intent.putExtra(Intent.EXTRA_STREAM, imageUri);
             intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
             intent.setPackage("com.whatsapp"); // DIRECT WHATSAPP
-            
+
             launchShare(intent);
         } catch (Exception e) {
             e.printStackTrace();
@@ -85,7 +85,7 @@ public class ShareHelper {
             shareTextOnly(text);
         }
     }
-    
+
     private void shareTextOnly(String text) {
         Intent intent = new Intent(Intent.ACTION_SEND);
         intent.setType("text/plain");
@@ -105,7 +105,7 @@ public class ShareHelper {
             Toast.makeText(context, "WhatsApp is not installed", Toast.LENGTH_SHORT).show();
         }
     }
-    
+
     public void sharePost(String title, String url) {
         shareWithStandardImage(title);
     }
