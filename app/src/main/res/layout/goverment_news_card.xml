@@ -120,7 +120,7 @@
                     android:id="@+id/cardView"
                     android:layout_width="164dp"
                     android:layout_height="36dp"
-                    app:cardBackgroundColor="#008B02"
+                    app:cardBackgroundColor="#E1306C"
                     app:cardCornerRadius="16dp"
                     app:cardElevation="0dp"
                     app:layout_constraintBottom_toTopOf="@+id/constraintLayout3"
@@ -150,7 +150,7 @@
                             android:layout_marginStart="2dp"
                             android:paddingStart="2dp"
                             android:paddingEnd="4dp"
-                            android:src="@drawable/whatsapp"
+                            android:src="@drawable/ic_instagram"
                             app:tint="#ffffff" />
                     </LinearLayout>
                 </androidx.cardview.widget.CardView>

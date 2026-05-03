@@ -192,7 +192,7 @@
                     <ImageView
                         android:layout_width="18dp"
                         android:layout_height="18dp"
-                        android:src="@drawable/whatsapp"
+                        android:src="@drawable/ic_instagram"
                         android:scaleType="fitCenter"
                         app:tint="@color/black" />
                 </LinearLayout>

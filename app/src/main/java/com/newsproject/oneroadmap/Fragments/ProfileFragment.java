@@ -1161,7 +1161,7 @@ public class ProfileFragment extends Fragment {
         shareButtonContainer.setOnClickListener(v -> {
             try {
                 shareRewardManager.startShare();
-                profileShareHelper.sharePost(null, null);
+                profileShareHelper.shareStandardMessageOnly();
             } catch (Exception e) {
                 Toast.makeText(requireContext(), "Unable to share right now", Toast.LENGTH_SHORT).show();
                 Log.e("Share", "Share error", e);

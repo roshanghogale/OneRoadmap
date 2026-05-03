@@ -175,8 +175,14 @@ public class MainActivity extends AppCompatActivity {
             Log.d("DEEPLINK", "URL: " + data.toString());
             Log.d("DEEPLINK", "ID: " + jobId);
 
-            if (path != null && path.startsWith("/job") && jobId != null) {
-                openJobFromApi(jobId);
+            if (path != null && path.startsWith("/job")) {
+                if (jobId != null && !jobId.isEmpty()) {
+                    openJobFromApi(jobId);
+                } else {
+                    // It's a generic /job link, just open home screen
+                    clearBackStack();
+                    replaceFragment(new HomeFragment(), false);
+                }
                 return;
             }
         }

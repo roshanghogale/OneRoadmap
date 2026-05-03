@@ -141,7 +141,7 @@
                     android:id="@+id/job_update_share_button"
                     android:layout_width="20dp"
                     android:layout_height="20dp"
-                    app:srcCompat="@drawable/whatsapp"
+                    app:srcCompat="@drawable/ic_instagram"
                     app:tint="@color/text_secondary" />
             </LinearLayout>
 

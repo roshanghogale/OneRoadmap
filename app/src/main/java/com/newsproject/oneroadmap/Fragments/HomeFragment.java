@@ -197,7 +197,10 @@ public class HomeFragment extends Fragment {
                 result -> {
                     if (!isAdded()) return;
                     if (shareRewardManager != null) {
-                        shareRewardManager.onShareReturned(null);
+                        int current = dbHelper.getUserCoins(userId);
+                        shareRewardManager.onShareReturned(newTotalCoins -> {
+                            showCoinAnimationDialog(current, newTotalCoins);
+                        });
                     }
                 });
 
@@ -1614,5 +1617,35 @@ public class HomeFragment extends Fragment {
 
     private int dpToPx(int dp) {
         return Math.round(dp * getResources().getDisplayMetrics().density);
+    }
+
+    private void showCoinAnimationDialog(int start, int end) {
+        View view = LayoutInflater.from(requireContext())
+                .inflate(R.layout.coin_dialog_layout, null);
+        TextView count = view.findViewById(R.id.coin_count);
+        CardView ok = view.findViewById(R.id.btn_close);
+        count.setText(String.valueOf(start));
+        AlertDialog dialog = new AlertDialog.Builder(requireContext())
+                .setView(view).create();
+        if (dialog.getWindow() != null)
+            dialog.getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
+        ok.setOnClickListener(v -> dialog.dismiss());
+        dialog.show();
+
+        final int[] displayedCoins = {start};
+        handler.post(new Runnable() {
+            @Override public void run() {
+                if (!isAdded()) return;
+                if (displayedCoins[0] < end) {
+                    displayedCoins[0]++;
+                    count.setText(String.valueOf(displayedCoins[0]));
+                    handler.postDelayed(this, 20);
+                } else if (displayedCoins[0] > end) {
+                    displayedCoins[0]--;
+                    count.setText(String.valueOf(displayedCoins[0]));
+                    handler.postDelayed(this, 20);
+                }
+            }
+        });
     }
 }

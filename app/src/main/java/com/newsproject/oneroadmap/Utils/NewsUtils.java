@@ -155,7 +155,8 @@ public class NewsUtils {
             rewardManager.startShare();
             
             ShareHelper shareHelper = new ShareHelper(context);
-            shareHelper.sharePost(news.getTitle(), news.getWebUrl());
+            // Pass null for URL to force STANDARD_SHARE_MESSAGE with link
+            shareHelper.sharePost(news.getTitle(), null);
         });
 
         mainHandler.post(() -> {

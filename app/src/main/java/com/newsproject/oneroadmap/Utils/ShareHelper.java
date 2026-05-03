@@ -2,111 +2,97 @@ package com.newsproject.oneroadmap.Utils;
 
 import android.content.Context;
 import android.content.Intent;
-import android.graphics.Bitmap;
-import android.net.Uri;
 import android.widget.Toast;
 import androidx.activity.result.ActivityResultLauncher;
-import androidx.core.content.FileProvider;
-import java.io.File;
-import java.io.FileOutputStream;
 
+/**
+ * Utility class to handle sharing to Instagram.
+ * This class is strictly text-only to ensure Instagram displays the content correctly.
+ * All links are routed through the /job deep link path to ensure the app opens.
+ */
 public class ShareHelper {
     private final Context context;
     private ActivityResultLauncher<Intent> shareLauncher;
-    
+
+    // Use /job as the base to ensure the app opens via deep link even for generic shares
+    private static final String DEFAULT_DEEP_LINK = "https://mahaalert.in/job";
+
+    private static final String STANDARD_SHARE_MESSAGE =
+            "महाराष्ट्र व केंद्र शासनाच्या\n\n" +
+            "सर्व सरकारी जॉब - ची माहिती सरळ तुमच्या स्मार्ट फोनवर मिळवा 👇👇\n\n" +
+            DEFAULT_DEEP_LINK;
+
     public ShareHelper(Context context) {
         this.context = context;
     }
-    
+
     public void setShareLauncher(ActivityResultLauncher<Intent> launcher) {
         this.shareLauncher = launcher;
     }
-    
-    private static final String STANDARD_SHARE_MESSAGE = 
-            "महाराष्ट्र व केंद्र शासनाच्या\n\nसर्व सरकारी जॉब - ची माहिती सरळ तुमच्या स्मार्ट फोनवर मिळवा 👇👇\n\nhttps://mahaalert.in/";
 
+    /**
+     * Shares a job update with its title and a specific deep link.
+     */
     public void shareJobWithImage(String title, String jobId, String imageUrl) {
+        String message;
+        
+        if (jobId != null && !jobId.isEmpty()) {
+            // Job Specific Share with ID
+            String deepLink = DEFAULT_DEEP_LINK + "?id=" + jobId;
+            message = title + "\n\n" +
+                      "महाराष्ट्र व केंद्र शासनाच्या सर्व सरकारी जॉब माहिती 👇👇\n\n" +
+                      deepLink;
+        } else {
+            // Fallback for News or Generic Share with a Title
+            message = title + "\n\n" + STANDARD_SHARE_MESSAGE;
+        }
 
-        String deepLink = "https://mahaalert.in/job?id=" + jobId;
-
-        String message =
-                "महाराष्ट्र व केंद्र शासनाच्या\n\n" +
-                        "सर्व सरकारी जॉब माहिती 👇👇\n\n" +
-                        deepLink;
-
-        shareWithStandardImage(message);
+        shareTextOnly(message);
     }
 
+    /**
+     * Legacy method for compatibility. Now forces text-only sharing.
+     */
     public void shareWithStandardImage(String text) {
-        try {
-            android.content.res.Resources res = context.getResources();
-            int resId = res.getIdentifier("share_demo", "drawable", context.getPackageName());
+        shareTextOnly(text);
+    }
 
-            if (resId != 0) {
-                Bitmap bitmap = android.graphics.BitmapFactory.decodeResource(res, resId);
-                if (bitmap != null) {
-                    shareImageWithText(bitmap, text);
-                    return;
-                }
-            }
-            shareTextOnly(text);
-        } catch (Exception e) {
-            shareTextOnly(text);
+    /**
+     * Generic share method. Appends standard promo and link.
+     */
+    public void sharePost(String title, String url) {
+        if (title != null && !title.isEmpty()) {
+            shareTextOnly(title + "\n\n" + STANDARD_SHARE_MESSAGE);
+        } else {
+            shareStandardMessageOnly();
         }
     }
 
-    private void shareImageWithText(Bitmap bitmap, String text) {
-        try {
-            File cacheDir = new File(context.getCacheDir(), "shared_images");
-            cacheDir.mkdirs();
-            File imageFile = new File(cacheDir, "job_banner_" + System.currentTimeMillis() + ".jpg");
-            FileOutputStream out = new FileOutputStream(imageFile);
-            bitmap.compress(Bitmap.CompressFormat.JPEG, 95, out);
-            out.flush();
-            out.close();
-
-            Uri imageUri = FileProvider.getUriForFile(
-                    context,
-                    "com.newsproject.oneroadmap.fileprovider",
-                    imageFile
-            );
-
-            Intent intent = new Intent(Intent.ACTION_SEND);
-            intent.setType("image/*");
-            intent.putExtra(Intent.EXTRA_TEXT, text);
-            intent.putExtra(Intent.EXTRA_STREAM, imageUri);
-            intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
-            intent.setPackage("com.whatsapp"); // DIRECT WHATSAPP
-
-            launchShare(intent);
-        } catch (Exception e) {
-            e.printStackTrace();
-            Toast.makeText(context, "WhatsApp not installed or error", Toast.LENGTH_SHORT).show();
-            shareTextOnly(text);
-        }
+    /**
+     * Strictly shares only the standard promotional message and app deep link.
+     * Use this for Profile, Stories, and Coin dialogs.
+     */
+    public void shareStandardMessageOnly() {
+        shareTextOnly(STANDARD_SHARE_MESSAGE);
     }
 
+    /**
+     * The core sharing method. Sends a text-only intent to Instagram.
+     */
     private void shareTextOnly(String text) {
-        Intent intent = new Intent(Intent.ACTION_SEND);
-        intent.setType("text/plain");
-        intent.putExtra(Intent.EXTRA_TEXT, text);
-        intent.setPackage("com.whatsapp"); // DIRECT WHATSAPP
-        launchShare(intent);
-    }
-
-    private void launchShare(Intent intent) {
         try {
+            Intent intent = new Intent(Intent.ACTION_SEND);
+            intent.setType("text/plain");
+            intent.putExtra(Intent.EXTRA_TEXT, text);
+            intent.setPackage("com.instagram.android");
+            
             if (shareLauncher != null) {
                 shareLauncher.launch(intent);
             } else {
                 context.startActivity(intent);
             }
         } catch (Exception e) {
-            Toast.makeText(context, "WhatsApp is not installed", Toast.LENGTH_SHORT).show();
+            Toast.makeText(context, "Instagram is not installed", Toast.LENGTH_SHORT).show();
         }
-    }
-
-    public void sharePost(String title, String url) {
-        shareWithStandardImage(title);
     }
 }

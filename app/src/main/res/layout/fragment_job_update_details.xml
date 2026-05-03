@@ -580,8 +580,8 @@
         android:layout_gravity="bottom|end"
         android:layout_marginEnd="16dp"
         android:layout_marginBottom="80dp"
-        android:src="@drawable/whatsapp"
-        app:backgroundTint="#4CAF50"
+        android:src="@drawable/ic_instagram"
+        app:backgroundTint="#E1306C"
         app:tint="@android:color/white"
         app:elevation="8dp" />
 

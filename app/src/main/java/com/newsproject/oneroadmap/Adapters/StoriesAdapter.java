@@ -161,7 +161,6 @@ public class StoriesAdapter
             shareButton.setOnClickListener(v -> {
                 int pos = getAdapterPosition();
                 if (pos == RecyclerView.NO_POSITION) return;
-                Story s = adapter.stories.get(pos);
                 
                 if (adapter.shareRewardManager != null) {
                     adapter.shareRewardManager.startShare();
@@ -171,7 +170,8 @@ public class StoriesAdapter
                 if (adapter.shareLauncher != null) {
                     shareHelper.setShareLauncher(adapter.shareLauncher);
                 }
-                shareHelper.sharePost(null, null);
+                // Share strictly only the standard text message
+                shareHelper.shareStandardMessageOnly();
             });
 
             // -------- Pause on hold --------

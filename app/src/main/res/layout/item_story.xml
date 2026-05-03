@@ -165,7 +165,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="4dp"
                 android:layout_marginBottom="8dp"
-                app:cardBackgroundColor="#008B02"
+                app:cardBackgroundColor="#E1306C"
                 app:cardCornerRadius="24dp"
                 app:cardElevation="4dp">
 
@@ -194,7 +194,7 @@
                         android:layout_height="22dp"
                         android:layout_marginStart="4dp"
                         android:layout_weight="1"
-                        app:srcCompat="@drawable/whatsapp"
+                        app:srcCompat="@drawable/ic_instagram"
                         app:tint="#FFFFFF" />
                 </LinearLayout>
             </androidx.cardview.widget.CardView>

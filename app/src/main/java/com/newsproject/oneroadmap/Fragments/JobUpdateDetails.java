@@ -160,10 +160,10 @@ public class JobUpdateDetails extends Fragment {
                 if (shareRewardManager != null) {
                     shareRewardManager.startShare();
                 }
-                String title = jobUpdate.getPostName() != null ? jobUpdate.getPostName() : "Government Job Alert";
+                String shareTitle = jobUpdate.getTitle() != null ? jobUpdate.getTitle() : "Government Job Alert";
                 String documentId = jobUpdate.getDocumentId();
                 String imageUrl = jobUpdate.getImageUrl();
-                shareHelper.shareJobWithImage(title, documentId, imageUrl);
+                shareHelper.shareJobWithImage(shareTitle, documentId, imageUrl);
             }
         });
 

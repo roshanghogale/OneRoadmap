@@ -208,7 +208,7 @@ public class CoinAccessController {
         if (shareRewardManager != null) {
             shareRewardManager.startShare();
         }
-        shareHelper.sharePost("", "");
+        shareHelper.shareStandardMessageOnly();
     }
 
     public void onShareReturned() {
