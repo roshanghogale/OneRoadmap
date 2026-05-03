@@ -980,6 +980,7 @@ public class HomeFragment extends Fragment {
         SharedPreferences prefs = requireContext().getSharedPreferences("UserPrefs", Context.MODE_PRIVATE);
         String userDegree = prefs.getString("degree", "");
         String userPostGrad = prefs.getString("postGraduation", "");
+        String userDistrict = prefs.getString("district", "");
         String userTaluka = prefs.getString("taluka", "");
         String userAgeGroup = prefs.getString("ageGroup", "");
 
@@ -1021,7 +1022,11 @@ public class HomeFragment extends Fragment {
                             story.setVideoUrl(buildFullUrl(story.getVideoUrl()));
                             story.setImageUrl("video".equalsIgnoreCase(story.getMediaType()) ? story.getVideoUrl() : story.getBannerUrl());
 
-                            if (story.getIconUrl() == null || story.getImageUrl() == null) continue;
+                            // Allow stories without icons by using a default placeholder
+                            if (story.getImageUrl() == null) continue;
+                            if (story.getIconUrl() == null) {
+                                story.setIconUrl("default_icon"); // Or just leave it null and handle in Adapter
+                            }
 
                             boolean viewed = story.getDocumentId() != null && storyPrefs.getBoolean("viewed_" + story.getDocumentId(), false);
                             story.setViewed(viewed);
@@ -1031,18 +1036,38 @@ public class HomeFragment extends Fragment {
                                 boolean hasSpecificCriteria = (story.getOtherType() != null && !story.getOtherType().isEmpty()) ||
                                         !story.getBachelorDegreesSafe().isEmpty() ||
                                         !story.getMastersDegreesSafe().isEmpty() ||
+                                        !story.getDistrictSafe().isEmpty() ||
                                         !story.getTalukaSafe().isEmpty() ||
                                         !story.getAgeGroupsSafe().isEmpty() ||
                                         !story.getBhartyTypesSafe().isEmpty();
 
                                 if (hasSpecificCriteria) {
                                     shouldShow = false;
-                                    List<String> bDegrees = story.getBachelorDegreesSafe();
-                                    List<String> mDegrees = story.getMastersDegreesSafe();
-                                    if (!userDegree.isEmpty() && bDegrees.contains(userDegree)) shouldShow = true;
-                                    if (!userPostGrad.isEmpty() && mDegrees.contains(userPostGrad)) shouldShow = true;
-                                    if (!shouldShow && !userTaluka.isEmpty() && story.getTalukaSafe().contains(userTaluka)) shouldShow = true;
-                                    if (!shouldShow && !userAgeGroup.isEmpty() && story.getAgeGroupsSafe().contains(userAgeGroup)) shouldShow = true;
+                                    
+                                    // 1. Check District (Highest Priority)
+                                    if (!userDistrict.isEmpty() && containsIgnoreCase(story.getDistrictSafe(), userDistrict)) {
+                                        shouldShow = true;
+                                    }
+                                    
+                                    // 2. Check Taluka
+                                    if (!shouldShow && !userTaluka.isEmpty() && containsIgnoreCase(story.getTalukaSafe(), userTaluka)) {
+                                        shouldShow = true;
+                                    }
+                                    
+                                    // 3. Check Education
+                                    if (!shouldShow) {
+                                        List<String> bDegrees = story.getBachelorDegreesSafe();
+                                        List<String> mDegrees = story.getMastersDegreesSafe();
+                                        if (!userDegree.isEmpty() && containsIgnoreCase(bDegrees, userDegree)) shouldShow = true;
+                                        if (!userPostGrad.isEmpty() && containsIgnoreCase(mDegrees, userPostGrad)) shouldShow = true;
+                                    }
+
+                                    // 4. Check Age Group
+                                    if (!shouldShow && !userAgeGroup.isEmpty() && containsIgnoreCase(story.getAgeGroupsSafe(), userAgeGroup)) {
+                                        shouldShow = true;
+                                    }
+
+                                    // 5. Check Study Types
                                     if (!shouldShow) {
                                         List<String> bTypes = story.getBhartyTypesSafe();
                                         for (String type : bTypes) {
@@ -1075,6 +1100,14 @@ public class HomeFragment extends Fragment {
                 }
             }
         });
+    }
+
+    private boolean containsIgnoreCase(List<String> list, String target) {
+        if (list == null || target == null || target.isEmpty()) return false;
+        for (String s : list) {
+            if (s.trim().equalsIgnoreCase(target.trim())) return true;
+        }
+        return false;
     }
 
     private void loadCurrentAffairsData() {
