@@ -125,7 +125,7 @@ public class ChatFragment extends Fragment {
         filterContainer = view.findViewById(R.id.filter_container);
         sortPopular = view.findViewById(R.id.sort_popular);
         sortRecent = view.findViewById(R.id.sort_recent);
-        
+
         // Setup filter chips
         setupFilterChips();
         

@@ -245,10 +245,14 @@ public class AllBannersList extends Fragment {
 
         selectionPdfButton.setOnClickListener(v -> {
             String pdfUrl = item.getSelectionPdfUrl();
+            android.util.Log.d("SelectionPDF", "Opening PDF (See All): " + pdfUrl);
             if (pdfUrl != null && !pdfUrl.isEmpty()) {
                 coinAccessController.requestPdfAccess(
                         pdfUrl,
-                        () -> dialog.dismiss()
+                        () -> {
+                            dialog.dismiss();
+                            com.newsproject.oneroadmap.Utils.WebViewHelper.openUrlInApp(requireContext(), pdfUrl);
+                        }
                 );
             } else {
                 Toast.makeText(context, "सिलेक्शन PDF उपलब्ध नाही", Toast.LENGTH_SHORT).show();

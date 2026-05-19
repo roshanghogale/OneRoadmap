@@ -1,7 +1,6 @@
 package com.newsproject.oneroadmap.Adapters;
 
 import android.content.Context;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -58,19 +57,9 @@ public class AllBannerAdapter extends RecyclerView.Adapter<AllBannerAdapter.View
 
         Glide.with(context)
                 .load(item.getImageUrl())
-                .listener(new com.bumptech.glide.request.RequestListener<android.graphics.drawable.Drawable>() {
-                    @Override
-                    public boolean onLoadFailed(@androidx.annotation.Nullable com.bumptech.glide.load.engine.GlideException e, Object model, com.bumptech.glide.request.target.Target<android.graphics.drawable.Drawable> target, boolean isFirstResource) {
-                        Log.e("Glide", "Failed to load image: " + item.getImageUrl(), e);
-                        return false;
-                    }
-
-                    @Override
-                    public boolean onResourceReady(android.graphics.drawable.Drawable resource, Object model, com.bumptech.glide.request.target.Target<android.graphics.drawable.Drawable> target, com.bumptech.glide.load.DataSource dataSource, boolean isFirstResource) {
-                        Log.d("Glide", "Image loaded: " + item.getImageUrl());
-                        return false;
-                    }
-                })
+                .placeholder(R.drawable.student_update_1)
+                .error(R.drawable.student_update_1)
+                .centerCrop()
                 .into(holder.imageView);
 
         holder.itemView.setOnClickListener(v -> {

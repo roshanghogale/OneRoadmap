@@ -688,14 +688,29 @@ public class JobViewModel extends ViewModel {
                 return job.getTimestamp().toDate().getTime();
             }
             String created = job.getCreatedAtString();
-            if (created != null && !created.isEmpty()) {
-                // New format: "28/10/2025, 4:09:31 pm"
-                SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy, h:mm:ss a", Locale.US);
-                sdf.setTimeZone(TimeZone.getTimeZone("Asia/Kolkata")); // IST
-                Date date = sdf.parse(created);
-                if (date != null) {
-                    return date.getTime();
-                }
+            if (created == null || created.isEmpty()) return 0L;
+
+            // Use multiple formats similar to TimeAgoUtil
+            String[] formats = {
+                    "yyyy-MM-dd HH:mm:ss.SSSSSS",
+                    "yyyy-MM-dd HH:mm:ss",
+                    "dd/MM/yyyy, h:mm:ss a",
+                    "dd/MM/yyyy, HH:mm:ss",
+                    "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'",
+                    "yyyy-MM-dd"
+            };
+
+            for (String format : formats) {
+                try {
+                    SimpleDateFormat sdf = new SimpleDateFormat(format, Locale.US);
+                    if (format.contains("Z") || format.startsWith("yyyy-MM-dd")) {
+                        sdf.setTimeZone(TimeZone.getTimeZone("UTC"));
+                    } else {
+                        sdf.setTimeZone(TimeZone.getTimeZone("Asia/Kolkata"));
+                    }
+                    Date date = sdf.parse(created);
+                    if (date != null) return date.getTime();
+                } catch (Exception ignored) {}
             }
         } catch (Exception e) {
             Log.e(TAG, "Failed to parse created_at: " + job.getCreatedAtString(), e);

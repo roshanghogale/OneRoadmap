@@ -40,6 +40,7 @@ import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.PagerSnapHelper;
 import androidx.recyclerview.widget.RecyclerView;
+import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 import androidx.transition.TransitionManager;
 import androidx.viewbinding.ViewBinding;
 
@@ -1254,7 +1255,11 @@ public class HomeFragment extends Fragment {
                 ImageView logo = itemView.findViewById(R.id.imageView18);
                 titleView.setText(item.getTitle());
                 lastDate.setText(item.getFormattedLastDateMarathi());
-                timeAgo.setText(item.getTimeAgo());
+                
+                String displayTime = item.getTimeAgo();
+                Log.d("JobTime", "ID: " + item.getDocumentId() + ", CreatedAt: " + item.getCreatedAtString() + ", Display: " + displayTime);
+                timeAgo.setText(displayTime);
+
                 Glide.with(getContext()).load(item.getIconUrl()).into(logo);
                 itemView.setOnClickListener(v -> {
                     if (!isAdded()) return;
@@ -1393,8 +1398,12 @@ public class HomeFragment extends Fragment {
         });
         selectionPdfButton.setOnClickListener(v -> {
             String pdfUrl = item.getSelectionPdfUrl();
+            android.util.Log.d("SelectionPDF", "Opening PDF: " + pdfUrl);
             if (pdfUrl != null && !pdfUrl.isEmpty()) {
-                coinAccessController.requestPdfAccess(pdfUrl, () -> dialog.dismiss());
+                coinAccessController.requestPdfAccess(pdfUrl, () -> {
+                    dialog.dismiss();
+                    com.newsproject.oneroadmap.Utils.WebViewHelper.openUrlInApp(requireContext(), pdfUrl);
+                });
             } else {
                 Toast.makeText(context, "PDF not available", Toast.LENGTH_SHORT).show();
             }

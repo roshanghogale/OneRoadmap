@@ -19,7 +19,7 @@
             android:id="@+id/student_update_image"
             android:layout_width="match_parent"
             android:layout_height="210dp"
-            android:scaleType="centerInside"
+            android:scaleType="centerCrop"
             app:srcCompat="@drawable/student_update_1" />
     </androidx.cardview.widget.CardView>
 

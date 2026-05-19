@@ -57,6 +57,9 @@ public class StudentUpdateAdapter extends RecyclerView.Adapter<StudentUpdateAdap
 
         Glide.with(context)
                 .load(item.getImageUrl())
+                .placeholder(R.drawable.student_update_1)
+                .error(R.drawable.student_update_1)
+                .centerCrop()
                 .into(holder.imageView);
 
         holder.itemView.setOnClickListener(v -> {

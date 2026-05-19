@@ -2,6 +2,7 @@ package com.newsproject.oneroadmap.Utils;
 
 import com.google.firebase.Timestamp;
 
+import android.util.Log;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
@@ -21,6 +22,8 @@ public class TimeAgoUtil {
 
     public static String getTimeAgo(String dateString) {
         if (dateString == null || dateString.isEmpty()) return "Unknown";
+
+        Log.d("TimeAgoUtil", "Parsing dateString: " + dateString);
 
         // List of common formats including the one from your server
         String[] formats = {
@@ -43,18 +46,22 @@ public class TimeAgoUtil {
                 
                 Date date = sdf.parse(dateString);
                 if (date != null) {
+                    Log.d("TimeAgoUtil", "Success with format [" + format + "]: " + date.toString());
                     return calculateTimeAgo(date);
                 }
             } catch (Exception ignored) {
             }
         }
         
+        Log.e("TimeAgoUtil", "Failed to parse dateString with all known formats: " + dateString);
         return "Unknown";
     }
 
     private static String calculateTimeAgo(Date date) {
         long now = System.currentTimeMillis();
         long diffInMillis = now - date.getTime();
+
+        Log.d("TimeAgoUtil", "Now: " + now + ", Date: " + date.getTime() + ", Diff: " + diffInMillis);
 
         if (diffInMillis < 0) return "Just now";
 

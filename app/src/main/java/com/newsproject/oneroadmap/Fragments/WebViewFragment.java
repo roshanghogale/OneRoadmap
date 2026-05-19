@@ -172,7 +172,8 @@ public class WebViewFragment extends Fragment {
         url = url.toLowerCase();
         return url.endsWith(".pdf")
                 || url.contains(".pdf?")
-                || url.contains("application/pdf");
+                || url.contains("application/pdf")
+                || url.contains("drive.google.com");
     }
 
     private void setupEdgeToEdge(View rootView) {
@@ -273,7 +274,10 @@ public class WebViewFragment extends Fragment {
         }
 
         try {
-            if (isPdfUrl(urlString)) {
+            if (urlString.contains("drive.google.com")) {
+                // For Google Drive links, load directly as they have their own viewer
+                webView.loadUrl(urlString);
+            } else if (isPdfUrl(urlString)) {
                 String googleDocsUrl = "https://docs.google.com/gview?embedded=true&url=" + urlString;
                 webView.loadUrl(googleDocsUrl);
             } else {

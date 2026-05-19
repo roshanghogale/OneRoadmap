@@ -13,7 +13,6 @@ import android.util.Log;
 
 import androidx.activity.OnBackPressedCallback;
 import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
@@ -29,22 +28,16 @@ import com.google.android.gms.ads.MobileAds;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.firebase.messaging.FirebaseMessaging;
 import com.google.gson.Gson;
-import com.newsproject.oneroadmap.Adapters.StoriesAdapter;
 import com.newsproject.oneroadmap.Fragments.*;
 import com.newsproject.oneroadmap.Models.JobUpdate;
 import com.newsproject.oneroadmap.Models.JobViewModel;
-import com.newsproject.oneroadmap.Models.News;
 import com.newsproject.oneroadmap.Models.User;
 import com.newsproject.oneroadmap.R;
-import com.newsproject.oneroadmap.Utils.DataConstants;
 import com.newsproject.oneroadmap.Utils.DatabaseHelper;
-import com.newsproject.oneroadmap.Utils.NewsUtils;
 import com.newsproject.oneroadmap.database.SavedJobsDatabaseHelper;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
