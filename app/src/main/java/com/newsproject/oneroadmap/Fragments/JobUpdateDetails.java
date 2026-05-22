@@ -17,10 +17,12 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.cardview.widget.CardView;
 import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
 import com.bumptech.glide.Glide;
 import com.google.android.gms.ads.AdListener;
@@ -36,6 +38,7 @@ import com.newsproject.oneroadmap.Adapters.RecentlyOpenedAdapter;
 import com.newsproject.oneroadmap.Models.JobUpdate;
 import com.newsproject.oneroadmap.R;
 import com.newsproject.oneroadmap.Utils.CoinAccessController;
+import com.newsproject.oneroadmap.Utils.RefreshableFragment;
 import com.newsproject.oneroadmap.Utils.TimeAgoUtil;
 import com.newsproject.oneroadmap.Utils.ShareHelper;
 import com.newsproject.oneroadmap.Utils.ShareRewardManager;
@@ -53,8 +56,9 @@ import android.graphics.drawable.ColorDrawable;
 import java.util.ArrayList;
 import java.util.List;
 
-public class JobUpdateDetails extends Fragment {
+public class JobUpdateDetails extends Fragment implements RefreshableFragment {
     private static final String TAG = "JobUpdateDetails";
+    private SwipeRefreshLayout swipeRefreshLayout;
     private Handler handler;
     private JobUpdate jobUpdate;
     private SavedJobsDatabaseHelper dbHelper;
@@ -140,6 +144,9 @@ public class JobUpdateDetails extends Fragment {
         saveButton = view.findViewById(R.id.imageView3);
         fabShare = view.findViewById(R.id.fab_share);
 
+        swipeRefreshLayout = view.findViewById(R.id.swipe_refresh);
+        swipeRefreshLayout.setOnRefreshListener(this::refreshData);
+
         loadNativeAd(view);
         updateSaveButtonIcon();
 
@@ -179,6 +186,19 @@ public class JobUpdateDetails extends Fragment {
         }
 
         return view;
+    }
+
+    @Override
+    public void refreshData() {
+        if (swipeRefreshLayout != null) {
+            swipeRefreshLayout.setRefreshing(true);
+        }
+        if (jobUpdate != null && jobUpdate.getDocumentId() != null) {
+            fetchJobUpdate(jobUpdate.getDocumentId(), getView());
+        }
+        handler.postDelayed(() -> {
+            if (swipeRefreshLayout != null) swipeRefreshLayout.setRefreshing(false);
+        }, 1000);
     }
 
     private void loadNativeAd(View rootView) {
@@ -256,29 +276,53 @@ public class JobUpdateDetails extends Fragment {
                 .error(R.drawable.job_details)
                 .into(imageView25);
 
+        // Value TextViews
         TextView postNameValue = view.findViewById(R.id.post_value);
+        TextView totalPostsValue = view.findViewById(R.id.total_posts_value);
         TextView educationRequirementValue = view.findViewById(R.id.education_requirement_value);
+        TextView salaryValue = view.findViewById(R.id.salary_value);
         TextView ageRequirementValue = view.findViewById(R.id.age_requirement_value);
         TextView jobPlaceValue = view.findViewById(R.id.job_place_value);
         TextView applicationFeesValue = view.findViewById(R.id.application_fees_value);
         TextView lastDateValue = view.findViewById(R.id.last_date_value);
+        TextView description1Value = view.findViewById(R.id.description1_value);
+        TextView description2Value = view.findViewById(R.id.description2_value);
         TextView noteValue = view.findViewById(R.id.note_value);
 
-        postNameValue.setText(jobUpdate.getPostName());
-        educationRequirementValue.setText(jobUpdate.getEducationRequirementText());
-        ageRequirementValue.setText(jobUpdate.getAgeRequirement());
-        jobPlaceValue.setText(jobUpdate.getJobPlace());
-        applicationFeesValue.setText(jobUpdate.getFormattedApplicationFees());
-        lastDateValue.setText(jobUpdate.getFormattedLastDateMarathi());
+        // Container Layouts
+        View postNameContainer = view.findViewById(R.id.post_name_container);
+        View totalPostsContainer = view.findViewById(R.id.total_posts_container);
+        View educationContainer = view.findViewById(R.id.education_requirement_container);
+        View salaryContainer = view.findViewById(R.id.salary_container);
+        View ageContainer = view.findViewById(R.id.age_requirement_container);
+        View jobPlaceContainer = view.findViewById(R.id.job_place_container);
+        View feesContainer = view.findViewById(R.id.application_fees_container);
+        View lastDateContainer = view.findViewById(R.id.last_date_container);
+        View desc1Container = view.findViewById(R.id.description1_container);
+        View desc2Container = view.findViewById(R.id.description2_container);
+        View noteContainer = view.findViewById(R.id.note_container);
+
+        // Set Values and Handle Visibility
+        setVisibility(postNameContainer, postNameValue, jobUpdate.getPostName());
+        setVisibility(totalPostsContainer, totalPostsValue, jobUpdate.getTotalPosts());
+        setVisibility(educationContainer, educationRequirementValue, jobUpdate.getEducationRequirementText());
+        setVisibility(salaryContainer, salaryValue, jobUpdate.getFormattedSalary());
+        setVisibility(jobPlaceContainer, jobPlaceValue, jobUpdate.getJobPlace());
+        setVisibility(desc1Container, description1Value, jobUpdate.getDescription1());
+        setVisibility(desc2Container, description2Value, jobUpdate.getDescription2());
+        setVisibility(noteContainer, noteValue, jobUpdate.getNote());
+
+        // Special handling for "private" type and empty fields
+        boolean isPrivate = "private".equalsIgnoreCase(jobUpdate.getType());
         
-        LinearLayout noteContainer = view.findViewById(R.id.note_container);
-        String note = jobUpdate.getNote();
-        if (note != null && !note.isEmpty()) {
-            noteContainer.setVisibility(View.VISIBLE);
-            noteValue.setText(note);
-            noteValue.setTextColor(Color.parseColor("#000000"));
+        if (isPrivate) {
+            ageContainer.setVisibility(View.GONE);
+            feesContainer.setVisibility(View.GONE);
+            lastDateContainer.setVisibility(View.GONE);
         } else {
-            noteContainer.setVisibility(View.GONE);
+            setVisibility(ageContainer, ageRequirementValue, jobUpdate.getAgeRequirement());
+            setVisibility(feesContainer, applicationFeesValue, jobUpdate.getFormattedApplicationFees());
+            setVisibility(lastDateContainer, lastDateValue, jobUpdate.getFormattedLastDateMarathi());
         }
 
         setupLink(view, R.id.application_link_container, R.id.textView45, jobUpdate.getApplicationLink(), "अर्जाची लिंक");
@@ -288,6 +332,15 @@ public class JobUpdateDetails extends Fragment {
 
         recentDb.addOrUpdateJob(jobUpdate);
         loadRecentlyOpened(view);
+    }
+
+    private void setVisibility(View container, TextView textView, String value) {
+        if (value != null && !value.trim().isEmpty() && !value.equalsIgnoreCase("N/A")) {
+            container.setVisibility(View.VISIBLE);
+            textView.setText(value);
+        } else {
+            container.setVisibility(View.GONE);
+        }
     }
 
     private void setupLink(View root, int containerId, int textViewId, String url, String defaultText) {

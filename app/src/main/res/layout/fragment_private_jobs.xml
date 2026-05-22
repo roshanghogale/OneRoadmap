@@ -136,83 +136,97 @@
                 android:textColor="@color/text_primary"
                 android:textSize="24sp" />
 
-            <LinearLayout
+            <HorizontalScrollView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginStart="16dp"
-                android:layout_marginTop="8dp"
-                android:layout_marginEnd="16dp"
-                android:orientation="horizontal">
+                android:scrollbars="none"
+                android:layout_marginTop="8dp">
 
-                <TextView
-                    android:id="@+id/private_internship"
-                    android:layout_width="match_parent"
+                <LinearLayout
+                    android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginEnd="3dp"
-                    android:layout_weight="1"
-                    android:background="@drawable/rectangle_with_stroke"
-                    android:fontFamily="@font/yantramanav_regular"
-                    android:padding="8dp"
-                    android:text="Internship"
-                    android:textAlignment="center"
-                    android:textColor="@color/text_primary"
-                    android:textSize="14sp" />
+                    android:orientation="horizontal"
+                    android:paddingStart="16dp"
+                    android:paddingEnd="16dp">
 
-                <TextView
-                    android:id="@+id/private_regular"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="3dp"
-                    android:layout_marginEnd="3dp"
-                    android:layout_weight="1"
-                    android:background="@drawable/rectangle_with_stroke"
-                    android:fontFamily="@font/yantramanav_regular"
-                    android:padding="8dp"
-                    android:text="Regular Job"
-                    android:textAlignment="center"
-                    android:textColor="@color/text_primary"
-                    android:textSize="14sp" />
-
-                <androidx.cardview.widget.CardView
-                    android:id="@+id/chip_education"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="3dp"
-                    android:layout_weight="1"
-                    app:cardBackgroundColor="#0B6581"
-                    app:cardCornerRadius="8dp"
-                    app:cardElevation="0dp">
-
-                    <LinearLayout
+                    <TextView
+                        android:id="@+id/private_internship"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:layout_marginStart="3dp"
                         android:layout_marginEnd="6dp"
-                        android:gravity="center_vertical"
-                        android:orientation="horizontal"
-                        android:padding="8dp">
+                        android:background="@drawable/rectangle_with_stroke"
+                        android:fontFamily="@font/yantramanav_regular"
+                        android:paddingHorizontal="16dp"
+                        android:paddingVertical="8dp"
+                        android:text="Internship"
+                        android:textAlignment="center"
+                        android:textColor="@color/text_primary"
+                        android:textSize="14sp" />
 
-                        <TextView
+                    <TextView
+                        android:id="@+id/private_regular"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginEnd="6dp"
+                        android:background="@drawable/rectangle_with_stroke"
+                        android:fontFamily="@font/yantramanav_regular"
+                        android:paddingHorizontal="16dp"
+                        android:paddingVertical="8dp"
+                        android:text="Regular Job"
+                        android:textAlignment="center"
+                        android:textColor="@color/text_primary"
+                        android:textSize="14sp" />
+
+                    <TextView
+                        android:id="@+id/private_work_home"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginEnd="6dp"
+                        android:background="@drawable/rectangle_with_stroke"
+                        android:fontFamily="@font/yantramanav_regular"
+                        android:paddingHorizontal="16dp"
+                        android:paddingVertical="8dp"
+                        android:text="Work Home"
+                        android:textAlignment="center"
+                        android:textColor="@color/text_primary"
+                        android:textSize="14sp" />
+
+                    <androidx.cardview.widget.CardView
+                        android:id="@+id/chip_education"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        app:cardBackgroundColor="#0B6581"
+                        app:cardCornerRadius="8dp"
+                        app:cardElevation="0dp">
+
+                        <LinearLayout
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:layout_marginStart="3dp"
-                            android:layout_marginEnd="6dp"
-                            android:fontFamily="@font/yantramanav_regular"
-                            android:text="Education"
-                            android:textAlignment="center"
-                            android:textColor="@color/white"
-                            android:textSize="14sp" />
+                            android:gravity="center_vertical"
+                            android:orientation="horizontal"
+                            android:paddingHorizontal="16dp"
+                            android:paddingVertical="8dp">
 
-                        <ImageView
-                            android:id="@+id/imageView13"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:src="@drawable/arrow_down"
-                            app:tint="#FFFFFF" />
-                    </LinearLayout>
-                </androidx.cardview.widget.CardView>
-            </LinearLayout>
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:fontFamily="@font/yantramanav_regular"
+                                android:text="Education"
+                                android:textAlignment="center"
+                                android:textColor="@color/white"
+                                android:textSize="14sp" />
+
+                            <ImageView
+                                android:id="@+id/imageView13"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginStart="8dp"
+                                android:src="@drawable/arrow_down"
+                                app:tint="#FFFFFF" />
+                        </LinearLayout>
+                    </androidx.cardview.widget.CardView>
+                </LinearLayout>
+            </HorizontalScrollView>
 
             <View
                 android:layout_width="match_parent"

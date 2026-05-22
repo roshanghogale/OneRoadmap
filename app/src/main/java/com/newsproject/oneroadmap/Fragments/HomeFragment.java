@@ -53,6 +53,7 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.newsproject.oneroadmap.Adapters.CurrentAffairsAdapter;
 import com.newsproject.oneroadmap.Adapters.NewsAdapter;
+import com.newsproject.oneroadmap.Adapters.RecentlyOpenedAdapter;
 import com.newsproject.oneroadmap.Adapters.StoriesAdapter;
 import com.newsproject.oneroadmap.Adapters.StoryAdapter;
 import com.newsproject.oneroadmap.Adapters.StudentUpdateAdapter;
@@ -113,7 +114,9 @@ public class HomeFragment extends Fragment {
     private RecyclerView recentlyOpenedRecycler;
     private RecyclerView studentUpdatesRecycler;
     private RecyclerView recyclerStudyMaterial;
+    private RecyclerView recentlyOpenedJobsRecycler;
     private LinearLayout recentRecycler;
+    private LinearLayout recentlyOpenedSection;
     private ScrollView mainScrollView;
     private ImageCarousel carousel;
     private StoryAdapter storyAdapter;
@@ -460,6 +463,8 @@ public class HomeFragment extends Fragment {
         userName = view.findViewById(R.id.user_name);
         watchEarnContainer = view.findViewById(R.id.fab_watch);
         watchEarnText = view.findViewById(R.id.watch_earn_text);
+        recentlyOpenedJobsRecycler = view.findViewById(R.id.recently_opened_jobs_recycler);
+        recentlyOpenedSection = view.findViewById(R.id.recently_opened_section);
 
         LinearLayout studyCards = view.findViewById(R.id.study_material_cards_linear);
         govLinear = view.findViewById(R.id.government_linear);
@@ -524,7 +529,36 @@ public class HomeFragment extends Fragment {
         PagerSnapHelper snapHelper = new PagerSnapHelper();
         snapHelper.attachToRecyclerView(storiesPlayer);
 
+        // Recently Opened Jobs Section at the bottom
+        recentlyOpenedJobsRecycler.setLayoutManager(new LinearLayoutManager(getContext()));
+        recentlyOpenedJobsRecycler.setNestedScrollingEnabled(false);
+        setupRecentlyOpenedBottom();
+
         setupClickListeners();
+    }
+
+    private void setupRecentlyOpenedBottom() {
+        if (recentlyOpenedSection == null || recentlyOpenedJobsRecycler == null) return;
+
+        List<JobUpdate> recentJobs = recentDb.getAllRecent();
+        if (recentJobs != null && !recentJobs.isEmpty()) {
+            recentlyOpenedSection.setVisibility(View.VISIBLE);
+            
+            recentlyOpenedJobsRecycler.setLayoutManager(
+                    new LinearLayoutManager(getContext(), LinearLayoutManager.HORIZONTAL, false));
+            
+            RecentlyOpenedAdapter bottomAdapter = new RecentlyOpenedAdapter(recentJobs, job -> {
+                JobUpdateDetails fragment = JobUpdateDetails.newInstance(job);
+                getParentFragmentManager()
+                        .beginTransaction()
+                        .replace(R.id.fragment_container, fragment)
+                        .addToBackStack(null)
+                        .commit();
+            });
+            recentlyOpenedJobsRecycler.setAdapter(bottomAdapter);
+        } else {
+            recentlyOpenedSection.setVisibility(View.GONE);
+        }
     }
 
     private void setupClickListeners() {
@@ -1343,6 +1377,7 @@ public class HomeFragment extends Fragment {
     @Override
     public void onResume() {
         super.onResume();
+        setupRecentlyOpenedBottom();
         handler.postDelayed(watchEarnRunnable, 2000);
     }
 

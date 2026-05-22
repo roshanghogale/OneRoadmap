@@ -429,34 +429,38 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
         JobUpdate job = new JobUpdate();
 
         job.setDocumentId(data.get("id"));
-        job.setPostName(data.get("post_name")); // FIX
+        
+        // Support both old snake_case and new camelCase keys
+        job.setPostName(data.containsKey("postName") ? data.get("postName") : data.get("post_name"));
 
         job.setTitle(data.get("title"));
         job.setSalary(data.get("salary"));
-        job.setLastDateString(data.get("last_date"));
+        job.setLastDateString(data.containsKey("lastDate") ? data.get("lastDate") : data.get("last_date"));
 
-        job.setAgeRequirement(data.get("age_requirement"));
-        job.setJobPlace(data.get("job_place"));
-        job.setApplicationFees(data.get("application_fees"));
-        job.setApplicationLink(data.get("application_link"));
+        job.setAgeRequirement(data.containsKey("ageRequirement") ? data.get("ageRequirement") : data.get("age_requirement"));
+        job.setJobPlace(data.containsKey("jobPlace") ? data.get("jobPlace") : data.get("job_place"));
+        job.setApplicationFees(data.containsKey("applicationFees") ? data.get("applicationFees") : data.get("application_fees"));
+        job.setApplicationLink(data.containsKey("applicationLink") ? data.get("applicationLink") : data.get("application_link"));
 
-        job.setType(data.get("job_type"));
-        job.setSubType(data.get("sub_type"));
+        job.setType(data.containsKey("type") ? data.get("type") : data.get("job_type"));
+        job.setSubType(data.containsKey("subType") ? data.get("subType") : data.get("sub_type"));
 
-        job.setEducationRequirement(data.get("education_requirement"));
-        job.setTotalPosts(data.get("total_posts"));
+        job.setEducationRequirement(data.containsKey("educationRequirement") ? data.get("educationRequirement") : data.get("education_requirement"));
+        job.setTotalPosts(data.containsKey("totalPosts") ? data.get("totalPosts") : data.get("total_posts"));
         job.setNote(data.get("note"));
+        job.setDescription1(data.get("description1"));
+        job.setDescription2(data.get("description2"));
 
-        job.setIconUrl(data.get("icon_url"));
-        job.setImageUrl(data.get("image_url"));
+        job.setIconUrl(data.containsKey("iconUrl") ? data.get("iconUrl") : data.get("icon_url"));
+        job.setImageUrl(data.containsKey("imageUrl") ? data.get("imageUrl") : data.get("image_url"));
 
-        job.setNotificationPdfLink(data.get("pdf_url"));
-        job.setSelectionPdfLink(data.get("selection_pdf_url"));
-        job.setSyllabusPdf(data.get("syllabus_pdf_url"));
+        job.setNotificationPdfLink(data.containsKey("pdfUrl") ? data.get("pdfUrl") : data.get("pdf_url"));
+        job.setSelectionPdfLink(data.containsKey("selectionPdfUrl") ? data.get("selectionPdfUrl") : data.get("selection_pdf_url"));
+        job.setSyllabusPdf(data.containsKey("syllabusPdfUrl") ? data.get("syllabusPdfUrl") : data.get("syllabus_pdf_url"));
 
-        job.setEducationCategories(parseJsonArray(data.get("education_categories")));
-        job.setBachelorDegrees(parseJsonArray(data.get("bachelor_degrees")));
-        job.setMastersDegrees(parseJsonArray(data.get("masters_degrees")));
+        job.setEducationCategories(parseJsonArray(data.containsKey("educationCategories") ? data.get("educationCategories") : data.get("education_categories")));
+        job.setBachelorDegrees(parseJsonArray(data.containsKey("bachelorDegrees") ? data.get("bachelorDegrees") : data.get("bachelor_degrees")));
+        job.setMastersDegrees(parseJsonArray(data.containsKey("mastersDegrees") ? data.get("mastersDegrees") : data.get("masters_degrees")));
 
         return job;
     }

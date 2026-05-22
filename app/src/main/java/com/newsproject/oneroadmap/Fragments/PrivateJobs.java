@@ -68,7 +68,7 @@ public class PrivateJobs extends Fragment {
     private ImageView backButton;
     private RecyclerView allJobRecycler;
     private FloatingActionButton fabScrollTop;
-    private TextView privateInternship, privateRegular;
+    private TextView privateInternship, privateRegular, privateWorkHome;
     private CardView chipEducation;
     private JobViewModel viewModel;
     private JobUpdateAdapter adapter;
@@ -87,6 +87,7 @@ public class PrivateJobs extends Fragment {
         backButton = view.findViewById(R.id.back_button);
         privateInternship = view.findViewById(R.id.private_internship);
         privateRegular = view.findViewById(R.id.private_regular);
+        privateWorkHome = view.findViewById(R.id.private_work_home);
         chipEducation = view.findViewById(R.id.chip_education);
         fabScrollTop = view.findViewById(R.id.fab_scroll_top);
 
@@ -121,6 +122,7 @@ public class PrivateJobs extends Fragment {
     private void setupListeners() {
         privateInternship.setOnClickListener(v -> viewModel.handleTypeChipClick("private", "internship", requireContext()));
         privateRegular.setOnClickListener(v -> viewModel.handleTypeChipClick("private", "regular-job", requireContext()));
+        privateWorkHome.setOnClickListener(v -> viewModel.handleTypeChipClick("private", "Work From Home", requireContext()));
 
         if (fabScrollTop != null) {
             fabScrollTop.setOnClickListener(v -> scrollToTop());
@@ -155,6 +157,8 @@ public class PrivateJobs extends Fragment {
             privateInternship.setTextColor(defaultColor);
             privateRegular.setBackgroundResource(R.drawable.rectangle_with_stroke);
             privateRegular.setTextColor(defaultColor);
+            privateWorkHome.setBackgroundResource(R.drawable.rectangle_with_stroke);
+            privateWorkHome.setTextColor(defaultColor);
             chipEducation.setCardBackgroundColor(ContextCompat.getColor(requireContext(), R.color.chip_default));
 
             if (selected != null) {
@@ -164,6 +168,9 @@ public class PrivateJobs extends Fragment {
                 } else if (selected.equals("private-regular-job")) {
                     privateRegular.setBackgroundResource(R.drawable.rectangle_filled);
                     privateRegular.setTextColor(selectedColor);
+                } else if (selected.equals("private-Work From Home")) {
+                    privateWorkHome.setBackgroundResource(R.drawable.rectangle_filled);
+                    privateWorkHome.setTextColor(selectedColor);
                 } else if ("education".equals(selected)) {
                     chipEducation.setCardBackgroundColor(ContextCompat.getColor(requireContext(), R.color.chip_selected));
                 }

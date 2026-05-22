@@ -23,9 +23,9 @@ public class JobUpdate implements Parcelable {
     private String title;
 
     @SerializedName("salary")
-    private String salary;  // ← Changed to String
+    private String salary;
 
-    @SerializedName("last_date")
+    @SerializedName(value = "lastDate", alternate = {"last_date"})
     private String lastDateString;
 
     private Timestamp lastDateTimestamp;
@@ -33,43 +33,43 @@ public class JobUpdate implements Parcelable {
     @SerializedName("time_ago")
     private String timeAgo;
 
-    @SerializedName("icon_url")
+    @SerializedName(value = "iconUrl", alternate = {"icon_url"})
     private String iconUrl;
 
-    @SerializedName("image_url")
+    @SerializedName(value = "imageUrl", alternate = {"image_url"})
     private String imageUrl;
 
-    @SerializedName("post_name")
+    @SerializedName(value = "postName", alternate = {"post_name"})
     private String postName;
 
-    @SerializedName("education_categories")
+    @SerializedName(value = "educationCategories", alternate = {"education_categories"})
     private List<String> educationCategories;
 
-    @SerializedName("bachelor_degrees")
+    @SerializedName(value = "bachelorDegrees", alternate = {"bachelor_degrees"})
     private List<String> bachelorDegrees;
 
-    @SerializedName("masters_degrees")
+    @SerializedName(value = "mastersDegrees", alternate = {"masters_degrees"})
     private List<String> mastersDegrees;
 
-    @SerializedName("age_requirement")
+    @SerializedName(value = "ageRequirement", alternate = {"age_requirement"})
     private String ageRequirement;
 
-    @SerializedName("job_place")
+    @SerializedName(value = "jobPlace", alternate = {"job_place"})
     private String jobPlace;
 
-    @SerializedName("application_fees")
-    private String applicationFees;  // ← Changed to String
+    @SerializedName(value = "applicationFees", alternate = {"application_fees"})
+    private String applicationFees;
 
-    @SerializedName("application_link")
+    @SerializedName(value = "applicationLink", alternate = {"application_link"})
     private String applicationLink;
 
-    @SerializedName("pdf_url")
+    @SerializedName(value = "pdfUrl", alternate = {"pdf_url"})
     private String notificationPdfLink;
 
-    @SerializedName("selection_pdf_url")
+    @SerializedName(value = "selectionPdfUrl", alternate = {"selection_pdf_url"})
     private String selectionPdfLink;
 
-    @SerializedName("syllabus_pdf_url")
+    @SerializedName(value = "syllabusPdfUrl", alternate = {"syllabus_pdf_url"})
     private String syllabusPdf;
 
     @SerializedName("id")
@@ -78,64 +78,34 @@ public class JobUpdate implements Parcelable {
     @SerializedName("type")
     private String type;
 
-    @SerializedName("sub_type")
+    @SerializedName(value = "subType", alternate = {"sub_type"})
     private String subType;
 
     @SerializedName("description")
     private String description;
 
+    @SerializedName("description1")
+    private String description1;
+
+    @SerializedName("description2")
+    private String description2;
+
     @SerializedName("note")
     private String note;
 
-    @SerializedName("created_at")
+    @SerializedName(value = "createdAt", alternate = {"created_at"})
     private String createdAtString;
 
-    @SerializedName("education_requirement")
-    private String educationRequirement;  // ← NEW
+    @SerializedName(value = "educationRequirement", alternate = {"education_requirement"})
+    private String educationRequirement;
 
-    @SerializedName("total_posts")
-    private String totalPosts;  // ← NEW
+    @SerializedName(value = "totalPosts", alternate = {"total_posts"})
+    private String totalPosts;
 
     @ServerTimestamp
     private Timestamp timestamp;
 
     public JobUpdate() {}
-
-    public JobUpdate(String title, String salary, String lastDateString, Timestamp lastDateTimestamp, String timeAgo,
-                     String iconUrl, String imageUrl, String postName, List<String> educationCategories,
-                     List<String> bachelorDegrees, List<String> mastersDegrees, String ageRequirement,
-                     String jobPlace, String applicationFees, String applicationLink, String notificationPdfLink,
-                     String selectionPdfLink, String syllabusPdf, String documentId, String type, String subType,
-                     String description, String note, String createdAtString, String educationRequirement,
-                     String totalPosts, Timestamp timestamp) {
-        this.title = title;
-        this.salary = salary;
-        this.lastDateString = lastDateString;
-        this.lastDateTimestamp = lastDateTimestamp;
-        this.timeAgo = timeAgo;
-        this.iconUrl = iconUrl;
-        this.imageUrl = imageUrl;
-        this.postName = postName;
-        this.educationCategories = educationCategories;
-        this.bachelorDegrees = bachelorDegrees;
-        this.mastersDegrees = mastersDegrees;
-        this.ageRequirement = ageRequirement;
-        this.jobPlace = jobPlace;
-        this.applicationFees = applicationFees;
-        this.applicationLink = applicationLink;
-        this.notificationPdfLink = notificationPdfLink;
-        this.selectionPdfLink = selectionPdfLink;
-        this.syllabusPdf = syllabusPdf;
-        this.documentId = documentId;
-        this.type = type;
-        this.subType = subType;
-        this.description = description;
-        this.note = note;
-        this.createdAtString = createdAtString;
-        this.educationRequirement = educationRequirement;
-        this.totalPosts = totalPosts;
-        this.timestamp = timestamp;
-    }
 
     protected JobUpdate(Parcel in) {
         title = in.readString();
@@ -160,6 +130,8 @@ public class JobUpdate implements Parcelable {
         type = in.readString();
         subType = in.readString();
         description = in.readString();
+        description1 = in.readString();
+        description2 = in.readString();
         note = in.readString();
         createdAtString = in.readString();
         educationRequirement = in.readString();
@@ -189,7 +161,6 @@ public class JobUpdate implements Parcelable {
     }
 
     public String getFormattedLastDate() {
-        // Use India locale, English digits
         return getFormattedLastDateInternal(new Locale("en", "IN"), false);
     }
 
@@ -282,6 +253,12 @@ public class JobUpdate implements Parcelable {
     public String getDescription() { return description; }
     public void setDescription(String description) { this.description = description; }
 
+    public String getDescription1() { return description1; }
+    public void setDescription1(String description1) { this.description1 = description1; }
+
+    public String getDescription2() { return description2; }
+    public void setDescription2(String description2) { this.description2 = description2; }
+
     public List<String> getEducationCategories() { return educationCategories; }
     public void setEducationCategories(List<String> educationCategories) { this.educationCategories = educationCategories; }
 
@@ -335,6 +312,8 @@ public class JobUpdate implements Parcelable {
         parcel.writeString(type);
         parcel.writeString(subType);
         parcel.writeString(description);
+        parcel.writeString(description1);
+        parcel.writeString(description2);
         parcel.writeString(note);
         parcel.writeString(createdAtString);
         parcel.writeString(educationRequirement);
