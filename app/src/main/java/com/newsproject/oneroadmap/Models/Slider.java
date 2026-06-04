@@ -114,9 +114,12 @@ public class Slider {
     public String getPostDocumentId() { return postDocumentId; }
     public String getWebUrl() { return webUrl; }
     public String getType() { return type; }
+    public void setType(String type) { this.type = type; }
     public String getPageType() { return pageType; }
     public boolean isSpecific() { return isSpecific; }
     public String getOtherType() { return otherType; }
     public String getImageUrl() { return imageUrl; }
     public void setImageUrl(String imageUrl) { this.imageUrl = imageUrl; }
+    public void setPostDocumentId(String postDocumentId) { this.postDocumentId = postDocumentId; }
+    public void setWebUrl(String webUrl) { this.webUrl = webUrl; }
 }

@@ -39,12 +39,22 @@ import com.newsproject.oneroadmap.Utils.BuildConfig;
 import androidx.core.content.res.ResourcesCompat;
 
 import java.io.IOException;
-import java.util.Map;
+
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import androidx.viewbinding.ViewBinding;
+
+import org.imaginativeworld.whynotimagecarousel.listener.CarouselListener;
+import com.newsproject.oneroadmap.Models.JobUpdate;
+import com.newsproject.oneroadmap.Models.News;
+
+import com.newsproject.oneroadmap.Utils.SliderNavigationHelper;
 
 import org.imaginativeworld.whynotimagecarousel.ImageCarousel;
 import org.imaginativeworld.whynotimagecarousel.model.CarouselItem;
-
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -54,8 +64,6 @@ import okhttp3.Callback;
 import okhttp3.Request;
 import okhttp3.Response;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -515,6 +523,9 @@ public class ChatFragment extends Fragment {
                                     }
 
                                     List<CarouselItem> carouselItems = new ArrayList<>();
+                                    List<Slider> chatSliders = new ArrayList<>();
+                                    Map<String, JobUpdate> jobUpdateCache = new HashMap<>();
+                                    Map<String, News> newsCache = new HashMap<>();
 
                                     for (int i = 0; i < arr.size(); i++) {
                                         Slider slider = new Gson().fromJson(arr.get(i), Slider.class);
@@ -526,13 +537,16 @@ public class ChatFragment extends Fragment {
                                         if (!"chat".equalsIgnoreCase(slider.getPageType())) continue;
 
                                         String imageUrl = slider.getImageUrl().replace("http://", "https://");
+                                        chatSliders.add(slider);
                                         carouselItems.add(new CarouselItem(imageUrl, slider.getTitle()));
+                                        SliderNavigationHelper.preloadLinkedContent(
+                                                slider, jobUpdateCache, newsCache, requireContext());
                                     }
 
                                     mainHandler.post(() -> {
                                         if (!isAdded()) return;
 
-                                        carousel.setData(carouselItems); // ✅ SAFE & CORRECT
+                                        carousel.setData(carouselItems);
 
                                         if (carouselItems.isEmpty()) {
                                             Toast.makeText(requireContext(), "No chat sliders available", Toast.LENGTH_SHORT).show();
@@ -540,6 +554,34 @@ public class ChatFragment extends Fragment {
                                         } else {
                                             Log.d(TAG, "Chat sliders loaded: " + carouselItems.size());
                                         }
+
+                                        carousel.setCarouselListener(new CarouselListener() {
+                                            @Override
+                                            public void onLongClick(int i, @NonNull CarouselItem carouselItem) {
+                                            }
+
+                                            @Override
+                                            public void onBindViewHolder(@NonNull ViewBinding viewBinding,
+                                                                         @NonNull CarouselItem carouselItem, int i) {
+                                            }
+
+                                            @Nullable
+                                            @Override
+                                            public ViewBinding onCreateViewHolder(@NonNull LayoutInflater layoutInflater,
+                                                                                  @NonNull ViewGroup viewGroup) {
+                                                return null;
+                                            }
+
+                                            @Override
+                                            public void onClick(int position, CarouselItem carouselItem) {
+                                                if (!isAdded() || getContext() == null) return;
+                                                Slider selectedSlider = SliderNavigationHelper.resolveSlider(
+                                                        chatSliders, position, carouselItem);
+                                                if (selectedSlider == null) return;
+                                                SliderNavigationHelper.handleSliderClick(
+                                                        requireContext(), selectedSlider, jobUpdateCache, newsCache, null);
+                                            }
+                                        });
                                     });
 
                                 } catch (Exception e) {

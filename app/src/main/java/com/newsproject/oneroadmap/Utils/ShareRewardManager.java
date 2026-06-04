@@ -35,21 +35,32 @@ public class ShareRewardManager {
     }
 
     /**
-     * Call this right before launching the share intent
+     * Call this right before launching the share intent.
+     * @return true if share tracking started successfully
      */
-    public void startShare() {
+    public boolean startShare() {
         if (isCooldownActive()) {
             Toast.makeText(context, "Please wait before sharing again", Toast.LENGTH_SHORT).show();
-            return;
+            return false;
         }
-        
+
         if (isDailyLimitReached()) {
             Toast.makeText(context, "Daily share limit reached", Toast.LENGTH_SHORT).show();
-            return;
+            return false;
         }
 
         shareStartTime = System.currentTimeMillis();
         isShareInProgress = true;
+        return true;
+    }
+
+    public boolean isShareInProgress() {
+        return isShareInProgress;
+    }
+
+    public void cancelShare() {
+        isShareInProgress = false;
+        shareStartTime = 0;
     }
 
     /**

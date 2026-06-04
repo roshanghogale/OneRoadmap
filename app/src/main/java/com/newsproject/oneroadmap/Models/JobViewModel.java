@@ -18,16 +18,13 @@ import com.google.gson.reflect.TypeToken;
 import com.newsproject.oneroadmap.Fragments.JobUpdateDetails;
 import com.newsproject.oneroadmap.R;
 import com.newsproject.oneroadmap.Utils.BuildConfig;
+import com.newsproject.oneroadmap.Utils.TimeAgoUtil;
 
 import java.io.IOException;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Date;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
-import java.util.TimeZone;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -689,29 +686,7 @@ public class JobViewModel extends ViewModel {
             }
             String created = job.getCreatedAtString();
             if (created == null || created.isEmpty()) return 0L;
-
-            // Use multiple formats similar to TimeAgoUtil
-            String[] formats = {
-                    "yyyy-MM-dd HH:mm:ss.SSSSSS",
-                    "yyyy-MM-dd HH:mm:ss",
-                    "dd/MM/yyyy, h:mm:ss a",
-                    "dd/MM/yyyy, HH:mm:ss",
-                    "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'",
-                    "yyyy-MM-dd"
-            };
-
-            for (String format : formats) {
-                try {
-                    SimpleDateFormat sdf = new SimpleDateFormat(format, Locale.US);
-                    if (format.contains("Z") || format.startsWith("yyyy-MM-dd")) {
-                        sdf.setTimeZone(TimeZone.getTimeZone("UTC"));
-                    } else {
-                        sdf.setTimeZone(TimeZone.getTimeZone("Asia/Kolkata"));
-                    }
-                    Date date = sdf.parse(created);
-                    if (date != null) return date.getTime();
-                } catch (Exception ignored) {}
-            }
+            return TimeAgoUtil.parseJobUpdateMillis(created);
         } catch (Exception e) {
             Log.e(TAG, "Failed to parse created_at: " + job.getCreatedAtString(), e);
         }

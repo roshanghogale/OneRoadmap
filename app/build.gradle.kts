@@ -13,8 +13,8 @@ android {
         applicationId = "com.newsproject.oneroadmap"
         minSdk = 24
         targetSdk = 36
-        versionCode = 5
-        versionName = "1.4"
+        versionCode = 6
+        versionName = "1.5"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -63,7 +63,6 @@ dependencies {
     implementation(libs.firebase.messaging)
     implementation(libs.gson)
     implementation(libs.cardview)
-    implementation(libs.firebase.crashlytics.buildtools)
     implementation(libs.legacy.support.v4)
     implementation(libs.recyclerview)
     implementation("androidx.viewpager2:viewpager2:1.1.0")

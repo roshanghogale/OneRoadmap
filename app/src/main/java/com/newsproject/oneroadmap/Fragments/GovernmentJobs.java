@@ -39,7 +39,7 @@ import androidx.cardview.widget.CardView;
 import androidx.appcompat.app.AlertDialog;
 import androidx.viewbinding.ViewBinding;
 
-import com.newsproject.oneroadmap.Utils.NewsUtils;
+import com.newsproject.oneroadmap.Utils.SliderNavigationHelper;
 import com.newsproject.oneroadmap.databinding.DialogEducationFilterBinding;
 
 import org.imaginativeworld.whynotimagecarousel.ImageCarousel;
@@ -402,17 +402,8 @@ public class GovernmentJobs extends Fragment {
 
                                     if (shouldShow) {
                                         sliders.add(slider);
-                                        if ("post".equalsIgnoreCase(slider.getType())) {
-                                            String id = slider.getPostDocumentId();
-                                            if (id != null && !id.trim().isEmpty()) {
-                                                JobViewModel.fetchJobUpdate(id, jobUpdateCache, getContext(), null);
-                                            }
-                                        } else if ("news".equalsIgnoreCase(slider.getType())) {
-                                            String id = slider.getPostDocumentId();
-                                            if (id != null && !id.trim().isEmpty()) {
-                                                NewsUtils.fetchNews(id, newsCache, getContext(), null);
-                                            }
-                                        }
+                                        SliderNavigationHelper.preloadLinkedContent(
+                                                slider, jobUpdateCache, newsCache, getContext());
                                         Log.d(TAG, "Added government slider: " + slider.getTitle());
                                     }
                                 }
@@ -457,38 +448,12 @@ public class GovernmentJobs extends Fragment {
 
                                         @Override
                                         public void onClick(int position, CarouselItem carouselItem) {
-                                            if (position < 0 || position >= sliders.size()) return;
-                                            Slider selectedSlider = sliders.get(position);
-                                            String id = selectedSlider.getPostDocumentId();
-                                            if (id == null || id.trim().isEmpty()) {
-                                                if (getContext() != null) {
-                                                    Toast.makeText(getContext(), "Content unavailable", Toast.LENGTH_SHORT).show();
-                                                }
-                                                return;
-                                            }
-
-                                            android.app.ProgressDialog progressDialog = new android.app.ProgressDialog(getContext());
-                                            progressDialog.setMessage("Loading...");
-                                            progressDialog.setCancelable(false);
-                                            progressDialog.show();
-
-                                            if ("post".equalsIgnoreCase(selectedSlider.getType())) {
-                                                JobUpdate job = jobUpdateCache.get(id);
-                                                if (job != null) {
-                                                    JobViewModel.navigateToJobDetails(job, getContext(), progressDialog);
-                                                } else {
-                                                    JobViewModel.fetchJobUpdate(id, jobUpdateCache, getContext(), () ->
-                                                            JobViewModel.navigateToJobDetails(jobUpdateCache.get(id), getContext(), progressDialog));
-                                                }
-                                            } else if ("news".equalsIgnoreCase(selectedSlider.getType())) {
-                                                News news = newsCache.get(id);
-                                                if (news != null) {
-                                                    NewsUtils.showNewsDialog(news, getContext(), progressDialog);
-                                                } else {
-                                                    NewsUtils.fetchNews(id, newsCache, getContext(), () ->
-                                                            NewsUtils.showNewsDialog(newsCache.get(id), getContext(), progressDialog));
-                                                }
-                                            }
+                                            if (getContext() == null) return;
+                                            Slider selectedSlider = SliderNavigationHelper.resolveSlider(
+                                                    sliders, position, carouselItem);
+                                            if (selectedSlider == null) return;
+                                            SliderNavigationHelper.handleSliderClick(
+                                                    getContext(), selectedSlider, jobUpdateCache, newsCache, null);
                                         }
                                     });
                                 }

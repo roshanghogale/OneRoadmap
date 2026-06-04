@@ -169,7 +169,7 @@ public class JobUpdate implements Parcelable {
         if (timestamp != null) {
             return TimeAgoUtil.getTimeAgo(timestamp);
         }
-        return TimeAgoUtil.getTimeAgo(createdAtString);
+        return TimeAgoUtil.getTimeAgoForJobUpdate(createdAtString);
     }
 
     public String getEducationSummary() {

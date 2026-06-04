@@ -71,6 +71,7 @@ public class JobUpdateDetails extends Fragment implements RefreshableFragment {
     private CoinAccessController coinAccessController;
     private String userId;
     private NativeAd mNativeAd;
+    private boolean waitingForShareReturn = false;
 
     public JobUpdateDetails() {
         // Required empty public constructor
@@ -125,13 +126,33 @@ public class JobUpdateDetails extends Fragment implements RefreshableFragment {
 
         shareLauncher = registerForActivityResult(
                 new ActivityResultContracts.StartActivityForResult(),
-                result -> {
-                    if (coinAccessController != null) {
-                        coinAccessController.onShareReturned();
-                    }
-                });
+                result -> handleShareReturn());
         
         shareHelper.setShareLauncher(shareLauncher);
+    }
+
+    private void handleShareReturn() {
+        waitingForShareReturn = false;
+        if (coinAccessController != null) {
+            coinAccessController.onShareReturned();
+        }
+    }
+
+    @Override
+    public void onPause() {
+        super.onPause();
+        if (shareRewardManager != null && shareRewardManager.isShareInProgress()) {
+            waitingForShareReturn = true;
+        }
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        if (waitingForShareReturn && shareRewardManager != null && shareRewardManager.isShareInProgress()) {
+            waitingForShareReturn = false;
+            handleShareReturn();
+        }
     }
 
     @Override
@@ -162,17 +183,7 @@ public class JobUpdateDetails extends Fragment implements RefreshableFragment {
             updateSaveButtonIcon();
         });
         
-        fabShare.setOnClickListener(v -> {
-            if (jobUpdate != null) {
-                if (shareRewardManager != null) {
-                    shareRewardManager.startShare();
-                }
-                String shareTitle = jobUpdate.getTitle() != null ? jobUpdate.getTitle() : "Government Job Alert";
-                String documentId = jobUpdate.getDocumentId();
-                String imageUrl = jobUpdate.getImageUrl();
-                shareHelper.shareJobWithImage(shareTitle, documentId, imageUrl);
-            }
-        });
+        fabShare.setOnClickListener(v -> showShareAppPickerDialog());
 
         if (jobUpdate != null) {
             populateUIFromObject(view);
@@ -199,6 +210,48 @@ public class JobUpdateDetails extends Fragment implements RefreshableFragment {
         handler.postDelayed(() -> {
             if (swipeRefreshLayout != null) swipeRefreshLayout.setRefreshing(false);
         }, 1000);
+    }
+
+    private void showShareAppPickerDialog() {
+        if (jobUpdate == null || shareHelper == null || !isAdded()) return;
+
+        View dialogView = LayoutInflater.from(requireContext()).inflate(R.layout.dialog_share_app_picker, null);
+        View whatsappBtn = dialogView.findViewById(R.id.btn_share_whatsapp);
+        View instagramBtn = dialogView.findViewById(R.id.btn_share_instagram);
+        View cancelBtn = dialogView.findViewById(R.id.btn_share_cancel);
+
+        AlertDialog shareDialog = new AlertDialog.Builder(requireContext())
+                .setView(dialogView)
+                .setCancelable(true)
+                .create();
+
+        if (shareDialog.getWindow() != null) {
+            shareDialog.getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
+        }
+
+        String shareTitle = jobUpdate.getTitle() != null ? jobUpdate.getTitle() : "Government Job Alert";
+        String shareMessage = shareHelper.buildJobShareMessage(shareTitle, jobUpdate.getDocumentId());
+
+        whatsappBtn.setOnClickListener(v -> {
+            shareDialog.dismiss();
+            launchShareWithReward(() -> shareHelper.shareToWhatsApp(shareMessage));
+        });
+
+        instagramBtn.setOnClickListener(v -> {
+            shareDialog.dismiss();
+            launchShareWithReward(() -> shareHelper.shareToInstagram(shareMessage));
+        });
+
+        cancelBtn.setOnClickListener(v -> shareDialog.dismiss());
+        shareDialog.show();
+    }
+
+    private void launchShareWithReward(java.util.function.BooleanSupplier shareAction) {
+        if (shareRewardManager == null) return;
+        if (!shareRewardManager.startShare()) return;
+        if (!shareAction.getAsBoolean()) {
+            shareRewardManager.cancelShare();
+        }
     }
 
     private void loadNativeAd(View rootView) {

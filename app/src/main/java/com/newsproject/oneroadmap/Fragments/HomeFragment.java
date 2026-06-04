@@ -754,9 +754,9 @@ public class HomeFragment extends Fragment {
         }, 300);
     }
 
-    public void openNewsById(String newsId) {
+    public boolean openNewsById(String newsId) {
 
-        if (newsList == null || newsList.isEmpty()) return;
+        if (newsList == null || newsList.isEmpty()) return false;
 
         int position = -1;
 
@@ -768,8 +768,7 @@ public class HomeFragment extends Fragment {
         }
 
         if (position == -1) {
-            Toast.makeText(getContext(), "News not found", Toast.LENGTH_SHORT).show();
-            return;
+            return false;
         }
 
         Gson gson = new Gson();
@@ -782,34 +781,21 @@ public class HomeFragment extends Fragment {
                 .replace(R.id.fragment_container, fragment)
                 .addToBackStack(null)
                 .commit();
+        return true;
     }
 
     public void navigateToContent(String type, String id, String webUrl) {
-        if ("pramotion".equalsIgnoreCase(type) || "promotion".equalsIgnoreCase(type)) {
-            if (webUrl != null && !webUrl.isEmpty()) {
-                com.newsproject.oneroadmap.Utils.WebViewHelper.openUrlInApp(requireContext(), webUrl);
-            }
-        } else if ("news".equalsIgnoreCase(type)) {
-            if (id != null && !id.isEmpty()) {
-                openNewsById(id);
-            }
-        } else if ("post".equalsIgnoreCase(type)) {
-            if (id != null && !id.isEmpty()) {
-                android.app.ProgressDialog pd = new android.app.ProgressDialog(getContext());
-                pd.setMessage("Loading...");
-                pd.show();
-                Map<String, JobUpdate> cache = new HashMap<>();
-                JobViewModel.fetchJobUpdate(id, cache, getContext(), () -> {
-                    JobUpdate j = cache.get(id);
-                    if (j != null) {
-                        JobViewModel.navigateToJobDetails(j, getContext(), pd);
-                    } else {
-                        pd.dismiss();
-                        Toast.makeText(getContext(), "Failed to load post", Toast.LENGTH_SHORT).show();
-                    }
-                });
-            }
-        }
+        Slider slider = new Slider();
+        slider.setType(type);
+        slider.setPostDocumentId(id);
+        slider.setWebUrl(webUrl);
+        com.newsproject.oneroadmap.Utils.SliderNavigationHelper.handleSliderClick(
+                getContext(),
+                slider,
+                null,
+                null,
+                this::openNewsById
+        );
     }
 
     public static void navigateFromStory(Context context, String type, String id, String webUrl) {
@@ -1631,9 +1617,12 @@ public class HomeFragment extends Fragment {
                         carousel.setData(carouselItemsList);
                         carousel.setCarouselListener(new CarouselListener() {
                             @Override public void onClick(int position, CarouselItem carouselItem) {
-                                if (!isAdded() || position < 0 || position >= finalSliders.size()) return;
-                                Slider s = finalSliders.get(position);
-                                navigateToContent(s.getType(), s.getPostDocumentId(), s.getWebUrl());
+                                if (!isAdded()) return;
+                                Slider slider = com.newsproject.oneroadmap.Utils.SliderNavigationHelper
+                                        .resolveSlider(finalSliders, position, carouselItem);
+                                if (slider == null) return;
+                                com.newsproject.oneroadmap.Utils.SliderNavigationHelper.handleSliderClick(
+                                        getContext(), slider, null, null, HomeFragment.this::openNewsById);
                             }
                             @Override public void onLongClick(int i, @NonNull CarouselItem carouselItem) {}
                             @Override public void onBindViewHolder(@NonNull ViewBinding viewBinding, @NonNull CarouselItem carouselItem, int i) {}

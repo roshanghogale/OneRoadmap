@@ -41,7 +41,7 @@ import com.newsproject.oneroadmap.Models.Slider;
 import com.newsproject.oneroadmap.R;
 import com.newsproject.oneroadmap.Utils.BuildConfig;
 import com.newsproject.oneroadmap.Utils.FilterUtils;
-import com.newsproject.oneroadmap.Utils.NewsUtils;
+import com.newsproject.oneroadmap.Utils.SliderNavigationHelper;
 import com.newsproject.oneroadmap.databinding.DialogEducationFilterBinding;
 
 import org.imaginativeworld.whynotimagecarousel.ImageCarousel;
@@ -527,17 +527,8 @@ public class BankingJobs extends Fragment {
 
                                     if (shouldShow) {
                                         sliders.add(slider);
-                                        if ("post".equalsIgnoreCase(slider.getType())) {
-                                            String id = slider.getPostDocumentId();
-                                            if (id != null && !id.trim().isEmpty()) {
-                                                JobViewModel.fetchJobUpdate(id, jobUpdateCache, requireContext(), null);
-                                            }
-                                        } else if ("news".equalsIgnoreCase(slider.getType())) {
-                                            String id = slider.getPostDocumentId();
-                                            if (id != null && !id.trim().isEmpty()) {
-                                                NewsUtils.fetchNews(id, newsCache, requireContext(), null);
-                                            }
-                                        }
+                                        SliderNavigationHelper.preloadLinkedContent(
+                                                slider, jobUpdateCache, newsCache, requireContext());
                                         Log.d(TAG, "Added banking slider: " + slider.getTitle());
                                     }
                                 }
@@ -581,36 +572,12 @@ public class BankingJobs extends Fragment {
 
                                     @Override
                                     public void onClick(int position, CarouselItem carouselItem) {
-                                        if (position < 0 || position >= sliders.size()) return;
-                                        Slider selectedSlider = sliders.get(position);
-                                        String id = selectedSlider.getPostDocumentId();
-                                        if (id == null || id.trim().isEmpty()) {
-                                            Toast.makeText(requireContext(), "Content unavailable", Toast.LENGTH_SHORT).show();
-                                            return;
-                                        }
-
-                                        android.app.ProgressDialog progressDialog = new android.app.ProgressDialog(requireContext());
-                                        progressDialog.setMessage("Loading...");
-                                        progressDialog.setCancelable(false);
-                                        progressDialog.show();
-
-                                        if ("post".equalsIgnoreCase(selectedSlider.getType())) {
-                                            JobUpdate job = jobUpdateCache.get(id);
-                                            if (job != null) {
-                                                JobViewModel.navigateToJobDetails(job, requireContext(), progressDialog);
-                                            } else {
-                                                JobViewModel.fetchJobUpdate(id, jobUpdateCache, requireContext(), () ->
-                                                        JobViewModel.navigateToJobDetails(jobUpdateCache.get(id), requireContext(), progressDialog));
-                                            }
-                                        } else if ("news".equalsIgnoreCase(selectedSlider.getType())) {
-                                            News news = newsCache.get(id);
-                                            if (news != null) {
-                                                NewsUtils.showNewsDialog(news, requireContext(), progressDialog);
-                                            } else {
-                                                NewsUtils.fetchNews(id, newsCache, requireContext(), () ->
-                                                        NewsUtils.showNewsDialog(newsCache.get(id), requireContext(), progressDialog));
-                                            }
-                                        }
+                                        if (!isAdded() || getContext() == null) return;
+                                        Slider selectedSlider = SliderNavigationHelper.resolveSlider(
+                                                sliders, position, carouselItem);
+                                        if (selectedSlider == null) return;
+                                        SliderNavigationHelper.handleSliderClick(
+                                                requireContext(), selectedSlider, jobUpdateCache, newsCache, null);
                                     }
                                 });
                             });

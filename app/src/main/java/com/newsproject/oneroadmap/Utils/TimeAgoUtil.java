@@ -21,15 +21,38 @@ public class TimeAgoUtil {
     }
 
     public static String getTimeAgo(String dateString) {
-        if (dateString == null || dateString.isEmpty()) return "Unknown";
+        Date date = parseDateString(dateString, false);
+        if (date != null) {
+            return calculateTimeAgo(date);
+        }
+        Log.e("TimeAgoUtil", "Failed to parse dateString with all known formats: " + dateString);
+        return "Unknown";
+    }
+
+    /** Job updates from the API use India local time without a timezone suffix. */
+    public static String getTimeAgoForJobUpdate(String dateString) {
+        Date date = parseDateString(dateString, true);
+        if (date != null) {
+            return calculateTimeAgo(date);
+        }
+        Log.e("TimeAgoUtil", "Failed to parse job update dateString: " + dateString);
+        return "Unknown";
+    }
+
+    public static long parseJobUpdateMillis(String dateString) {
+        Date date = parseDateString(dateString, true);
+        return date != null ? date.getTime() : 0L;
+    }
+
+    private static Date parseDateString(String dateString, boolean jobUpdateTime) {
+        if (dateString == null || dateString.isEmpty()) return null;
 
         Log.d("TimeAgoUtil", "Parsing dateString: " + dateString);
 
-        // List of common formats including the one from your server
         String[] formats = {
                 "yyyy-MM-dd HH:mm:ss.SSSSSS",
                 "yyyy-MM-dd HH:mm:ss",
-                "dd/MM/yyyy, h:mm:ss a", // ✅ Matches your example: 28/12/2025, 5:47:52 am
+                "dd/MM/yyyy, h:mm:ss a",
                 "dd/MM/yyyy, HH:mm:ss",
                 "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'",
                 "yyyy-MM-dd"
@@ -38,23 +61,30 @@ public class TimeAgoUtil {
         for (String format : formats) {
             try {
                 SimpleDateFormat sdf = new SimpleDateFormat(format, Locale.US);
-                if (format.contains("Z") || format.startsWith("yyyy-MM-dd")) {
-                    sdf.setTimeZone(TimeZone.getTimeZone("UTC"));
-                } else {
-                    sdf.setTimeZone(TimeZone.getTimeZone("Asia/Kolkata"));
-                }
-                
+                sdf.setTimeZone(resolveTimeZone(format, jobUpdateTime));
+
                 Date date = sdf.parse(dateString);
                 if (date != null) {
-                    Log.d("TimeAgoUtil", "Success with format [" + format + "]: " + date.toString());
-                    return calculateTimeAgo(date);
+                    Log.d("TimeAgoUtil", "Success with format [" + format + "]: " + date);
+                    return date;
                 }
             } catch (Exception ignored) {
             }
         }
-        
-        Log.e("TimeAgoUtil", "Failed to parse dateString with all known formats: " + dateString);
-        return "Unknown";
+        return null;
+    }
+
+    private static TimeZone resolveTimeZone(String format, boolean jobUpdateTime) {
+        if (format.contains("Z")) {
+            return TimeZone.getTimeZone("UTC");
+        }
+        if (jobUpdateTime) {
+            return TimeZone.getTimeZone("Asia/Kolkata");
+        }
+        if (format.startsWith("yyyy-MM-dd")) {
+            return TimeZone.getTimeZone("UTC");
+        }
+        return TimeZone.getTimeZone("Asia/Kolkata");
     }
 
     private static String calculateTimeAgo(Date date) {
